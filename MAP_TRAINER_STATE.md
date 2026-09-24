@@ -21,6 +21,10 @@ Position: **"An adaptive academic assessment and growth platform built around MA
 
 Decided: no "flaming red" combat framing for competitive features (kept as a real design option, chosen against). No live image-generation API for now; if pursued later, the lower-risk path is a curated art bank pre-generated once, offline, not live per-request.
 
+- **Enhanced results screen** (real, built): "Your Strengths" section with per-skill-type star ratings (★★★★☆), computed from the actual questions answered in that attempt. "Your Next Target" (current RIT + 10, explicitly labeled as a reasonable goal, not an official NWEA growth projection — deliberate per the discussion about not overstating what the app's numbers represent). "Recommended Training" — the 1-2 weakest skill types (under 70% accuracy, min. 2 questions) each get a one-click "Practice this →" button that jumps straight into the matching Training Mode skill-practice mode. Note: the practice-mode mapping uses the 3 skill filters that already exist (Vocabulary / informational-text / literary-text) — there's no dedicated filter yet for finer-grained types like "Inference" specifically; that's a small follow-up (a new `SKILL_FILTERS` entry per type), not done in this pass. The existing growth-delta-from-last-test and history graph were already built from a prior session — confirmed still there, not duplicated.
+
+## Backlog (in priority order)
+
 ## Roadmap — organized from everything discussed, not yet all built
 **A. Gamification, remaining pieces** (no new infra needed, same pattern as what's built)
 - Rank tiers (Bronze→Platinum) layered on top of existing XP/level data
@@ -46,5 +50,5 @@ Decided: no "flaming red" combat framing for competitive features (kept as a rea
 
 ## Next step
 Two independent threads:
-1. **User**: push the latest `index.html` (Simulation/Training split + gamification v1) and confirm live — same `git add . && git commit && git push` pattern as before.
-2. **Build**: continue down the roadmap — suggest B (enhanced results screen) or A's remaining pieces (rank tiers, weekly missions, smart recommendation) next, since both are buildable immediately with zero new infrastructure, before moving to C/D/E which need new schema + realtime work.
+1. **User**: push the latest `index.html` (adds the enhanced results screen) — same push pattern, confirmed working (last push succeeded; the "I don't see it" report turned out to be browser caching, resolved with a hard refresh).
+2. **Build**: continue down the roadmap — remaining gamification pieces (rank tiers, weekly missions, smart recommendation, journey visual) are all buildable now with zero new infrastructure. After that, C (async leaderboards) is the next natural step before the bigger D/E (live sessions + teacher control room) work.

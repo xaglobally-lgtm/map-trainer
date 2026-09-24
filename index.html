@@ -835,6 +835,13 @@
             <svg id="history-graph" width="100%" height="140" style="background:#fafafa; border-radius:10px; margin-bottom:4px;"></svg>
             <p id="growth-caption" style="font-size:11px; color:#94a3b8; margin:0 0 20px;"></p>
             <div id="res-summary" style="background:#eef2ff; padding:20px; border-radius:15px; font-size:14px; margin-bottom:20px;"></div>
+            <div id="res-strengths-section" style="margin-bottom:20px;">
+                <h3 style="margin-bottom:6px;">Your Strengths</h3>
+                <div id="res-strengths-list" style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;"></div>
+                <div id="res-next-target" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; font-size:13px; margin-bottom:14px;"></div>
+                <h3 style="margin-bottom:6px;">Recommended Training</h3>
+                <div id="res-recommended-training" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
             <h3 id="i18n-cefrLevelAttained">CEFR Level Attained</h3>
             <div id="res-cefr-level" style="font-size:28px; font-weight:900; color:var(--primary); margin-bottom:8px;"></div>
             <h3 id="i18n-attainmentByBand">Attainment by CEFR Band</h3>
@@ -6164,6 +6171,7 @@
 
         renderPersonalGrowth();
         renderStudentSupport(weak, strong, finalBand);
+        renderSkillStrengths();
 
         const savedLang = localStorage.getItem('report_lang') || 'en';
         const langSel = document.getElementById('report-lang-select');
@@ -6194,6 +6202,75 @@
     }
     function logPrevPage() { state.logPage = Math.max(0, (state.logPage || 0) - 1); renderLogPage(); }
     function logNextPage() { state.logPage = (state.logPage || 0) + 1; renderLogPage(); }
+    // Maps a skill type to whichever existing Training Mode skill-practice
+    // filter is the closest match — Vocabulary/Nuance -> vocab, informational
+    // CCSS (RI.*) -> infotext, literary CCSS (RL.*) -> littext. There isn't a
+    // dedicated practice filter per fine-grained type (e.g. "Inference"
+    // specifically) yet — that would need a new SKILL_FILTERS entry, tracked
+    // as a follow-up rather than guessed at here.
+    function closestSkillPracticeMode(type, ccss) {
+        if (type === 'Vocabulary' || type === 'Nuance') return 'vocab_20';
+        if (ccss && ccss.startsWith('RL')) return 'littext_20';
+        return 'infotext_20'; // default: most non-vocab types are informational-text-tagged
+    }
+    function startRecommendedPractice(modeValue) {
+        document.getElementById('view-results').classList.add('hidden');
+        document.getElementById('view-setup').classList.remove('hidden');
+        setModeCategory('train');
+        const sel = document.getElementById('mode-select');
+        if (sel) sel.value = modeValue;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function renderSkillStrengths() {
+        const byType = {};
+        state.results.forEach(r => {
+            const t = r.q.type || 'General';
+            if (!byType[t]) byType[t] = { correct: 0, total: 0, ccss: r.q.ccss };
+            byType[t].total++;
+            if (r.correct) byType[t].correct++;
+        });
+        const types = Object.keys(byType).filter(t => byType[t].total >= 2);
+        const listEl = document.getElementById('res-strengths-list');
+        if (!types.length) {
+            listEl.innerHTML = '<p style="font-size:12px; color:#94a3b8;">Not enough questions of any single skill type in this attempt for a reliable breakdown.</p>';
+        } else {
+            listEl.innerHTML = types.map(t => {
+                const acc = byType[t].correct / byType[t].total;
+                const stars = Math.max(1, Math.min(5, Math.round(acc * 5)));
+                const starStr = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+                return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:6px 10px; background:#f8fafc; border-radius:8px;">
+                    <span>${escapeHtml(t)}</span>
+                    <span style="color:#f59e0b; letter-spacing:1px;">${starStr}</span>
+                </div>`;
+            }).join('');
+        }
+
+        // Next target: a plain, honest "aim a bit higher" framing — never
+        // implied to be an official NWEA growth projection.
+        const targetEl = document.getElementById('res-next-target');
+        targetEl.innerHTML = `🎯 <b>Your next target: RIT ${state.rit + 10}</b><br><span style="font-size:11px; color:#64748b;">A reasonable next goal based on this attempt — not an official NWEA growth projection.</span>`;
+
+        // Recommended training: the weakest 1-2 skill types (by accuracy,
+        // minimum 2 questions attempted), each with a one-click way to
+        // actually go practice it.
+        const weakest = types
+            .map(t => ({ type: t, acc: byType[t].correct / byType[t].total, ccss: byType[t].ccss }))
+            .filter(x => x.acc < 0.7)
+            .sort((a, b) => a.acc - b.acc)
+            .slice(0, 2);
+        const trainEl = document.getElementById('res-recommended-training');
+        if (!weakest.length) {
+            trainEl.innerHTML = '<p style="font-size:12px; color:#94a3b8;">Solid performance across the skill types tested — continue with adaptive practice to keep growing.</p>';
+        } else {
+            trainEl.innerHTML = weakest.map(w => {
+                const mode = closestSkillPracticeMode(w.type, w.ccss);
+                return `<div style="display:flex; justify-content:space-between; align-items:center; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:10px 14px;">
+                    <span style="font-size:13px;"><b>${escapeHtml(w.type)}</b> — ${Math.round(w.acc*100)}% accuracy this attempt</span>
+                    <button onclick="startRecommendedPractice('${mode}')" style="background:var(--primary-grad); color:white; border:none; padding:8px 14px; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer; white-space:nowrap;">Practice this →</button>
+                </div>`;
+            }).join('');
+        }
+    }
     function renderPersonalGrowth() {
         const name = document.getElementById('student-name').value || 'Guest';
         const mode = document.getElementById('mode-select').value;
