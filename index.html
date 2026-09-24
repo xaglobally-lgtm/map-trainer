@@ -600,7 +600,34 @@
                     <p style="font-size:13px;">Signed in as <b id="auth-current-email"></b></p>
                     <p style="font-size:13px;">Plan: <b id="auth-current-plan"></b></p>
                     <button onclick="signOutUser()" style="width:100%; padding:10px; border-radius:10px; background:#f1f5f9; color:#334155; border:none; font-weight:700; cursor:pointer;">Sign out</button>
+
+                    <hr style="margin:16px 0;">
+                    <h3 style="margin:0 0 8px; font-size:15px;">Classes &amp; Leaderboards</h3>
+                    <div id="my-classes-list" style="margin-bottom:12px;"></div>
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <input type="text" id="join-class-code" placeholder="Enter class code (e.g. FOX-482)" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); text-transform:uppercase;">
+                        <button onclick="joinClass()" style="padding:8px 14px; border-radius:8px; background:#f1f5f9; border:none; font-weight:700; cursor:pointer; white-space:nowrap;">Join</button>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="new-class-name" placeholder="New class name (e.g. Room 12 Reading)" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border);">
+                        <button onclick="createClass()" style="padding:8px 14px; border-radius:8px; background:var(--primary-grad); color:white; border:none; font-weight:700; cursor:pointer; white-space:nowrap;">Create</button>
+                    </div>
+                    <p style="font-size:10px; color:#94a3b8; margin:6px 0 0;">Create a class as a teacher, or join one with a code a teacher shares with you.</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- LEADERBOARD -->
+        <div id="modal-leaderboard" class="modal hidden">
+            <div class="modal-content" style="max-height:90vh; overflow-y:auto;">
+                <button type="button" class="modal-close" onclick="closeModal('modal-leaderboard')" title="Close" aria-label="Close">×</button>
+                <h2 id="leaderboard-class-name" style="margin-top:0;">Leaderboard</h2>
+                <div style="display:flex; gap:8px; margin-bottom:14px;">
+                    <button onclick="renderLeaderboard('best')" id="lb-tab-best" class="lb-tab-btn" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-weight:700; cursor:pointer; font-size:12px;">🏆 Highest RIT</button>
+                    <button onclick="renderLeaderboard('improved')" id="lb-tab-improved" class="lb-tab-btn" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-weight:700; cursor:pointer; font-size:12px;">📈 Most Improved</button>
+                    <button onclick="renderLeaderboard('accuracy')" id="lb-tab-accuracy" class="lb-tab-btn" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-weight:700; cursor:pointer; font-size:12px;">🎯 Best Accuracy</button>
+                </div>
+                <div id="leaderboard-rows"></div>
             </div>
         </div>
         <div id="grade-picker"></div>
@@ -959,6 +986,7 @@
             inView.classList.remove('hidden');
             document.getElementById('auth-current-email').textContent = session.user.email;
             document.getElementById('auth-current-plan').textContent = window.MAP_ENTITLEMENT === 'full' ? 'Full (A1–C2)' : 'Free (A1–A2)';
+            loadMyClasses();
         }
         if (typeof updateMenu === 'function') updateMenu();
     }
@@ -978,6 +1006,106 @@
         await sb.auth.signOut();
         await refreshEntitlement();
         closeModal('modal-auth');
+    }
+
+    // ===================== CLASSES & LEADERBOARDS (Roadmap item C) =====================
+    const JOIN_CODE_WORDS = ['FOX','OWL','BEE','CAT','FIN','RAY','JAY','ELK','COD','KIT'];
+    function generateJoinCode() {
+        const word = JOIN_CODE_WORDS[Math.floor(Math.random() * JOIN_CODE_WORDS.length)];
+        const num = Math.floor(100 + Math.random() * 900);
+        return `${word}-${num}`;
+    }
+    // Makes sure a map_profiles row exists before any class action — the
+    // leaderboard function needs a display_name to show, and there's no
+    // other point in the app where a profile gets created.
+    async function ensureProfile() {
+        if (!sb || !window.MAP_USER) return;
+        const name = (document.getElementById('student-name') || {}).value || 'Student';
+        await sb.from('map_profiles').upsert({ id: window.MAP_USER.id, display_name: name, role: 'student' }, { onConflict: 'id' });
+    }
+    async function createClass() {
+        if (!sb || !window.MAP_USER) return;
+        const nameEl = document.getElementById('new-class-name');
+        const name = (nameEl.value || '').trim();
+        if (!name) return;
+        await ensureProfile();
+        const joinCode = generateJoinCode();
+        const { error } = await sb.from('map_classes').insert({ teacher_id: window.MAP_USER.id, name, join_code: joinCode });
+        if (error) { alert('Could not create class: ' + error.message); return; }
+        nameEl.value = '';
+        loadMyClasses();
+    }
+    async function joinClass() {
+        if (!sb || !window.MAP_USER) return;
+        const codeEl = document.getElementById('join-class-code');
+        const code = (codeEl.value || '').trim().toUpperCase();
+        if (!code) return;
+        await ensureProfile();
+        const { data: cls, error } = await sb.from('map_classes').select('id,name').eq('join_code', code).maybeSingle();
+        if (error || !cls) { alert('No class found with that code.'); return; }
+        const { error: joinErr } = await sb.from('map_class_members').insert({ class_id: cls.id, student_id: window.MAP_USER.id });
+        if (joinErr && !joinErr.message.includes('duplicate')) { alert('Could not join class: ' + joinErr.message); return; }
+        codeEl.value = '';
+        loadMyClasses();
+    }
+    async function loadMyClasses() {
+        const listEl = document.getElementById('my-classes-list');
+        if (!sb || !window.MAP_USER || !listEl) return;
+        const [{ data: owned }, { data: memberships }] = await Promise.all([
+            sb.from('map_classes').select('id,name,join_code').eq('teacher_id', window.MAP_USER.id),
+            sb.from('map_class_members').select('class_id').eq('student_id', window.MAP_USER.id)
+        ]);
+        let joined = [];
+        if (memberships && memberships.length) {
+            const ids = memberships.map(m => m.class_id);
+            const { data: joinedClasses } = await sb.from('map_classes').select('id,name,join_code').in('id', ids);
+            joined = joinedClasses || [];
+        }
+        const rows = [];
+        (owned || []).forEach(c => rows.push(`<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:#f8fafc; border-radius:8px; margin-bottom:4px; font-size:12px;">
+            <span>👩‍🏫 <b>${escapeHtml(c.name)}</b> — code <code>${c.join_code}</code></span>
+            <button onclick="openLeaderboard('${c.id}','${escapeHtml(c.name)}')" style="background:var(--primary-grad); color:white; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">Leaderboard</button>
+        </div>`));
+        joined.forEach(c => rows.push(`<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:#f8fafc; border-radius:8px; margin-bottom:4px; font-size:12px;">
+            <span>🎓 <b>${escapeHtml(c.name)}</b></span>
+            <button onclick="openLeaderboard('${c.id}','${escapeHtml(c.name)}')" style="background:var(--primary-grad); color:white; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">Leaderboard</button>
+        </div>`));
+        listEl.innerHTML = rows.length ? rows.join('') : '<p style="font-size:11px; color:#94a3b8;">No classes yet.</p>';
+    }
+    let currentLeaderboardClassId = null;
+    let currentLeaderboardRows = [];
+    async function openLeaderboard(classId, className) {
+        currentLeaderboardClassId = classId;
+        document.getElementById('leaderboard-class-name').innerText = '🏆 ' + className;
+        document.getElementById('leaderboard-rows').innerHTML = '<p style="font-size:12px; color:#94a3b8;">Loading…</p>';
+        openModal('modal-leaderboard');
+        const { data, error } = await sb.rpc('get_class_leaderboard', { p_class_id: classId });
+        if (error) {
+            document.getElementById('leaderboard-rows').innerHTML = `<p style="font-size:12px; color:#dc2626;">Could not load leaderboard: ${escapeHtml(error.message)}</p>`;
+            return;
+        }
+        currentLeaderboardRows = data || [];
+        renderLeaderboard('best');
+    }
+    function renderLeaderboard(metric) {
+        ['best', 'improved', 'accuracy'].forEach(m => {
+            const btn = document.getElementById('lb-tab-' + m);
+            if (btn) { btn.style.background = m === metric ? 'var(--primary-grad)' : 'var(--card)'; btn.style.color = m === metric ? 'white' : 'inherit'; }
+        });
+        const rowsEl = document.getElementById('leaderboard-rows');
+        if (!currentLeaderboardRows.length) { rowsEl.innerHTML = '<p style="font-size:12px; color:#94a3b8;">No completed tests yet for this class.</p>'; return; }
+        const withMetric = currentLeaderboardRows.map(r => ({
+            name: r.display_name,
+            value: metric === 'best' ? r.best_rit : metric === 'improved' ? (r.latest_rit - r.first_rit) : Math.round((r.avg_accuracy || 0) * 100),
+            tests: r.tests_completed
+        }));
+        withMetric.sort((a, b) => b.value - a.value);
+        const unit = metric === 'accuracy' ? '%' : (metric === 'improved' ? ' RIT' : '');
+        const sign = metric === 'improved' ? (v => v >= 0 ? '+' + v : String(v)) : (v => String(v));
+        rowsEl.innerHTML = withMetric.map((r, i) => `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:${i < 3 ? '#fff7ed' : '#f8fafc'}; border-radius:8px; margin-bottom:4px;">
+            <span style="font-size:13px;">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1) + '.'} &nbsp; ${escapeHtml(r.name)} <span style="color:#94a3b8; font-size:11px;">(${r.tests} tests)</span></span>
+            <b style="font-size:14px;">${sign(r.value)}${unit}</b>
+        </div>`).join('');
     }
 
     // After a completed (non-practice, non-cancelled) test, sync a summary
