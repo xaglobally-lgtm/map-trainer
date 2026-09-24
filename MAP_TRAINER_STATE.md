@@ -23,6 +23,13 @@ Decided: no "flaming red" combat framing for competitive features (kept as a rea
 
 - **Enhanced results screen** (real, built): "Your Strengths" section with per-skill-type star ratings (★★★★☆), computed from the actual questions answered in that attempt. "Your Next Target" (current RIT + 10, explicitly labeled as a reasonable goal, not an official NWEA growth projection — deliberate per the discussion about not overstating what the app's numbers represent). "Recommended Training" — the 1-2 weakest skill types (under 70% accuracy, min. 2 questions) each get a one-click "Practice this →" button that jumps straight into the matching Training Mode skill-practice mode. Note: the practice-mode mapping uses the 3 skill filters that already exist (Vocabulary / informational-text / literary-text) — there's no dedicated filter yet for finer-grained types like "Inference" specifically; that's a small follow-up (a new `SKILL_FILTERS` entry per type), not done in this pass. The existing growth-delta-from-last-test and history graph were already built from a prior session — confirmed still there, not duplicated.
 
+- **Gamification layer completed** (real, built, all local-device for now):
+  - **Rank tiers**: Bronze/Silver/Gold/Platinum, derived from Level (thresholds at Level 1/5/10/20), shown on the player card next to the level.
+  - **Weekly Mission**: "Complete 2 tests this week," tracked by bucketing history entries into calendar weeks (Monday start), shown as X/2 with a checkmark when done.
+  - **"What should I do today?"** smart recommendation on the dashboard: aggregates per-skill-type accuracy across a student's ENTIRE history (not just their last test — required a real data change, see below), finds their single weakest skill type with at least 5 questions attempted (so one unlucky question can't get flagged as "your weakness"), and shows a one-click START button into the matching Training Mode practice.
+  - **"Your Growth Path"** on the results screen: a simple horizontal milestone track (current RIT ±20, in steps of 10) with the student's position marked — explicitly not framed as the real NWEA scale.
+  - **Data model change this required**: test-history entries now also store a `byType` breakdown (per-skill-type correct/total) alongside the existing rit/lexile/accuracy fields, computed via a new shared `computeByTypeAccuracy()` helper (also used by the results-screen strengths section, so both features stay consistent). Older history entries made before this change won't have `byType` and are silently skipped by the aggregation — not a bug, just means the recommendation needs a little fresh history to kick in.
+
 ## Backlog (in priority order)
 
 ## Roadmap — organized from everything discussed, not yet all built
@@ -51,4 +58,4 @@ Decided: no "flaming red" combat framing for competitive features (kept as a rea
 ## Next step
 Two independent threads:
 1. **User**: push the latest `index.html` (adds the enhanced results screen) — same push pattern, confirmed working (last push succeeded; the "I don't see it" report turned out to be browser caching, resolved with a hard refresh).
-2. **Build**: continue down the roadmap — remaining gamification pieces (rank tiers, weekly missions, smart recommendation, journey visual) are all buildable now with zero new infrastructure. After that, C (async leaderboards) is the next natural step before the bigger D/E (live sessions + teacher control room) work.
+2. **Build**: gamification (A) is now essentially complete. Next up is C (async leaderboards) — schema already exists from Phase A (`map_classes`/`map_class_members`/`map_test_sessions`), no real-time needed for class/weekly/monthly views. After that, D/E (live sessions + teacher control room) are the bigger remaining pieces, needing new schema and Supabase Realtime.

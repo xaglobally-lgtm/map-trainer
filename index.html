@@ -626,6 +626,7 @@
             </label>
 
             <div id="player-card" class="hidden" style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:16px;"></div>
+            <div id="smart-recommendation" class="hidden" style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px 14px; margin-bottom:16px;"></div>
             
             <div id="mode-category-tabs" style="display:flex; gap:8px; margin-bottom:12px;">
                 <button type="button" onclick="setModeCategory('sim')" id="tab-sim" style="flex:1; padding:10px; border-radius:10px; border:2px solid var(--border); background:var(--card); font-weight:800; cursor:pointer;">🎯 Simulation Mode</button>
@@ -839,6 +840,7 @@
                 <h3 style="margin-bottom:6px;">Your Strengths</h3>
                 <div id="res-strengths-list" style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;"></div>
                 <div id="res-next-target" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; font-size:13px; margin-bottom:14px;"></div>
+                <div id="res-journey" style="margin-bottom:14px;"></div>
                 <h3 style="margin-bottom:6px;">Recommended Training</h3>
                 <div id="res-recommended-training" style="display:flex; flex-direction:column; gap:8px;"></div>
             </div>
@@ -5823,7 +5825,7 @@
             const name = document.getElementById('student-name').value || 'Guest';
             const mode = document.getElementById('mode-select').value;
             const accuracy = state.results.length ? state.results.filter(r => r.correct).length / state.results.length : 0;
-            pushTestHistory(name, mode, { date: Date.now(), rit: state.rit, lexile: ritToLexile(state.rit), accuracy, questionCount: state.results.length });
+            pushTestHistory(name, mode, { date: Date.now(), rit: state.rit, lexile: ritToLexile(state.rit), accuracy, questionCount: state.results.length, byType: computeByTypeAccuracy(state.results) });
             awardXP(name, 50); // completion bonus, on top of per-question XP already awarded during the test
             checkAndAwardBadges(name);
         }
@@ -6202,6 +6204,86 @@
     }
     function logPrevPage() { state.logPage = Math.max(0, (state.logPage || 0) - 1); renderLogPage(); }
     function logNextPage() { state.logPage = (state.logPage || 0) + 1; renderLogPage(); }
+    const RANK_TIERS = [
+        { min: 1, name: 'Bronze', icon: '🥉' },
+        { min: 5, name: 'Silver', icon: '🥈' },
+        { min: 10, name: 'Gold', icon: '🥇' },
+        { min: 20, name: 'Platinum', icon: '💎' }
+    ];
+    function getRankForLevel(level) {
+        let rank = RANK_TIERS[0];
+        RANK_TIERS.forEach(r => { if (level >= r.min) rank = r; });
+        return rank;
+    }
+    function getStartOfWeekMs(ts) {
+        const date = new Date(ts);
+        const day = date.getDay(); // 0 = Sunday
+        const diff = (day === 0 ? -6 : 1) - day; // back to Monday
+        date.setHours(0, 0, 0, 0);
+        date.setDate(date.getDate() + diff);
+        return date.getTime();
+    }
+    const WEEKLY_MISSION_TARGET = 2;
+    function computeWeeklyMission(name) {
+        const hist = getAllHistoryForName(name);
+        const weekStart = getStartOfWeekMs(Date.now());
+        const completedThisWeek = hist.filter(h => h.date >= weekStart).length;
+        return { completed: Math.min(completedThisWeek, WEEKLY_MISSION_TARGET), target: WEEKLY_MISSION_TARGET, done: completedThisWeek >= WEEKLY_MISSION_TARGET };
+    }
+    // Aggregates per-skill-type accuracy across the student's ENTIRE
+    // history (not just the last test) to find their single biggest,
+    // statistically meaningful opportunity for improvement — needs at
+    // least 5 questions of a type across all attempts to qualify, so one
+    // unlucky question doesn't get flagged as "your weakness."
+    function computeWeakestSkillAcrossHistory(name) {
+        const hist = getAllHistoryForName(name);
+        const agg = {};
+        hist.forEach(h => {
+            if (!h.byType) return;
+            Object.keys(h.byType).forEach(t => {
+                if (!agg[t]) agg[t] = { correct: 0, total: 0, ccss: h.byType[t].ccss };
+                agg[t].correct += h.byType[t].correct;
+                agg[t].total += h.byType[t].total;
+            });
+        });
+        const candidates = Object.keys(agg)
+            .map(t => ({ type: t, acc: agg[t].correct / agg[t].total, total: agg[t].total, ccss: agg[t].ccss }))
+            .filter(x => x.total >= 5);
+        if (!candidates.length) return null;
+        candidates.sort((a, b) => a.acc - b.acc);
+        return candidates[0];
+    }
+    // "What should I do today?" — shown on the dashboard before a name is
+    // even fully picked; only renders once there's enough history to base
+    // a real recommendation on, rather than guessing with no data.
+    function renderSmartRecommendation() {
+        const box = document.getElementById('smart-recommendation');
+        if (!box) return;
+        const name = (document.getElementById('student-name') || {}).value || '';
+        const weakest = name.trim() ? computeWeakestSkillAcrossHistory(name) : null;
+        if (!weakest) { box.classList.add('hidden'); return; }
+        box.classList.remove('hidden');
+        const mode = closestSkillPracticeMode(weakest.type, weakest.ccss);
+        box.innerHTML = `
+            <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:#92400e; margin-bottom:4px;">📅 What should I do today?</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <div style="font-weight:900; font-size:14px;">📖 ${escapeHtml(weakest.type)} practice — 10 minutes</div>
+                    <div style="font-size:11px; color:#78350f; margin-top:2px;">Why: this is currently your biggest opportunity for improvement (${Math.round(weakest.acc*100)}% accuracy across ${weakest.total} questions).</div>
+                </div>
+                <button onclick="startRecommendedPractice('${mode}')" style="background:var(--primary-grad); color:white; border:none; padding:10px 18px; border-radius:10px; font-weight:900; cursor:pointer; white-space:nowrap;">START</button>
+            </div>`;
+    }
+    function computeByTypeAccuracy(results) {
+        const byType = {};
+        results.forEach(r => {
+            const t = r.q.type || 'General';
+            if (!byType[t]) byType[t] = { correct: 0, total: 0, ccss: r.q.ccss };
+            byType[t].total++;
+            if (r.correct) byType[t].correct++;
+        });
+        return byType;
+    }
     // Maps a skill type to whichever existing Training Mode skill-practice
     // filter is the closest match — Vocabulary/Nuance -> vocab, informational
     // CCSS (RI.*) -> infotext, literary CCSS (RL.*) -> littext. There isn't a
@@ -6222,13 +6304,7 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     function renderSkillStrengths() {
-        const byType = {};
-        state.results.forEach(r => {
-            const t = r.q.type || 'General';
-            if (!byType[t]) byType[t] = { correct: 0, total: 0, ccss: r.q.ccss };
-            byType[t].total++;
-            if (r.correct) byType[t].correct++;
-        });
+        const byType = computeByTypeAccuracy(state.results);
         const types = Object.keys(byType).filter(t => byType[t].total >= 2);
         const listEl = document.getElementById('res-strengths-list');
         if (!types.length) {
@@ -6249,6 +6325,7 @@
         // implied to be an official NWEA growth projection.
         const targetEl = document.getElementById('res-next-target');
         targetEl.innerHTML = `🎯 <b>Your next target: RIT ${state.rit + 10}</b><br><span style="font-size:11px; color:#64748b;">A reasonable next goal based on this attempt — not an official NWEA growth projection.</span>`;
+        renderMapJourney();
 
         // Recommended training: the weakest 1-2 skill types (by accuracy,
         // minimum 2 questions attempted), each with a one-click way to
@@ -6270,6 +6347,27 @@
                 </div>`;
             }).join('');
         }
+    }
+    // "Your MAP Journey" — a simple horizontal milestone path centered on
+    // the student's current RIT, not a claim about the real NWEA scale.
+    function renderMapJourney() {
+        const el = document.getElementById('res-journey');
+        if (!el) return;
+        const base = Math.floor(state.rit / 10) * 10;
+        const milestones = [base - 20, base - 10, base, base + 10, base + 20];
+        el.innerHTML = `
+            <h3 style="margin-bottom:8px;">Your Growth Path</h3>
+            <div style="display:flex; align-items:center; justify-content:space-between; position:relative; padding:0 4px;">
+                <div style="position:absolute; top:14px; left:20px; right:20px; height:3px; background:#e2e8f0; z-index:0;"></div>
+                ${milestones.map(m => {
+                    const isCurrent = m === base;
+                    return `<div style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; flex:1;">
+                        <div style="width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:11px; ${isCurrent ? 'background:var(--primary-grad); color:white;' : 'background:#e2e8f0; color:#64748b;'}">${isCurrent ? '★' : ''}</div>
+                        <div style="font-size:11px; margin-top:4px; ${isCurrent ? 'font-weight:900; color:var(--primary);' : 'color:#94a3b8;'}">${m}</div>
+                    </div>`;
+                }).join('')}
+            </div>
+        `;
     }
     function renderPersonalGrowth() {
         const name = document.getElementById('student-name').value || 'Guest';
@@ -6401,6 +6499,8 @@
             personalBestRit,
             improvementStreak,
             xp, level,
+            rank: getRankForLevel(level),
+            weeklyMission: computeWeeklyMission(name),
             xpIntoLevel: xp % XP_PER_LEVEL,
             xpForNextLevel: XP_PER_LEVEL,
             deltaFromPrevious: hist.length > 1 ? (hist[hist.length - 1].rit - hist[hist.length - 2].rit) : null,
@@ -6422,15 +6522,17 @@
             ? `<span style="color:${s.deltaFromPrevious >= 0 ? '#16a34a' : '#dc2626'};">${s.deltaFromPrevious >= 0 ? '+' : ''}${s.deltaFromPrevious} from last test</span>`
             : '';
         const badgesHtml = s.badges.map(id => BADGE_DEFS[id] ? `<span title="${BADGE_DEFS[id].label}" style="font-size:18px;">${BADGE_DEFS[id].icon}</span>` : '').join(' ');
+        const missionHtml = `<div style="font-size:11px; color:#64748b; margin-top:6px;">🎯 Weekly Mission: complete ${s.weeklyMission.target} tests this week — ${s.weeklyMission.completed}/${s.weeklyMission.target} ${s.weeklyMission.done ? '✅' : ''}</div>`;
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 <div>
-                    <div style="font-weight:900; font-size:15px;">${escapeHtml(name)} &nbsp; <span style="font-size:12px; font-weight:700; color:var(--primary-mid);">Level ${s.level}</span></div>
+                    <div style="font-weight:900; font-size:15px;">${escapeHtml(name)} &nbsp; <span style="font-size:12px; font-weight:700; color:var(--primary-mid);">Level ${s.level}</span> &nbsp; <span style="font-size:12px;">${s.rank.icon} ${s.rank.name}</span></div>
                     <div style="font-size:12px; color:#64748b; margin-top:2px;">
                         ${s.personalBestRit != null ? `Personal Best: <b>${s.personalBestRit}</b>` : ''}
                         ${s.improvementStreak > 0 ? ` &nbsp;•&nbsp; 🔥 ${s.improvementStreak}-test improvement streak` : ''}
                         ${deltaHtml ? ' &nbsp;•&nbsp; ' + deltaHtml : ''}
                     </div>
+                    ${missionHtml}
                 </div>
                 <div style="text-align:right;">${badgesHtml || '<span style="font-size:11px; color:#cbd5e1;">No badges yet</span>'}</div>
             </div>
@@ -6448,6 +6550,7 @@
             localStorage.setItem('remembered_name', document.getElementById('student-name').value);
         }
         renderPlayerCard();
+        renderSmartRecommendation();
     }
     function onRememberNameToggle() {
         const chk = document.getElementById('remember-name-toggle');
@@ -6603,6 +6706,7 @@
             if (rememberChk) rememberChk.checked = true;
         }
         renderPlayerCard();
+        renderSmartRecommendation();
         setModeCategory(localStorage.getItem('mode_category') || 'sim');
         {
             const simEl = document.getElementById('sim-time-limit');
