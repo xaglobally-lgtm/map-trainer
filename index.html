@@ -412,6 +412,7 @@
         <h2 style="margin-top:0; padding-right:40px;">Send Report To</h2>
         <label style="font-size:12px; font-weight:700;">Recipient email address(es), comma-separated</label>
         <input type="text" id="sendto-emails" placeholder="teacher@school.com, parent@example.com" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-top:6px;">
+        <p style="font-size:11px; color:#94a3b8; margin:8px 0 0;">If you've earned a certificate, download it from 🏆 Certificates first and attach it yourself — this opens your email app with the report text ready, but can't attach files automatically.</p>
         <div style="display:flex; gap:8px; margin-top:14px;">
             <button onclick="closeModal('modal-sendto')" style="flex:1; padding:12px; border-radius:10px; background:#f1f5f9; color:#334155; border:none; font-weight:700; cursor:pointer;">Cancel</button>
             <button onclick="sendReportEmail()" style="flex:1; padding:12px; border-radius:10px; background:var(--primary-grad); color:white; border:none; font-weight:700; cursor:pointer;">Send</button>
@@ -654,6 +655,16 @@
 
             <div id="player-card" class="hidden" style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:16px;"></div>
             <div id="smart-recommendation" class="hidden" style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px 14px; margin-bottom:16px;"></div>
+
+            <!-- CERTIFICATES -->
+            <div id="modal-certificates" class="modal hidden">
+                <div class="modal-content" style="max-height:90vh; overflow-y:auto;">
+                    <button type="button" class="modal-close" onclick="closeModal('modal-certificates')" title="Close" aria-label="Close">×</button>
+                    <h2 style="margin-top:0;">🏆 Certificates</h2>
+                    <p style="font-size:12px; color:#64748b; margin:0 0 14px;">Download and print, or attach to an email yourself — mailto links can't attach files automatically.</p>
+                    <div id="certificates-list"></div>
+                </div>
+            </div>
             
             <div id="mode-category-tabs" style="display:flex; gap:8px; margin-bottom:12px;">
                 <button type="button" onclick="setModeCategory('sim')" id="tab-sim" style="flex:1; padding:10px; border-radius:10px; border:2px solid var(--border); background:var(--card); font-weight:800; cursor:pointer;">🎯 Simulation Mode</button>
@@ -1018,17 +1029,25 @@
     // Makes sure a map_profiles row exists before any class action — the
     // leaderboard function needs a display_name to show, and there's no
     // other point in the app where a profile gets created.
-    async function ensureProfile() {
+    async function ensureProfile(inferredRole) {
         if (!sb || !window.MAP_USER) return;
         const name = (document.getElementById('student-name') || {}).value || 'Student';
-        await sb.from('map_profiles').upsert({ id: window.MAP_USER.id, display_name: name, role: 'student' }, { onConflict: 'id' });
+        // Don't clobber a role that's already set — someone can plausibly
+        // be a teacher for one class and a member of another. Only guess
+        // the role the FIRST time a profile is created for this user.
+        const { data: existing } = await sb.from('map_profiles').select('id').eq('id', window.MAP_USER.id).maybeSingle();
+        if (existing) {
+            await sb.from('map_profiles').update({ display_name: name }).eq('id', window.MAP_USER.id);
+        } else {
+            await sb.from('map_profiles').insert({ id: window.MAP_USER.id, display_name: name, role: inferredRole || 'student' });
+        }
     }
     async function createClass() {
         if (!sb || !window.MAP_USER) return;
         const nameEl = document.getElementById('new-class-name');
         const name = (nameEl.value || '').trim();
         if (!name) return;
-        await ensureProfile();
+        await ensureProfile('teacher');
         const joinCode = generateJoinCode();
         const { error } = await sb.from('map_classes').insert({ teacher_id: window.MAP_USER.id, name, join_code: joinCode });
         if (error) { alert('Could not create class: ' + error.message); return; }
@@ -1040,7 +1059,7 @@
         const codeEl = document.getElementById('join-class-code');
         const code = (codeEl.value || '').trim().toUpperCase();
         if (!code) return;
-        await ensureProfile();
+        await ensureProfile('student');
         const { data: cls, error } = await sb.from('map_classes').select('id,name').eq('join_code', code).maybeSingle();
         if (error || !cls) { alert('No class found with that code.'); return; }
         const { error: joinErr } = await sb.from('map_class_members').insert({ class_id: cls.id, student_id: window.MAP_USER.id });
@@ -1122,7 +1141,8 @@
                 total_time_seconds: summary.totalTime, question_count: summary.questionCount,
                 correct_count: summary.correctCount, cancelled: summary.cancelled,
                 practice_only: summary.practiceOnly, started_at: summary.startedAt,
-                completed_at: new Date().toISOString()
+                completed_at: new Date().toISOString(),
+                by_type: summary.byType || null
             }).select('id').single();
             if (sessionRow) {
                 await sb.from('map_history_points').insert({
@@ -3139,10 +3159,12 @@
             response: response,
             interaction: q.interaction || 'multiple_choice'
         });
-        // XP is for participation, not correctness — a wrong answer still
-        // earns the same XP as a right one. Keeps the motivational layer
-        // from quietly becoming a second, conflicting scoring system.
-        awardXP(document.getElementById('student-name').value || 'Guest', 10);
+        // XP is now purely derived at display time from completed-test
+        // history (10/question + 50/test, computed fresh — see
+        // computeXPFromHistory), not an incrementing counter kept here.
+        // Participation-based either way: a wrong answer counts the same
+        // as a right one toward XP, since it's motivational, not a second
+        // scoring system.
         const advance = () => { state.current++; loadQ(); };
         setTimeout(() => {
             t.style.display = 'none';
@@ -5953,9 +5975,12 @@
             const name = document.getElementById('student-name').value || 'Guest';
             const mode = document.getElementById('mode-select').value;
             const accuracy = state.results.length ? state.results.filter(r => r.correct).length / state.results.length : 0;
+            // Local history is still written as a fallback for anonymous/
+            // offline use — but for a signed-in user, the cloud copy (below)
+            // is authoritative, and gamification is derived from THAT, not
+            // from this local write, so switching devices doesn't lose
+            // anything.
             pushTestHistory(name, mode, { date: Date.now(), rit: state.rit, lexile: ritToLexile(state.rit), accuracy, questionCount: state.results.length, byType: computeByTypeAccuracy(state.results) });
-            awardXP(name, 50); // completion bonus, on top of per-question XP already awarded during the test
-            checkAndAwardBadges(name);
         }
 
         // Additive only: syncs a summary to the server if signed in, does
@@ -5974,7 +5999,8 @@
                 correctCount: state.results.filter(r => r.correct).length,
                 cancelled: state.cancelled,
                 practiceOnly: false,
-                startedAt: new Date(Date.now() - (state.totalTime || 0) * 1000).toISOString()
+                startedAt: new Date(Date.now() - (state.totalTime || 0) * 1000).toISOString(),
+                byType: computeByTypeAccuracy(state.results)
             });
         }
 
@@ -6352,8 +6378,7 @@
         return date.getTime();
     }
     const WEEKLY_MISSION_TARGET = 2;
-    function computeWeeklyMission(name) {
-        const hist = getAllHistoryForName(name);
+    function computeWeeklyMissionFromHistory(hist) {
         const weekStart = getStartOfWeekMs(Date.now());
         const completedThisWeek = hist.filter(h => h.date >= weekStart).length;
         return { completed: Math.min(completedThisWeek, WEEKLY_MISSION_TARGET), target: WEEKLY_MISSION_TARGET, done: completedThisWeek >= WEEKLY_MISSION_TARGET };
@@ -6363,8 +6388,7 @@
     // statistically meaningful opportunity for improvement — needs at
     // least 5 questions of a type across all attempts to qualify, so one
     // unlucky question doesn't get flagged as "your weakness."
-    function computeWeakestSkillAcrossHistory(name) {
-        const hist = getAllHistoryForName(name);
+    function computeWeakestSkillFromHistory(hist) {
         const agg = {};
         hist.forEach(h => {
             if (!h.byType) return;
@@ -6384,11 +6408,13 @@
     // "What should I do today?" — shown on the dashboard before a name is
     // even fully picked; only renders once there's enough history to base
     // a real recommendation on, rather than guessing with no data.
-    function renderSmartRecommendation() {
+    async function renderSmartRecommendation() {
         const box = document.getElementById('smart-recommendation');
         if (!box) return;
         const name = (document.getElementById('student-name') || {}).value || '';
-        const weakest = name.trim() ? computeWeakestSkillAcrossHistory(name) : null;
+        if (!name.trim() && !window.MAP_USER) { box.classList.add('hidden'); return; }
+        const hist = await getPlayerHistory(name);
+        const weakest = computeWeakestSkillFromHistory(hist);
         if (!weakest) { box.classList.add('hidden'); return; }
         box.classList.remove('hidden');
         const mode = closestSkillPracticeMode(weakest.type, weakest.ccss);
@@ -6553,22 +6579,24 @@
         localStorage.setItem('xag_hist_v2', JSON.stringify(all));
     }
     // ===================== PLAYER PROGRESS (XP, levels, streaks, badges) =====================
-    // Deliberately local-only for now (same device), same as the existing
-    // history log — syncing this server-side is a natural fast-follow once
-    // the mechanic itself is proven, not a prerequisite for it.
+    // Fully derived from test-history each time it's displayed — no stored
+    // XP/badge counters to keep in sync. When signed in, history comes from
+    // Supabase (map_test_sessions, via fetchCloudHistory), so switching
+    // devices carries everything with it. When not signed in, it falls back
+    // to this device's local log, same as before — the app still works
+    // fully without an account.
     function getPlayerKey(name) { return (name || 'Guest').trim().toLowerCase(); }
-    function getPlayerXP(name) {
-        return parseInt(localStorage.getItem('player_xp_' + getPlayerKey(name)), 10) || 0;
-    }
-    function awardXP(name, amount) {
-        const xp = getPlayerXP(name) + amount;
-        localStorage.setItem('player_xp_' + getPlayerKey(name), String(xp));
-        return xp;
-    }
     const XP_PER_LEVEL = 500;
     function getPlayerLevel(xp) { return Math.floor(xp / XP_PER_LEVEL) + 1; }
+    // XP = 10/question answered + 50/test completed, computed fresh from
+    // history rather than incremented live — a wrong answer counts the same
+    // as a right one, since this is motivational, not a second scoring
+    // system.
+    function computeXPFromHistory(hist) {
+        return hist.reduce((sum, h) => sum + (h.questionCount || 0) * 10 + 50, 0);
+    }
     // All of a student's completed-test history, across every mode, oldest
-    // first — the history log itself is kept per-mode, but personal best /
+    // first — the local log itself is kept per-mode, but personal best /
     // streaks are meant to reflect the whole player, not just one mode.
     function getAllHistoryForName(name) {
         const all = JSON.parse(localStorage.getItem('xag_hist_v2') || '{}');
@@ -6580,47 +6608,125 @@
         combined.sort((a, b) => a.date - b.date);
         return combined;
     }
-    function getPlayerBadges(name) {
-        return JSON.parse(localStorage.getItem('player_badges_' + getPlayerKey(name)) || '[]');
+    // Server-side equivalent of getAllHistoryForName — same shape, so every
+    // downstream computation (XP, badges, streaks, weakest skill) works
+    // unchanged regardless of which source it came from.
+    async function fetchCloudHistory() {
+        if (!sb || !window.MAP_USER) return [];
+        const { data, error } = await sb.from('map_test_sessions')
+            .select('rit_end,lexile_end,correct_count,question_count,completed_at,by_type')
+            .eq('user_id', window.MAP_USER.id)
+            .eq('cancelled', false)
+            .not('completed_at', 'is', null)
+            .order('completed_at', { ascending: true });
+        if (error || !data) return [];
+        return data.map(row => ({
+            date: new Date(row.completed_at).getTime(),
+            rit: row.rit_end, lexile: row.lexile_end,
+            accuracy: row.question_count ? row.correct_count / row.question_count : 0,
+            questionCount: row.question_count || 0,
+            byType: row.by_type || {}
+        }));
+    }
+    // The single place that decides "local device or cloud account" — every
+    // gamification function below goes through this instead of calling
+    // getAllHistoryForName directly, so the cloud/local branch only needs
+    // to be right in one place.
+    async function getPlayerHistory(name) {
+        if (window.MAP_USER) return await fetchCloudHistory();
+        return getAllHistoryForName(name);
     }
     const BADGE_DEFS = {
-        tests10: { label: '10 Tests Completed', icon: '📘' },
-        tests30: { label: '30-Test Veteran', icon: '📚' },
-        perfect: { label: 'Perfect Score', icon: '💯' },
-        beatBest: { label: 'Beat Your Best', icon: '🏆' },
-        streak5: { label: '5-Test Streak', icon: '🔥' }
+        tests10: { label: '10 Tests Completed', icon: '📘', certTitle: '10-Test Certificate', certSubtitle: 'For completing 10 practice tests' },
+        tests30: { label: '30-Test Veteran', icon: '📚', certTitle: 'Reading Champion', certSubtitle: 'For completing 30 practice tests' },
+        perfect: { label: 'Perfect Score', icon: '💯', certTitle: 'Problem Solver', certSubtitle: 'For a perfect score on a practice test' },
+        beatBest: { label: 'Beat Your Best', icon: '🏆', certTitle: 'Personal Best Award', certSubtitle: 'For beating their own previous best score' },
+        streak5: { label: '5-Test Streak', icon: '🔥', certTitle: 'Improvement Award', certSubtitle: 'For 5 consecutive tests showing improvement' }
     };
-    // Called right after a completed test is logged — checks the player's
-    // whole history and awards any newly-earned badges (never re-awards one
-    // already earned).
-    function checkAndAwardBadges(name) {
-        const hist = getAllHistoryForName(name);
-        const have = new Set(getPlayerBadges(name));
-        const newly = [];
-        const maybeAward = (id) => { if (!have.has(id)) { have.add(id); newly.push(id); } };
-        if (hist.length >= 10) maybeAward('tests10');
-        if (hist.length >= 30) maybeAward('tests30');
-        if (hist.length >= 5) maybeAward('streak5');
+    // Draws a printable certificate onto a canvas and triggers a PNG
+    // download — a real, working artifact the student/parent can keep,
+    // print, or attach to an email themselves (mailto can't attach files
+    // for them automatically).
+    function downloadCertificate(badgeId) {
+        const def = BADGE_DEFS[badgeId];
+        if (!def) return;
+        const name = (document.getElementById('student-name') || {}).value || 'Student';
+        const canvas = document.createElement('canvas');
+        canvas.width = 1000; canvas.height = 700;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fdfaf3'; ctx.fillRect(0, 0, 1000, 700);
+        ctx.strokeStyle = '#1e3a8a'; ctx.lineWidth = 10; ctx.strokeRect(20, 20, 960, 660);
+        ctx.strokeStyle = '#14b8a6'; ctx.lineWidth = 3; ctx.strokeRect(40, 40, 920, 620);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#1e3a8a'; ctx.font = 'bold 28px Georgia, serif';
+        ctx.fillText('MAP TRAINER', 500, 120);
+        ctx.font = 'italic 20px Georgia, serif'; ctx.fillStyle = '#64748b';
+        ctx.fillText('Certificate of Achievement', 500, 155);
+        ctx.font = 'bold 44px Georgia, serif'; ctx.fillStyle = '#0e7490';
+        ctx.fillText(def.certTitle, 500, 280);
+        ctx.font = '22px Georgia, serif'; ctx.fillStyle = '#334155';
+        ctx.fillText('This certifies that', 500, 350);
+        ctx.font = 'bold 38px Georgia, serif'; ctx.fillStyle = '#1e293b';
+        ctx.fillText(name, 500, 410);
+        ctx.font = '20px Georgia, serif'; ctx.fillStyle = '#334155';
+        ctx.fillText(def.certSubtitle, 500, 460);
+        ctx.font = '16px Georgia, serif'; ctx.fillStyle = '#94a3b8';
+        ctx.fillText(new Date().toLocaleDateString(), 500, 560);
+        ctx.font = 'italic 13px Georgia, serif';
+        ctx.fillText('Independent practice tool — not an official NWEA MAP score or certification.', 500, 600);
+
+        const link = document.createElement('a');
+        link.download = `MAP-Trainer-${def.certTitle.replace(/\s+/g,'-')}-${name.replace(/\s+/g,'-')}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+    async function openCertificates() {
+        const name = (document.getElementById('student-name') || {}).value || '';
+        const hist = await getPlayerHistory(name);
+        const badges = computeBadgesFromHistory(hist);
+        const listEl = document.getElementById('certificates-list');
+        if (!badges.length) {
+            listEl.innerHTML = '<p style="font-size:13px; color:#94a3b8;">No certificates earned yet — complete tests to start earning them.</p>';
+        } else {
+            listEl.innerHTML = badges.map(id => {
+                const def = BADGE_DEFS[id];
+                if (!def) return '';
+                return `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#f8fafc; border-radius:10px; margin-bottom:8px;">
+                    <span>${def.icon} <b>${escapeHtml(def.certTitle)}</b></span>
+                    <button onclick="downloadCertificate('${id}')" style="background:var(--primary-grad); color:white; border:none; padding:7px 14px; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer;">Download</button>
+                </div>`;
+            }).join('');
+        }
+        openModal('modal-certificates');
+    }
+    // Pure function of history — same badges every time given the same
+    // data, whether that data came from this device or the cloud. No
+    // stored array, so there's nothing to fall out of sync.
+    function computeBadgesFromHistory(hist) {
+        const have = [];
+        if (hist.length >= 10) have.push('tests10');
+        if (hist.length >= 30) have.push('tests30');
+        if (hist.length >= 5) have.push('streak5');
         const latest = hist[hist.length - 1];
-        if (latest && latest.accuracy === 1 && latest.questionCount >= 5) maybeAward('perfect');
+        if (latest && latest.accuracy === 1 && latest.questionCount >= 5) have.push('perfect');
         if (latest && hist.length > 1) {
             const priorBest = Math.max(...hist.slice(0, -1).map(h => h.rit || 0));
-            if (latest.rit > priorBest) maybeAward('beatBest');
+            if (latest.rit > priorBest) have.push('beatBest');
         }
-        localStorage.setItem('player_badges_' + getPlayerKey(name), JSON.stringify(Array.from(have)));
-        return newly;
+        return have;
     }
     // Personal best, current streak (consecutive completed tests) and
     // improvement streak (consecutive tests where RIT rose vs. the one
-    // before it) — all derived from the same cross-mode history.
-    function computePlayerStats(name) {
-        const hist = getAllHistoryForName(name);
+    // before it) — all derived from the same cross-mode, cloud-or-local
+    // history.
+    async function computePlayerStats(name) {
+        const hist = await getPlayerHistory(name);
         const personalBestRit = hist.length ? Math.max(...hist.map(h => h.rit || 0)) : null;
         let improvementStreak = 0;
         for (let i = hist.length - 1; i > 0; i--) {
             if ((hist[i].rit || 0) > (hist[i - 1].rit || 0)) improvementStreak++; else break;
         }
-        const xp = getPlayerXP(name);
+        const xp = computeXPFromHistory(hist);
         const level = getPlayerLevel(xp);
         return {
             testsCompleted: hist.length,
@@ -6628,33 +6734,38 @@
             improvementStreak,
             xp, level,
             rank: getRankForLevel(level),
-            weeklyMission: computeWeeklyMission(name),
+            weeklyMission: computeWeeklyMissionFromHistory(hist),
             xpIntoLevel: xp % XP_PER_LEVEL,
             xpForNextLevel: XP_PER_LEVEL,
             deltaFromPrevious: hist.length > 1 ? (hist[hist.length - 1].rit - hist[hist.length - 2].rit) : null,
-            badges: getPlayerBadges(name)
+            badges: computeBadgesFromHistory(hist)
         };
     }
     // Renders the small "player card" on the dashboard — called on load and
-    // whenever the student name field changes.
-    function renderPlayerCard() {
+    // whenever the student name field changes. Async now (history may come
+    // from a network call), so the card briefly shows nothing/stale data
+    // while it resolves — an acceptable trade-off for progress that follows
+    // the student across devices.
+    async function renderPlayerCard() {
         const card = document.getElementById('player-card');
         if (!card) return;
         const name = (document.getElementById('student-name') || {}).value || '';
-        if (!name.trim()) { card.classList.add('hidden'); return; }
-        const s = computePlayerStats(name);
+        if (!name.trim() && !window.MAP_USER) { card.classList.add('hidden'); return; }
+        const s = await computePlayerStats(name);
         if (s.testsCompleted === 0) { card.classList.add('hidden'); return; }
         card.classList.remove('hidden');
+        const displayName = window.MAP_USER ? (window.MAP_USER.email || name) : name;
         const pct = Math.round((s.xpIntoLevel / s.xpForNextLevel) * 100);
         const deltaHtml = s.deltaFromPrevious != null
             ? `<span style="color:${s.deltaFromPrevious >= 0 ? '#16a34a' : '#dc2626'};">${s.deltaFromPrevious >= 0 ? '+' : ''}${s.deltaFromPrevious} from last test</span>`
             : '';
         const badgesHtml = s.badges.map(id => BADGE_DEFS[id] ? `<span title="${BADGE_DEFS[id].label}" style="font-size:18px;">${BADGE_DEFS[id].icon}</span>` : '').join(' ');
+        const certLinkHtml = s.badges.length ? `<div style="margin-top:4px;"><a href="javascript:void(0)" onclick="openCertificates()" style="font-size:11px; font-weight:700; color:var(--primary-mid);">🏆 View Certificates →</a></div>` : '';
         const missionHtml = `<div style="font-size:11px; color:#64748b; margin-top:6px;">🎯 Weekly Mission: complete ${s.weeklyMission.target} tests this week — ${s.weeklyMission.completed}/${s.weeklyMission.target} ${s.weeklyMission.done ? '✅' : ''}</div>`;
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 <div>
-                    <div style="font-weight:900; font-size:15px;">${escapeHtml(name)} &nbsp; <span style="font-size:12px; font-weight:700; color:var(--primary-mid);">Level ${s.level}</span> &nbsp; <span style="font-size:12px;">${s.rank.icon} ${s.rank.name}</span></div>
+                    <div style="font-weight:900; font-size:15px;">${escapeHtml(displayName)} &nbsp; <span style="font-size:12px; font-weight:700; color:var(--primary-mid);">Level ${s.level}</span> &nbsp; <span style="font-size:12px;">${s.rank.icon} ${s.rank.name}</span></div>
                     <div style="font-size:12px; color:#64748b; margin-top:2px;">
                         ${s.personalBestRit != null ? `Personal Best: <b>${s.personalBestRit}</b>` : ''}
                         ${s.improvementStreak > 0 ? ` &nbsp;•&nbsp; 🔥 ${s.improvementStreak}-test improvement streak` : ''}
@@ -6662,7 +6773,7 @@
                     </div>
                     ${missionHtml}
                 </div>
-                <div style="text-align:right;">${badgesHtml || '<span style="font-size:11px; color:#cbd5e1;">No badges yet</span>'}</div>
+                <div style="text-align:right;">${badgesHtml || '<span style="font-size:11px; color:#cbd5e1;">No badges yet</span>'}${certLinkHtml}</div>
             </div>
             <div style="background:#e2e8f0; border-radius:6px; height:8px; margin-top:8px; overflow:hidden;">
                 <div style="background:var(--primary-grad); height:100%; width:${pct}%;"></div>
