@@ -436,6 +436,12 @@
                 <option value="none">No images</option>
             </select>
 
+            <h4 class="settings-subhead">Simulation Mode Time Limit</h4>
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px;">
+                <input type="number" id="sim-time-limit" min="5" max="240" style="width:70px; padding:6px; border-radius:8px; border:1px solid var(--border);" onchange="onSimTimeLimitChange()"> minutes (default 80)
+            </label>
+            <p style="font-size:11px; color:#94a3b8; margin:6px 0 0;">Only applies to Simulation Mode tests (Adaptive: 40/100 Questions). Training Mode has no overall time limit.</p>
+
             <h4 class="settings-subhead">Answer Feedback</h4>
             <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                 <input type="checkbox" id="show-feedback-toggle" onchange="onShowFeedbackToggle()"> Show a "why is this correct/incorrect" explanation after each question
@@ -618,36 +624,43 @@
             <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#64748b; margin-bottom:15px; cursor:pointer; justify-content:center;">
                 <input type="checkbox" id="remember-name-toggle" onchange="onRememberNameToggle()"> Remember me on this device
             </label>
+
+            <div id="player-card" class="hidden" style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:16px;"></div>
             
-            <select id="mode-select" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); font-weight: bold; margin-bottom: 20px;">
-                <option value="adaptive_40">Adaptive: 40 Questions (full learning report)</option>
-                <option value="adaptive_100">Adaptive: 100 Questions (full learning report)</option>
-                <option value="mixed_40">Adaptive Mixed: 40 Questions (full learning report)</option>
-                <option value="tech_5">Tech test only: 5 Questions</option>
-                <optgroup label="CEFR Level Check (40 Questions, no report)">
-                    <option value="cefr_A1">Mission: A1 (no report)</option>
-                    <option value="cefr_A2">Mission: A2 (no report)</option>
-                    <option value="cefr_B1">Mission: B1 (no report)</option>
-                    <option value="cefr_B2">Mission: B2 (no report)</option>
-                    <option value="cefr_C1">Mission: C1 (no report)</option>
-                    <option value="cefr_C2">Mission: C2 (no report)</option>
+            <div id="mode-category-tabs" style="display:flex; gap:8px; margin-bottom:12px;">
+                <button type="button" onclick="setModeCategory('sim')" id="tab-sim" style="flex:1; padding:10px; border-radius:10px; border:2px solid var(--border); background:var(--card); font-weight:800; cursor:pointer;">🎯 Simulation Mode</button>
+                <button type="button" onclick="setModeCategory('train')" id="tab-train" style="flex:1; padding:10px; border-radius:10px; border:2px solid var(--border); background:var(--card); font-weight:800; cursor:pointer;">📚 Training Mode</button>
+            </div>
+            <div id="mode-category-desc" style="font-size:12px; color:#64748b; margin-bottom:10px; line-height:1.5;"></div>
+            <select id="mode-select" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); font-weight: bold; margin-bottom: 20px;" onchange="onModeSelectChange()">
+                <option value="adaptive_40" data-cat="sim">Adaptive: 40 Questions (full learning report)</option>
+                <option value="adaptive_40_sets" data-cat="sim">Adaptive: 40 Questions — more passage-based sets (full learning report)</option>
+                <option value="adaptive_100" data-cat="sim">Adaptive: 100 Questions (full learning report)</option>
+                <option value="tech_5" data-cat="train">Tech test only: 5 Questions</option>
+                <optgroup label="CEFR Level Check (40 Questions, no report)" data-cat="train">
+                    <option value="cefr_A1" data-cat="train">Mission: A1 (no report)</option>
+                    <option value="cefr_A2" data-cat="train">Mission: A2 (no report)</option>
+                    <option value="cefr_B1" data-cat="train">Mission: B1 (no report)</option>
+                    <option value="cefr_B2" data-cat="train">Mission: B2 (no report)</option>
+                    <option value="cefr_C1" data-cat="train">Mission: C1 (no report)</option>
+                    <option value="cefr_C2" data-cat="train">Mission: C2 (no report)</option>
                 </optgroup>
-                <option value="prog">Sequential: A1 to C2 Progress</option>
-                <optgroup label="Skill-Focus Practice (Adaptive, no report)">
-                    <option value="vocab_20">Vocabulary &amp; Word Meaning: 20 Questions</option>
-                    <option value="vocab_40">Vocabulary &amp; Word Meaning: 40 Questions</option>
-                    <option value="infotext_20">Informational Text Comprehension: 20 Questions</option>
-                    <option value="infotext_40">Informational Text Comprehension: 40 Questions</option>
-                    <option value="littext_20">Literary Text Comprehension: 20 Questions</option>
-                    <option value="littext_40">Literary Text Comprehension: 40 Questions</option>
+                <option value="prog" data-cat="train">Sequential: A1 to C2 Progress</option>
+                <optgroup label="Skill-Focus Practice (Adaptive, no report)" data-cat="train">
+                    <option value="vocab_20" data-cat="train">Vocabulary &amp; Word Meaning: 20 Questions</option>
+                    <option value="vocab_40" data-cat="train">Vocabulary &amp; Word Meaning: 40 Questions</option>
+                    <option value="infotext_20" data-cat="train">Informational Text Comprehension: 20 Questions</option>
+                    <option value="infotext_40" data-cat="train">Informational Text Comprehension: 40 Questions</option>
+                    <option value="littext_20" data-cat="train">Literary Text Comprehension: 20 Questions</option>
+                    <option value="littext_40" data-cat="train">Literary Text Comprehension: 40 Questions</option>
                 </optgroup>
-                <optgroup label="Command Terms Assessment (Bloom's Taxonomy, no report)">
-                    <option value="bloom_g12_15">Grades 1–2: 15 Questions</option>
-                    <option value="bloom_g12_25">Grades 1–2: 25 Questions</option>
-                    <option value="bloom_g35_15">Grades 3–5: 15 Questions</option>
-                    <option value="bloom_g35_25">Grades 3–5: 25 Questions</option>
-                    <option value="bloom_g68_15">Grades 6–8: 15 Questions</option>
-                    <option value="bloom_g68_25">Grades 6–8: 25 Questions</option>
+                <optgroup label="Command Terms Assessment (Bloom's Taxonomy, no report)" data-cat="train">
+                    <option value="bloom_g12_15" data-cat="train">Grades 1–2: 15 Questions</option>
+                    <option value="bloom_g12_25" data-cat="train">Grades 1–2: 25 Questions</option>
+                    <option value="bloom_g35_15" data-cat="train">Grades 3–5: 15 Questions</option>
+                    <option value="bloom_g35_25" data-cat="train">Grades 3–5: 25 Questions</option>
+                    <option value="bloom_g68_15" data-cat="train">Grades 6–8: 15 Questions</option>
+                    <option value="bloom_g68_25" data-cat="train">Grades 6–8: 25 Questions</option>
                 </optgroup>
             </select>
             <button onclick="startSession()" class="btn-primary-grad" style="width:100%; padding:18px; border-radius:12px; font-weight:900; cursor:pointer;">LAUNCH MISSION</button>
@@ -2568,9 +2581,49 @@
         if (band === 'B1' || band === 'B2') return 'moderate';
         return 'advanced';
     }
+    // A single source of truth for "is this a Simulation-mode test" — used
+    // to force off feedback, hints, and word-help, and to apply the overall
+    // time limit, regardless of what else is toggled in Settings.
+    function isSimulationMode(mode) {
+        mode = mode || document.getElementById('mode-select').value;
+        return mode === 'adaptive_40' || mode === 'adaptive_40_sets' || mode === 'adaptive_100';
+    }
+    function getSimulationTimeLimitSeconds() {
+        const mins = parseInt(localStorage.getItem('sim_time_limit_minutes'), 10);
+        return (mins && mins > 0 ? mins : 80) * 60;
+    }
+    function onSimTimeLimitChange() {
+        const el = document.getElementById('sim-time-limit');
+        let mins = parseInt(el && el.value, 10);
+        if (!mins || mins < 5) mins = 80;
+        if (mins > 240) mins = 240;
+        localStorage.setItem('sim_time_limit_minutes', String(mins));
+        if (el) el.value = mins;
+    }
+    // Shared by both timer intervals (fresh start and resume-after-interrupt):
+    // ticks the clock, and in Simulation Mode shows time REMAINING (not
+    // elapsed) and auto-submits when it hits zero — a real test doesn't wait
+    // for the student to notice time is up.
+    function tickTestClock() {
+        state.totalTime++; state.pageTime++;
+        const totalEl = document.getElementById('total-timer');
+        if (isSimulationMode()) {
+            const remaining = Math.max(0, getSimulationTimeLimitSeconds() - state.totalTime);
+            if (totalEl) totalEl.innerText = formatT(remaining) + ' left';
+            if (remaining <= 0) {
+                clearInterval(state.timerObj);
+                endTest(false); // time's up — ends and scores normally, not a cancelled attempt
+                return;
+            }
+        } else if (totalEl) {
+            totalEl.innerText = formatT(state.totalTime);
+        }
+        document.getElementById('page-timer').innerText = formatT(state.pageTime);
+        if (state.totalTime % 15 === 0) saveActiveSession();
+    }
     function feedbackAllowed() {
         const mode = document.getElementById('mode-select').value;
-        return localStorage.getItem('show_feedback') === '1' && mode !== 'adaptive_40';
+        return localStorage.getItem('show_feedback') === '1' && !isSimulationMode(mode);
     }
     function onShowFeedbackToggle() {
         const a = document.getElementById('show-feedback-toggle');
@@ -2923,13 +2976,17 @@
         // unified entry from all renderers
         const t = document.getElementById('toast'); t.style.display = 'block';
         const modeNow = document.getElementById('mode-select').value;
+        const bandBefore = state.activeQ ? state.activeQ.band : null;
         // Bloom's/Command Terms isn't RIT-calibrated at all, and CEFR Level Check
         // locks its band regardless of RIT — in both cases, letting RIT drift
         // during the session would silently carry into the next real adaptive
         // test (state.rit persists across sessions until the page reloads).
         if (!state.bloomGrade && !modeNow.startsWith('cefr_')) updateAdaptiveRit(!!correct, state.activeQ);
+        const bandAfter = bandForRit(state.rit);
+        const bandOrder = ['A1','A2','B1','B2','C1','C2'];
+        const movedUp = bandBefore && bandAfter && bandOrder.indexOf(bandAfter) > bandOrder.indexOf(bandBefore);
         if (correct) {
-            t.innerText = "CORRECT! 🌟"; t.style.background = "var(--success)";
+            t.innerText = movedUp ? "CORRECT! 🌟  ⬆ Difficulty Up!" : "CORRECT! 🌟"; t.style.background = "var(--success)";
             playPartyPopper();
         } else {
             t.innerText = "INCORRECT"; t.style.background = "var(--danger)";
@@ -2945,6 +3002,10 @@
             response: response,
             interaction: q.interaction || 'multiple_choice'
         });
+        // XP is for participation, not correctness — a wrong answer still
+        // earns the same XP as a right one. Keeps the motivational layer
+        // from quietly becoming a second, conflicting scoring system.
+        awardXP(document.getElementById('student-name').value || 'Guest', 10);
         const advance = () => { state.current++; loadQ(); };
         setTimeout(() => {
             t.style.display = 'none';
@@ -3873,7 +3934,9 @@
         }
     });
     function renderPassageAndQuestionText(q) {
-        const wordInfoOn = localStorage.getItem('wordinfo_enabled') === '1';
+        // Word tap/hover help is a Training Mode aid — always off in
+        // Simulation Mode, regardless of the Settings toggle.
+        const wordInfoOn = localStorage.getItem('wordinfo_enabled') === '1' && !isSimulationMode();
         const passageEl = document.getElementById('passage');
         const qTextEl = document.getElementById('q-text');
         if (wordInfoOn) {
@@ -4993,7 +5056,7 @@
     function maybeStartItemSet(band) {
         // ~40% chance to start a passage set when queue empty (higher for mixed mode)
         const mode = document.getElementById('mode-select').value;
-        const p = mode.startsWith('mixed') ? 0.55 : 0.35;
+        const p = mode === 'adaptive_40_sets' ? 0.75 : 0.35;
         if (Math.random() > p) return null;
         return buildPassageSet(band);
     }
@@ -5108,6 +5171,38 @@
         const m = localStorage.getItem('image_mode');
         return m || 'accurate';
     }
+    const MODE_CATEGORY_DESC = {
+        sim: '⏱️ Timed &nbsp;•&nbsp; 🧠 Adaptive difficulty &nbsp;•&nbsp; 🚫 No instant answers &nbsp;•&nbsp; 🎯 Minimal distractions &nbsp;•&nbsp; 🖥️ Realistic test interface &nbsp;•&nbsp; 📄 Full-length simulation &nbsp;•&nbsp; 📊 Results afterward',
+        train: '💬 Practice freely with feedback and explanations enabled after each question.'
+    };
+    function setModeCategory(cat) {
+        localStorage.setItem('mode_category', cat);
+        const sel = document.getElementById('mode-select');
+        const tabSim = document.getElementById('tab-sim');
+        const tabTrain = document.getElementById('tab-train');
+        [tabSim, tabTrain].forEach(t => { t.style.background = 'var(--card)'; t.style.color = 'inherit'; });
+        const activeTab = cat === 'sim' ? tabSim : tabTrain;
+        activeTab.style.background = 'var(--primary-grad)';
+        activeTab.style.color = 'white';
+        document.getElementById('mode-category-desc').innerHTML = MODE_CATEGORY_DESC[cat];
+
+        let firstVisible = null;
+        Array.from(sel.children).forEach(child => {
+            // Options and optgroups both carry data-cat.
+            const show = child.getAttribute('data-cat') === cat;
+            child.hidden = !show;
+            if (show && !firstVisible) {
+                firstVisible = (child.tagName === 'OPTGROUP') ? child.querySelector('option') : child;
+            }
+        });
+        if (firstVisible && !Array.from(sel.options).some(o => o.value === sel.value && !o.hidden)) {
+            sel.value = firstVisible.value;
+        }
+    }
+    function onModeSelectChange() {
+        // Placeholder hook — currently no per-selection side effects beyond
+        // what startSession() already reads at launch time.
+    }
     function onImageModeChange() {
         const a = document.getElementById('image-mode-select');
         const b = document.getElementById('image-mode-select-popover');
@@ -5124,6 +5219,17 @@
         });
         const img = document.getElementById('q-img');
         if (img) img.style.display = mode === 'none' ? 'none' : '';
+        applySimulationRestrictions();
+    }
+    // Simulation Mode should feel like a real, low-distraction test: no
+    // hints, no word tap/hover translation help — regardless of what's
+    // toggled in Settings, since those settings are meant for Training
+    // Mode. Piggybacks on the same call sites as applyIllustrationVisibility
+    // so every question render picks this up automatically.
+    function applySimulationRestrictions() {
+        const sim = isSimulationMode();
+        const hintArea = document.getElementById('hint-area');
+        if (hintArea) hintArea.style.display = sim ? 'none' : '';
     }
     function describeSceneForA11y(scene, topic) {
         if (!scene || (!scene.subject && !scene.location && !scene.mood)) {
@@ -5257,6 +5363,7 @@
         if (!saved) return;
 
         const modeEl = document.getElementById('mode-select');
+        setModeCategory(isSimulationMode(saved.mode) ? 'sim' : 'train');
         if (modeEl) modeEl.value = saved.mode;
 
         state.current = saved.current; state.totalTime = saved.totalTime || 0; state.pageTime = 0;
@@ -5286,12 +5393,7 @@
         document.getElementById('view-setup').classList.add('hidden');
         document.getElementById('view-test').classList.remove('hidden');
 
-        state.timerObj = setInterval(() => {
-            state.totalTime++; state.pageTime++;
-            document.getElementById('total-timer').innerText = formatT(state.totalTime);
-            document.getElementById('page-timer').innerText = formatT(state.pageTime);
-            if (state.totalTime % 15 === 0) saveActiveSession();
-        }, 1000);
+        state.timerObj = setInterval(tickTestClock, 1000);
         loadQ();
     }
 
@@ -5359,12 +5461,7 @@
         document.getElementById('view-test').classList.remove('hidden');
         clearActiveSession(); // starting fresh supersedes any old interrupted session
 
-        state.timerObj = setInterval(() => {
-            state.totalTime++; state.pageTime++;
-            document.getElementById('total-timer').innerText = formatT(state.totalTime);
-            document.getElementById('page-timer').innerText = formatT(state.pageTime);
-            if (state.totalTime % 15 === 0) saveActiveSession();
-        }, 1000);
+        state.timerObj = setInterval(tickTestClock, 1000);
         loadQ();
     }
 
@@ -5533,7 +5630,7 @@
         // Ensure interaction type (default MC; randomly mix in adaptive modes)
         if (!q.interaction) {
             const mode = document.getElementById('mode-select').value;
-            if (mode.startsWith('adaptive') || mode.startsWith('mixed') || mode === 'prog') {
+            if (mode.startsWith('adaptive') || mode === 'prog') {
                 q.interaction = pickInteraction();
                 // only apply mix if frame didn't specify; for pure MC frames keep MC
                 if (!q.answerKey && q.options && q.options.length) q.interaction = 'multiple_choice';
@@ -5718,7 +5815,10 @@
         if (!state.cancelled) {
             const name = document.getElementById('student-name').value || 'Guest';
             const mode = document.getElementById('mode-select').value;
-            pushTestHistory(name, mode, { date: Date.now(), rit: state.rit, lexile: ritToLexile(state.rit) });
+            const accuracy = state.results.length ? state.results.filter(r => r.correct).length / state.results.length : 0;
+            pushTestHistory(name, mode, { date: Date.now(), rit: state.rit, lexile: ritToLexile(state.rit), accuracy, questionCount: state.results.length });
+            awardXP(name, 50); // completion bonus, on top of per-question XP already awarded during the test
+            checkAndAwardBadges(name);
         }
 
         // Additive only: syncs a summary to the server if signed in, does
@@ -6149,6 +6249,120 @@
         if (all[key].length > 30) all[key] = all[key].slice(-30);
         localStorage.setItem('xag_hist_v2', JSON.stringify(all));
     }
+    // ===================== PLAYER PROGRESS (XP, levels, streaks, badges) =====================
+    // Deliberately local-only for now (same device), same as the existing
+    // history log — syncing this server-side is a natural fast-follow once
+    // the mechanic itself is proven, not a prerequisite for it.
+    function getPlayerKey(name) { return (name || 'Guest').trim().toLowerCase(); }
+    function getPlayerXP(name) {
+        return parseInt(localStorage.getItem('player_xp_' + getPlayerKey(name)), 10) || 0;
+    }
+    function awardXP(name, amount) {
+        const xp = getPlayerXP(name) + amount;
+        localStorage.setItem('player_xp_' + getPlayerKey(name), String(xp));
+        return xp;
+    }
+    const XP_PER_LEVEL = 500;
+    function getPlayerLevel(xp) { return Math.floor(xp / XP_PER_LEVEL) + 1; }
+    // All of a student's completed-test history, across every mode, oldest
+    // first — the history log itself is kept per-mode, but personal best /
+    // streaks are meant to reflect the whole player, not just one mode.
+    function getAllHistoryForName(name) {
+        const all = JSON.parse(localStorage.getItem('xag_hist_v2') || '{}');
+        const prefix = getPlayerKey(name) + '|';
+        let combined = [];
+        Object.keys(all).forEach(key => {
+            if (key.startsWith(prefix)) combined = combined.concat(all[key]);
+        });
+        combined.sort((a, b) => a.date - b.date);
+        return combined;
+    }
+    function getPlayerBadges(name) {
+        return JSON.parse(localStorage.getItem('player_badges_' + getPlayerKey(name)) || '[]');
+    }
+    const BADGE_DEFS = {
+        tests10: { label: '10 Tests Completed', icon: '📘' },
+        tests30: { label: '30-Test Veteran', icon: '📚' },
+        perfect: { label: 'Perfect Score', icon: '💯' },
+        beatBest: { label: 'Beat Your Best', icon: '🏆' },
+        streak5: { label: '5-Test Streak', icon: '🔥' }
+    };
+    // Called right after a completed test is logged — checks the player's
+    // whole history and awards any newly-earned badges (never re-awards one
+    // already earned).
+    function checkAndAwardBadges(name) {
+        const hist = getAllHistoryForName(name);
+        const have = new Set(getPlayerBadges(name));
+        const newly = [];
+        const maybeAward = (id) => { if (!have.has(id)) { have.add(id); newly.push(id); } };
+        if (hist.length >= 10) maybeAward('tests10');
+        if (hist.length >= 30) maybeAward('tests30');
+        if (hist.length >= 5) maybeAward('streak5');
+        const latest = hist[hist.length - 1];
+        if (latest && latest.accuracy === 1 && latest.questionCount >= 5) maybeAward('perfect');
+        if (latest && hist.length > 1) {
+            const priorBest = Math.max(...hist.slice(0, -1).map(h => h.rit || 0));
+            if (latest.rit > priorBest) maybeAward('beatBest');
+        }
+        localStorage.setItem('player_badges_' + getPlayerKey(name), JSON.stringify(Array.from(have)));
+        return newly;
+    }
+    // Personal best, current streak (consecutive completed tests) and
+    // improvement streak (consecutive tests where RIT rose vs. the one
+    // before it) — all derived from the same cross-mode history.
+    function computePlayerStats(name) {
+        const hist = getAllHistoryForName(name);
+        const personalBestRit = hist.length ? Math.max(...hist.map(h => h.rit || 0)) : null;
+        let improvementStreak = 0;
+        for (let i = hist.length - 1; i > 0; i--) {
+            if ((hist[i].rit || 0) > (hist[i - 1].rit || 0)) improvementStreak++; else break;
+        }
+        const xp = getPlayerXP(name);
+        const level = getPlayerLevel(xp);
+        return {
+            testsCompleted: hist.length,
+            personalBestRit,
+            improvementStreak,
+            xp, level,
+            xpIntoLevel: xp % XP_PER_LEVEL,
+            xpForNextLevel: XP_PER_LEVEL,
+            deltaFromPrevious: hist.length > 1 ? (hist[hist.length - 1].rit - hist[hist.length - 2].rit) : null,
+            badges: getPlayerBadges(name)
+        };
+    }
+    // Renders the small "player card" on the dashboard — called on load and
+    // whenever the student name field changes.
+    function renderPlayerCard() {
+        const card = document.getElementById('player-card');
+        if (!card) return;
+        const name = (document.getElementById('student-name') || {}).value || '';
+        if (!name.trim()) { card.classList.add('hidden'); return; }
+        const s = computePlayerStats(name);
+        if (s.testsCompleted === 0) { card.classList.add('hidden'); return; }
+        card.classList.remove('hidden');
+        const pct = Math.round((s.xpIntoLevel / s.xpForNextLevel) * 100);
+        const deltaHtml = s.deltaFromPrevious != null
+            ? `<span style="color:${s.deltaFromPrevious >= 0 ? '#16a34a' : '#dc2626'};">${s.deltaFromPrevious >= 0 ? '+' : ''}${s.deltaFromPrevious} from last test</span>`
+            : '';
+        const badgesHtml = s.badges.map(id => BADGE_DEFS[id] ? `<span title="${BADGE_DEFS[id].label}" style="font-size:18px;">${BADGE_DEFS[id].icon}</span>` : '').join(' ');
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div>
+                    <div style="font-weight:900; font-size:15px;">${escapeHtml(name)} &nbsp; <span style="font-size:12px; font-weight:700; color:var(--primary-mid);">Level ${s.level}</span></div>
+                    <div style="font-size:12px; color:#64748b; margin-top:2px;">
+                        ${s.personalBestRit != null ? `Personal Best: <b>${s.personalBestRit}</b>` : ''}
+                        ${s.improvementStreak > 0 ? ` &nbsp;•&nbsp; 🔥 ${s.improvementStreak}-test improvement streak` : ''}
+                        ${deltaHtml ? ' &nbsp;•&nbsp; ' + deltaHtml : ''}
+                    </div>
+                </div>
+                <div style="text-align:right;">${badgesHtml || '<span style="font-size:11px; color:#cbd5e1;">No badges yet</span>'}</div>
+            </div>
+            <div style="background:#e2e8f0; border-radius:6px; height:8px; margin-top:8px; overflow:hidden;">
+                <div style="background:var(--primary-grad); height:100%; width:${pct}%;"></div>
+            </div>
+            <div style="font-size:10px; color:#94a3b8; margin-top:3px;">${s.xpIntoLevel} / ${s.xpForNextLevel} XP to Level ${s.level + 1}</div>
+        `;
+    }
     function formatT(s) { return Math.floor(s/60).toString().padStart(2,'0') + ":" + (s%60).toString().padStart(2,'0'); }
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -6156,6 +6370,7 @@
         if (localStorage.getItem('remember_name') === '1') {
             localStorage.setItem('remembered_name', document.getElementById('student-name').value);
         }
+        renderPlayerCard();
     }
     function onRememberNameToggle() {
         const chk = document.getElementById('remember-name-toggle');
@@ -6309,6 +6524,12 @@
             const rememberChk = document.getElementById('remember-name-toggle');
             if (nameEl) nameEl.value = localStorage.getItem('remembered_name') || '';
             if (rememberChk) rememberChk.checked = true;
+        }
+        renderPlayerCard();
+        setModeCategory(localStorage.getItem('mode_category') || 'sim');
+        {
+            const simEl = document.getElementById('sim-time-limit');
+            if (simEl) simEl.value = parseInt(localStorage.getItem('sim_time_limit_minutes'), 10) || 80;
         }
         checkForInterruptedSession();
     };
