@@ -620,7 +620,7 @@
                         <input type="text" id="join-class-code" placeholder="Enter class code (e.g. FOX-482)" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); text-transform:uppercase;">
                         <button onclick="joinClass()" style="padding:8px 14px; border-radius:8px; background:#f1f5f9; border:none; font-weight:700; cursor:pointer; white-space:nowrap;">Join</button>
                     </div>
-                    <div style="display:flex; gap:8px;">
+                    <div id="create-class-row" style="display:flex; gap:8px;">
                         <input type="text" id="new-class-name" placeholder="New class name (e.g. Room 12 Reading)" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border);">
                         <button onclick="createClass()" style="padding:8px 14px; border-radius:8px; background:var(--primary-grad); color:white; border:none; font-weight:700; cursor:pointer; white-space:nowrap;">Create</button>
                     </div>
@@ -977,7 +977,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
     // ===================== ACCOUNTS / ENTITLEMENT (Tier 2, Phase A) =====================
     // Fill these in from Settings > API in the API Verifier LIVE Supabase
@@ -987,7 +987,9 @@
     const SUPABASE_URL = 'https://iwpfhalextbzbvcajtxu.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3cGZoYWxleHRiemJ2Y2FqdHh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NzY1MjcsImV4cCI6MjEwNTQ1MjUyN30.Gi717bXdX-WFCAc6wd7uAY-DiOokH5htMbX4bD7psZo';
 
-    const sb = (SUPABASE_ANON_KEY !== 'PASTE_ANON_KEY_HERE')
+    // Guarded: if the Supabase library failed to load (offline, CDN blocked),
+    // sb stays null and the app keeps working in local-only mode.
+    const sb = (window.supabase && SUPABASE_ANON_KEY !== 'PASTE_ANON_KEY_HERE')
         ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
         : null;
 
@@ -995,7 +997,17 @@
     // 'free' for anyone not signed in, so the app works exactly as before
     // for someone who just opens the file with no account at all.
     window.MAP_ENTITLEMENT = 'free';
+    window.MAP_PLAN = 'free';
     window.MAP_USER = null;
+    const PLAN_LABELS = { free: 'Free', pro: 'Pro', educator: 'Educator', connect: 'Connect' };
+    const PLAN_DESCRIPTIONS = {
+        free: 'Training Mode + one free 20-question trial',
+        pro: 'Unlimited Simulation tests, up to 2 student profiles',
+        educator: 'Pro + up to 2 classes with leaderboards',
+        connect: 'School-wide: unlimited classes, live MAP Connect sessions'
+    };
+    function canCreateClasses() { return window.MAP_PLAN === 'educator' || window.MAP_PLAN === 'connect'; }
+    function canRunLiveSessions() { return window.MAP_PLAN === 'connect'; }
 
     // ===================== ONE-TIME FREE TRIAL (20-question Simulation) =====================
     // Checked both locally (works with no account) and server-side (so a
@@ -1026,8 +1038,14 @@
         const badge = document.getElementById('auth-status-badge');
         if (!session) {
             window.MAP_USER = null;
+            window.MAP_PLAN = 'free';
             window.MAP_ENTITLEMENT = 'free';
             if (badge) badge.textContent = 'Sign in';
+            if (typeof refreshSimulationLockLabels === 'function') refreshSimulationLockLabels();
+            const inV = document.getElementById('auth-signed-in-view');
+            const outV = document.getElementById('auth-signed-out-view');
+            if (inV) inV.classList.add('hidden');
+            if (outV) outV.classList.remove('hidden');
             return;
         }
         window.MAP_USER = session.user;
@@ -1036,20 +1054,27 @@
             .select('plan,status')
             .eq('user_id', session.user.id)
             .maybeSingle();
-        window.MAP_ENTITLEMENT = (sub && sub.plan === 'full' && sub.status === 'active') ? 'full' : 'free';
-        if (badge) badge.textContent = session.user.email + ' · ' + (window.MAP_ENTITLEMENT === 'full' ? 'Full' : 'Free');
+        // Four tiers: free / pro / educator / connect. MAP_PLAN is the tier;
+        // MAP_ENTITLEMENT stays as a simple 'full'/'free' switch meaning
+        // "has any paid plan" (unlocks Simulation Mode).
+        window.MAP_PLAN = (sub && sub.status === 'active' && PLAN_LABELS[sub.plan]) ? sub.plan : 'free';
+        window.MAP_ENTITLEMENT = window.MAP_PLAN === 'free' ? 'free' : 'full';
+        if (badge) badge.textContent = session.user.email + ' · ' + PLAN_LABELS[window.MAP_PLAN];
         const outView = document.getElementById('auth-signed-out-view');
         const inView = document.getElementById('auth-signed-in-view');
         if (outView) outView.classList.add('hidden');
         if (inView) {
             inView.classList.remove('hidden');
             document.getElementById('auth-current-email').textContent = session.user.email;
-            document.getElementById('auth-current-plan').textContent = window.MAP_ENTITLEMENT === 'full' ? 'Full (A1–C2)' : 'Free (A1–A2)';
+            document.getElementById('auth-current-plan').textContent = PLAN_LABELS[window.MAP_PLAN] + ' — ' + PLAN_DESCRIPTIONS[window.MAP_PLAN];
+            const classSection = document.getElementById('create-class-row');
+            if (classSection) classSection.style.display = canCreateClasses() ? '' : 'none';
             loadMyClasses();
             loadNicknamePreference();
         }
         if (typeof updateMenu === 'function') updateMenu();
         refreshTrialOptionVisibility();
+        if (typeof refreshSimulationLockLabels === 'function') refreshSimulationLockLabels();
     }
 
     async function sendMagicLink() {
@@ -1129,8 +1154,12 @@
         const nameEl = document.getElementById('new-class-name');
         const name = (nameEl.value || '').trim();
         if (!name) return;
+        if (!canCreateClasses()) {
+            alert('Creating classes needs an Educator or Connect plan.');
+            return;
+        }
         const { count } = await sb.from('edu_classes').select('id', { count: 'exact', head: true }).eq('teacher_id', window.MAP_USER.id);
-        if ((count || 0) >= MAX_CLASSES_PER_TEACHER) {
+        if (window.MAP_PLAN === 'educator' && (count || 0) >= MAX_CLASSES_PER_TEACHER) {
             alert(`Educator accounts can create up to ${MAX_CLASSES_PER_TEACHER} classes. Need more? That's what MAP-Style Connect (school-wide) is for.`);
             return;
         }
@@ -1141,21 +1170,18 @@
         nameEl.value = '';
         loadMyClasses();
     }
+    // Joining goes through a server function (join_class_by_code) because a
+    // student can't read the classes table or insert roster rows directly
+    // under RLS — the function validates the code and the 40-student cap
+    // server-side, so neither can be bypassed from the browser.
     async function joinClass() {
         if (!sb || !window.MAP_USER) return;
         const codeEl = document.getElementById('join-class-code');
         const code = (codeEl.value || '').trim().toUpperCase();
         if (!code) return;
         await ensureProfile('student');
-        const { data: cls, error } = await sb.from('edu_classes').select('id,name').eq('join_code', code).maybeSingle();
-        if (error || !cls) { alert('No class found with that code.'); return; }
-        const { count } = await sb.from('edu_class_members').select('student_id', { count: 'exact', head: true }).eq('class_id', cls.id);
-        if ((count || 0) >= MAX_STUDENTS_PER_CLASS) {
-            alert(`This class already has ${MAX_STUDENTS_PER_CLASS} students — ask your teacher to check the class roster.`);
-            return;
-        }
-        const { error: joinErr } = await sb.from('edu_class_members').insert({ class_id: cls.id, student_id: window.MAP_USER.id });
-        if (joinErr && !joinErr.message.includes('duplicate')) { alert('Could not join class: ' + joinErr.message); return; }
+        const { error } = await sb.rpc('join_class_by_code', { p_code: code });
+        if (error) { alert(error.message); return; }
         codeEl.value = '';
         loadMyClasses();
     }
@@ -5665,7 +5691,29 @@
         }
         return { kind: 'standard' };
     }
+    // Simulation Mode (except the one-time free trial) needs any paid plan.
+    // Training Mode is free for everyone. This is a client-side gate —
+    // question generation runs in the browser, so it can't be fully
+    // server-enforced; what IS server-enforced is that only paid-plan
+    // sessions can create classes/live sessions (see RLS policies).
+    function simulationLocked(mode) {
+        return isSimulationMode(mode) && mode !== 'trial_20' && window.MAP_ENTITLEMENT !== 'full';
+    }
+    function refreshSimulationLockLabels() {
+        const sel = document.getElementById('mode-select');
+        if (!sel) return;
+        Array.from(sel.options).forEach(o => {
+            if (!o.dataset.baseLabel) o.dataset.baseLabel = o.textContent;
+            o.textContent = (simulationLocked(o.value) ? '🔒 ' : '') + o.dataset.baseLabel;
+        });
+    }
     function startSession() {
+        const mvCheck = document.getElementById('mode-select').value;
+        if (simulationLocked(mvCheck)) {
+            alert("Simulation tests are part of MAP-Style PRO. Try the free 20-question trial, use Training Mode (free), or sign in to upgrade.");
+            openModal('modal-auth');
+            return;
+        }
         state.current = 0; state.totalTime = 0; state.results = []; state.setQueue = []; state.activeSetId = null; state.usedPassages = new Set(); state.usedSeeds = new Set();
         state.streak = 0; state.recentWrongTokens = [];
         const mv = document.getElementById('mode-select').value;
@@ -6081,7 +6129,10 @@
             // is authoritative, and gamification is derived from THAT, not
             // from this local write, so switching devices doesn't lose
             // anything.
-            pushTestHistory(name, mode, { date: Date.now(), rit: state.rit, lexile: ritToLexile(state.rit), accuracy, questionCount: state.results.length, byType: computeByTypeAccuracy(state.results) });
+            // The trial deliberately withholds its score, so it must never
+            // enter history (it would otherwise surface as "Personal Best",
+            // "+X from last test", or on a leaderboard).
+            if (mode !== 'trial_20') pushTestHistory(name, mode, { date: Date.now(), rit: state.rit, lexile: ritToLexile(state.rit), accuracy, questionCount: state.results.length, byType: computeByTypeAccuracy(state.results) });
         }
 
         // Additive only: syncs a summary to the server if signed in, does
@@ -6732,6 +6783,7 @@
             .select('rit_end,lexile_end,correct_count,question_count,completed_at,by_type')
             .eq('user_id', window.MAP_USER.id)
             .eq('cancelled', false)
+            .neq('mode', 'trial_20')
             .not('completed_at', 'is', null)
             .order('completed_at', { ascending: true });
         if (error || !data) return [];
@@ -7062,7 +7114,8 @@
         renderPlayerCard();
         renderSmartRecommendation();
         setModeCategory(localStorage.getItem('mode_category') || 'sim');
-        refreshTrialOptionVisibility();
+        if (typeof refreshTrialOptionVisibility === 'function') refreshTrialOptionVisibility();
+        refreshSimulationLockLabels();
         {
             const simEl = document.getElementById('sim-time-limit');
             if (simEl) simEl.value = parseInt(localStorage.getItem('sim_time_limit_minutes'), 10) || 80;

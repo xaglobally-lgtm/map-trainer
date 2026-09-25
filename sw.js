@@ -1,9 +1,11 @@
-// MAP Trainer service worker — caches the app shell so it keeps working
-// fully offline after the first successful load, same as the old
-// single-file version did by default (no network calls at all during a
-// test). Bump CACHE_NAME whenever index.html changes so returning visitors
-// pick up the update instead of a stale cached copy.
-const CACHE_NAME = 'map-trainer-v1';
+// MAP Trainer service worker.
+// Strategy: NETWORK-FIRST for the app page itself (so every deploy reaches
+// users on their next visit, instead of the old cache-first behaviour that
+// kept serving a stale index.html indefinitely), falling back to the cached
+// copy only when offline. Static icons/manifest stay cache-first — they
+// rarely change and should load instantly.
+// Bump CACHE_NAME only if the list of static files changes.
+const CACHE_NAME = 'map-trainer-v2';
 const SHELL_FILES = [
   './',
   './index.html',
@@ -29,28 +31,42 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
+function isAppPage(request) {
+  if (request.mode === 'navigate') return true;
+  const url = new URL(request.url);
+  return url.origin === self.location.origin &&
+    (url.pathname.endsWith('/') || url.pathname.endsWith('.html'));
+}
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  // Never intercept cross-origin calls (Supabase API, CDN) — let the
+  // browser handle them normally.
+  if (new URL(req.url).origin !== self.location.origin) return;
+
+  if (isAppPage(req)) {
+    event.respondWith(
+      fetch(req)
         .then((response) => {
-          // Cache a copy of anything same-origin we successfully fetch, so
-          // it's available offline next time too.
-          if (response && response.status === 200 && event.request.url.startsWith(self.location.origin)) {
+          if (response && response.status === 200) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy));
           }
           return response;
         })
-        .catch(() => {
-          // Offline and not cached: for a page navigation, fall back to the
-          // cached app shell rather than showing the browser's error page.
-          if (event.request.mode === 'navigate') return caches.match('./index.html');
-          return new Response('', { status: 504, statusText: 'Offline' });
-        });
-    })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(req).then((cached) => cached || fetch(req).then((response) => {
+      if (response && response.status === 200) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+      }
+      return response;
+    }))
   );
 });
