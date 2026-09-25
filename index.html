@@ -584,7 +584,7 @@
     <!-- DASHBOARD -->
     <div id="view-setup" class="dashboard">
         <button onclick="openModal('modal-settings')" title="Settings" aria-label="Open settings" style="position:fixed; top:20px; right:20px; background:none; border:none; font-size:24px; cursor:pointer;">⚙️</button>
-        <div id="auth-status-badge" style="position:fixed; top:22px; right:64px; font-size:12px; font-weight:700; color:#475569; cursor:pointer; text-align:right;" onclick="openModal('modal-auth')">Sign in</div>
+        <div id="auth-status-badge" style="position:fixed; top:18px; right:64px; z-index:60; display:flex; align-items:center; gap:6px; max-width:320px; padding:6px 12px; border-radius:999px; background:var(--card); color:var(--text); border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.08); font-size:12px; font-weight:700; cursor:pointer;" onclick="openModal('modal-auth')">Sign in</div>
 
         <!-- SIGN IN / ACCOUNT -->
         <div id="modal-auth" class="modal hidden">
@@ -1059,7 +1059,15 @@
         // "has any paid plan" (unlocks Simulation Mode).
         window.MAP_PLAN = (sub && sub.status === 'active' && PLAN_LABELS[sub.plan]) ? sub.plan : 'free';
         window.MAP_ENTITLEMENT = window.MAP_PLAN === 'free' ? 'free' : 'full';
-        if (badge) badge.textContent = session.user.email + ' · ' + PLAN_LABELS[window.MAP_PLAN];
+        if (badge) {
+            // Plan is shown as a coloured pill (the important part), email
+            // is truncated with an ellipsis so a long address can't push
+            // the badge off-screen or behind other elements.
+            const planColors = { free: '#64748b', pro: '#0e7490', educator: '#7c3aed', connect: '#b45309' };
+            badge.innerHTML = `<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">${escapeHtml(session.user.email)}</span>`
+                + `<span style="background:${planColors[window.MAP_PLAN]}; color:white; padding:2px 8px; border-radius:999px; font-size:11px; white-space:nowrap;">${PLAN_LABELS[window.MAP_PLAN]}</span>`;
+            badge.title = session.user.email + ' — ' + PLAN_LABELS[window.MAP_PLAN] + ' plan';
+        }
         const outView = document.getElementById('auth-signed-out-view');
         const inView = document.getElementById('auth-signed-in-view');
         if (outView) outView.classList.add('hidden');
