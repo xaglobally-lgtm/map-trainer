@@ -629,6 +629,72 @@
             </div>
         </div>
 
+        <!-- MAP CONNECT: STUDENT JOIN / WAITING ROOM -->
+        <div id="modal-live-join" class="modal hidden">
+            <div class="modal-content">
+                <button type="button" class="modal-close" onclick="leaveLiveSession()" title="Leave" aria-label="Leave">×</button>
+                <h2 style="margin-top:0;">🎮 Join Live Session</h2>
+                <div id="live-join-form">
+                    <p style="font-size:13px; color:#64748b;">Enter the code your teacher is showing.</p>
+                    <input type="text" id="live-join-code" placeholder="e.g. OWL-305" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); text-transform:uppercase; font-size:18px; font-weight:800; letter-spacing:2px; text-align:center; margin-bottom:10px;">
+                    <button onclick="joinLiveSession()" style="width:100%; padding:12px; border-radius:10px; background:var(--primary-grad); color:white; border:none; font-weight:900; cursor:pointer;">Join</button>
+                </div>
+                <div id="live-wait-room" class="hidden" style="text-align:center;">
+                    <div id="live-wait-name" style="font-size:18px; font-weight:900; margin-bottom:6px;"></div>
+                    <div id="live-wait-status" style="font-size:14px; color:#64748b; margin-bottom:16px;">Waiting for your teacher to start…</div>
+                    <div style="font-size:36px; margin-bottom:10px;">⏳</div>
+                    <button id="live-start-now-btn" class="hidden" onclick="startLiveTest()" style="width:100%; padding:14px; border-radius:12px; background:var(--primary-grad); color:white; border:none; font-weight:900; cursor:pointer;">The session is live — Start now</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAP CONNECT: TEACHER SETUP -->
+        <div id="modal-host-setup" class="modal hidden">
+            <div class="modal-content">
+                <button type="button" class="modal-close" onclick="closeModal('modal-host-setup')" title="Close" aria-label="Close">×</button>
+                <h2 style="margin-top:0;">📡 Host a Live Session</h2>
+                <label style="font-size:12px; font-weight:800;">Session name</label>
+                <input type="text" id="host-session-name" placeholder="e.g. Friday Reading Challenge" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin:4px 0 12px;">
+                <label style="font-size:12px; font-weight:800;">Class</label>
+                <select id="host-session-class" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin:4px 0 12px;"></select>
+                <label style="font-size:12px; font-weight:800;">Test</label>
+                <select id="host-session-mode" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin:4px 0 12px;">
+                    <option value="adaptive_40">Adaptive: 40 Questions</option>
+                    <option value="adaptive_40_sets">Adaptive: 40 Questions — more passage-based sets</option>
+                    <option value="adaptive_100">Adaptive: 100 Questions</option>
+                </select>
+                <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:16px; cursor:pointer;">
+                    <input type="checkbox" id="host-show-board" checked> Students can see the live leaderboard
+                </label>
+                <button onclick="hostCreateSession()" style="width:100%; padding:14px; border-radius:12px; background:#b45309; color:white; border:none; font-weight:900; cursor:pointer;">Create session &amp; get join code</button>
+            </div>
+        </div>
+
+        <!-- MAP CONNECT: TEACHER HOST SCREEN -->
+        <div id="modal-host-live" class="modal hidden">
+            <div class="modal-content" style="max-width:820px; width:95%; max-height:92vh; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+                    <div>
+                        <div id="host-live-name" style="font-size:20px; font-weight:900;"></div>
+                        <div style="font-size:12px; color:#64748b;">Students join at this site with the code:</div>
+                        <div id="host-live-code" style="font-size:42px; font-weight:900; letter-spacing:4px; color:#b45309;"></div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div id="host-live-status" style="font-weight:900; font-size:14px; margin-bottom:8px;"></div>
+                        <div id="host-live-counts" style="font-size:13px;"></div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; margin:14px 0; flex-wrap:wrap;">
+                    <button id="host-btn-start" onclick="hostSetStatus('active')" style="padding:10px 16px; border-radius:10px; border:none; background:#16a34a; color:white; font-weight:900; cursor:pointer;">▶ Start</button>
+                    <button id="host-btn-pause" onclick="hostSetStatus('paused')" style="padding:10px 16px; border-radius:10px; border:none; background:#eab308; color:#1f2937; font-weight:900; cursor:pointer;">⏸ Pause</button>
+                    <button id="host-btn-resume" onclick="hostSetStatus('active')" style="padding:10px 16px; border-radius:10px; border:none; background:#16a34a; color:white; font-weight:900; cursor:pointer;">▶ Resume</button>
+                    <button id="host-btn-end" onclick="hostEndSession()" style="padding:10px 16px; border-radius:10px; border:none; background:#dc2626; color:white; font-weight:900; cursor:pointer;">■ End session</button>
+                    <button onclick="hostCloseScreen()" style="padding:10px 16px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); font-weight:800; cursor:pointer; margin-left:auto;">Close screen</button>
+                </div>
+                <div id="host-live-board"></div>
+            </div>
+        </div>
+
         <!-- LEADERBOARD -->
         <div id="modal-leaderboard" class="modal hidden">
             <div class="modal-content" style="max-height:90vh; overflow-y:auto;">
@@ -715,10 +781,20 @@
                 </optgroup>
             </select>
             <button onclick="startSession()" class="btn-primary-grad" style="width:100%; padding:18px; border-radius:12px; font-weight:900; cursor:pointer;">LAUNCH MISSION</button>
+            <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+                <button onclick="openJoinLive()" style="flex:1; min-width:180px; padding:12px; border-radius:12px; border:2px solid var(--primary-mid); background:var(--card); color:var(--text); font-weight:800; cursor:pointer;">🎮 Join Live Session</button>
+                <button id="host-live-btn" onclick="openHostSetup()" style="display:none; flex:1; min-width:180px; padding:12px; border-radius:12px; border:none; background:#b45309; color:white; font-weight:800; cursor:pointer;">📡 Host Live Session (Connect)</button>
+            </div>
         </div>
     </div>
 
     <!-- TESTING -->
+    <div id="live-pause-overlay" class="hidden" style="position:fixed; inset:0; z-index:200; background:rgba(15,23,42,0.85); color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px;">
+        <div style="font-size:64px;">⏸</div>
+        <div style="font-size:28px; font-weight:900; margin-top:10px;">Your teacher has paused the session</div>
+        <div style="font-size:15px; opacity:0.8; margin-top:8px;">Your time is frozen. The test will continue when your teacher resumes.</div>
+    </div>
+    <div id="live-student-board" class="hidden" style="position:fixed; right:16px; bottom:16px; z-index:90; width:230px; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:14px; box-shadow:0 6px 20px rgba(0,0,0,0.15); padding:10px 12px; font-size:12px;"></div>
     <div id="view-test" class="hidden flex-col">
         <div class="top-nav">
             <div class="nav-title">
@@ -1042,6 +1118,7 @@
             window.MAP_ENTITLEMENT = 'free';
             if (badge) badge.textContent = 'Sign in';
             if (typeof refreshSimulationLockLabels === 'function') refreshSimulationLockLabels();
+            refreshConnectButtons();
             const inV = document.getElementById('auth-signed-in-view');
             const outV = document.getElementById('auth-signed-out-view');
             if (inV) inV.classList.add('hidden');
@@ -1082,6 +1159,8 @@
         }
         if (typeof updateMenu === 'function') updateMenu();
         refreshTrialOptionVisibility();
+        refreshConnectButtons();
+        maybeRejoinLiveSession();
         if (typeof refreshSimulationLockLabels === 'function') refreshSimulationLockLabels();
     }
 
@@ -1277,6 +1356,288 @@
                 });
             }
         } catch (e) { /* best-effort — never block the local report on a sync failure */ }
+    }
+
+
+    // ===================== MAP CONNECT (live group sessions) =====================
+    // Realtime model:
+    //  - Teacher subscribes to changes on edu_group_participants for their
+    //    session (RLS lets them see all rows) and redraws the board on every
+    //    change, plus polls every 10s because "disconnected" is computed from
+    //    time (last_seen_at) and doesn't itself produce a database event.
+    //  - Students subscribe to their session's row in edu_group_sessions to
+    //    react instantly to Start / Pause / Resume / End.
+    //  - Students can't subscribe to classmates' rows (RLS: own row only), so
+    //    their live leaderboard polls get_live_leaderboard every 15s.
+    //  - Heartbeat: every 20s and on every question, the student updates
+    //    their own row (last_seen_at, progress). 45s silence = shown as
+    //    disconnected; the next heartbeat reconnects them automatically.
+    const LIVE_HEARTBEAT_MS = 20000;
+    let LIVE = null; // student: { role:'student', sessionId, name, mode, showBoard, status, channel, timers }
+    let HOST = null; // teacher: { sessionId, name, code, mode, status, channel, pollTimer }
+    const MODE_LIMITS = { adaptive_40: 40, adaptive_40_sets: 40, adaptive_100: 100 };
+
+    function refreshConnectButtons() {
+        const hostBtn = document.getElementById('host-live-btn');
+        if (hostBtn) hostBtn.style.display = (window.MAP_USER && canRunLiveSessions()) ? '' : 'none';
+    }
+    function isTestRunning() {
+        const v = document.getElementById('view-test');
+        return v && !v.classList.contains('hidden');
+    }
+
+    // ---------- Student side ----------
+    function openJoinLive() {
+        if (!sb || !window.MAP_USER) { alert('Please sign in first — live sessions need an account so your teacher can see your progress.'); openModal('modal-auth'); return; }
+        document.getElementById('live-join-form').classList.remove('hidden');
+        document.getElementById('live-wait-room').classList.add('hidden');
+        openModal('modal-live-join');
+    }
+    async function joinLiveSession(codeArg, silent) {
+        if (!sb || !window.MAP_USER) return;
+        const code = (codeArg || document.getElementById('live-join-code').value || '').trim().toUpperCase();
+        if (!code) return;
+        await ensureProfile('student');
+        const { data, error } = await sb.rpc('join_group_session', { p_code: code });
+        if (error || !data || !data.length) {
+            localStorage.removeItem('live_code');
+            if (!silent) alert(error ? error.message : 'Could not join that session.');
+            return;
+        }
+        const row = data[0];
+        const { data: sess } = await sb.from('edu_group_sessions').select('show_student_leaderboard,status').eq('id', row.session_id).maybeSingle();
+        stopLiveStudent(true);
+        LIVE = { role: 'student', sessionId: row.session_id, name: row.session_name, mode: row.session_mode,
+                 showBoard: !sess || sess.show_student_leaderboard !== false, status: row.session_status, timers: [] };
+        localStorage.setItem('live_code', code); // lets a page reload rejoin automatically
+        LIVE.channel = sb.channel('live-student-' + LIVE.sessionId)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'edu_group_sessions', filter: 'id=eq.' + LIVE.sessionId },
+                payload => onLiveSessionStatus(payload.new.status))
+            .subscribe();
+        LIVE.timers.push(setInterval(() => liveHeartbeat(), LIVE_HEARTBEAT_MS));
+        LIVE.timers.push(setInterval(() => refreshStudentBoard(), 15000));
+        liveHeartbeat();
+        document.getElementById('live-join-form').classList.add('hidden');
+        document.getElementById('live-wait-room').classList.remove('hidden');
+        document.getElementById('live-wait-name').innerText = row.session_name;
+        if (!isTestRunning()) openModal('modal-live-join');
+        onLiveSessionStatus(row.session_status, true);
+    }
+    function onLiveSessionStatus(status, isInitial) {
+        if (!LIVE) return;
+        const prev = LIVE.status;
+        LIVE.status = status;
+        const statusEl = document.getElementById('live-wait-status');
+        const startBtn = document.getElementById('live-start-now-btn');
+        if (status === 'waiting') {
+            if (statusEl) statusEl.innerText = 'Waiting for your teacher to start…';
+            startBtn.classList.add('hidden');
+        } else if (status === 'active') {
+            hideLivePause();
+            if (!isTestRunning()) {
+                // Fresh start (waiting -> active) begins immediately; a rejoin
+                // into an already-running session asks first, so it doesn't
+                // silently throw away saved progress.
+                if (!isInitial && prev === 'waiting') { startLiveTest(); }
+                else {
+                    if (statusEl) statusEl.innerText = 'This session is live.';
+                    startBtn.classList.remove('hidden');
+                }
+            }
+        } else if (status === 'paused') {
+            if (isTestRunning()) showLivePause();
+            else if (statusEl) statusEl.innerText = 'Session paused by your teacher.';
+        } else if (status === 'ended') {
+            hideLivePause();
+            if (isTestRunning()) { endTest(false); }
+            else { alert('This live session has ended.'); closeModal('modal-live-join'); }
+            stopLiveStudent();
+        }
+    }
+    function startLiveTest() {
+        if (!LIVE) return;
+        closeModal('modal-live-join');
+        setModeCategory('sim');
+        const sel = document.getElementById('mode-select');
+        if (sel) sel.value = LIVE.mode;
+        startSession();
+        if (LIVE.showBoard) document.getElementById('live-student-board').classList.remove('hidden');
+        refreshStudentBoard();
+        liveHeartbeat({ status: 'active' });
+    }
+    async function liveHeartbeat(extra) {
+        if (!LIVE || !sb || !window.MAP_USER) return;
+        const upd = Object.assign({ last_seen_at: new Date().toISOString() }, extra || {});
+        if (isTestRunning()) { upd.current_question_index = state.current || 0; upd.current_rit = state.rit || null; }
+        await sb.from('edu_group_participants').update(upd)
+            .eq('session_id', LIVE.sessionId).eq('student_id', window.MAP_USER.id);
+    }
+    function showLivePause() {
+        clearInterval(state.timerObj); state.timerObj = null;
+        document.getElementById('live-pause-overlay').classList.remove('hidden');
+        liveHeartbeat({ status: 'paused' });
+    }
+    function hideLivePause() {
+        const ov = document.getElementById('live-pause-overlay');
+        const wasPaused = ov && !ov.classList.contains('hidden');
+        if (ov) ov.classList.add('hidden');
+        if (wasPaused && isTestRunning() && !state.timerObj) {
+            state.timerObj = setInterval(tickTestClock, 1000);
+            liveHeartbeat({ status: 'active' });
+        }
+    }
+    async function refreshStudentBoard() {
+        const box = document.getElementById('live-student-board');
+        if (!LIVE || !LIVE.showBoard || !box || !isTestRunning()) return;
+        const { data } = await sb.rpc('get_live_leaderboard', { p_session_id: LIVE.sessionId });
+        if (!data) return;
+        const rows = data.slice().sort((a, b) => (b.current_rit || 0) - (a.current_rit || 0));
+        const myIdx = rows.findIndex(r => r.student_id === window.MAP_USER.id);
+        box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">📡 ${escapeHtml(LIVE.name)}</div>`
+            + (myIdx >= 0 ? `<div style="margin-bottom:6px;">You are <b>#${myIdx + 1}</b> of ${rows.length}</div>` : '')
+            + rows.slice(0, 5).map((r, i) => `<div style="display:flex; justify-content:space-between; ${r.student_id === window.MAP_USER.id ? 'font-weight:900; color:var(--primary-mid);' : ''}">
+                <span>${i + 1}. ${escapeHtml(r.display_name)}</span><span>${r.current_rit || '—'}</span></div>`).join('');
+    }
+    // Called from endTest() — marks this student finished and tidies up.
+    function onLiveTestFinished(wasCancelled) {
+        if (!LIVE) return;
+        liveHeartbeat({ status: wasCancelled ? 'paused' : 'finished' });
+        document.getElementById('live-student-board').classList.add('hidden');
+        if (!wasCancelled) { localStorage.removeItem('live_code'); stopLiveStudent(); }
+    }
+    function stopLiveStudent(keepCode) {
+        if (!LIVE) return;
+        (LIVE.timers || []).forEach(t => clearInterval(t));
+        if (LIVE.channel && sb) sb.removeChannel(LIVE.channel);
+        if (!keepCode) localStorage.removeItem('live_code');
+        LIVE = null;
+        const b = document.getElementById('live-student-board');
+        if (b) b.classList.add('hidden');
+    }
+    function leaveLiveSession() {
+        closeModal('modal-live-join');
+        stopLiveStudent();
+    }
+    // After sign-in resolves: if this device was in a live session (page
+    // reload, dropped connection), rejoin silently.
+    function maybeRejoinLiveSession() {
+        const code = localStorage.getItem('live_code');
+        if (code && window.MAP_USER && !LIVE) joinLiveSession(code, true);
+    }
+
+    // ---------- Teacher side ----------
+    async function openHostSetup() {
+        if (!canRunLiveSessions()) { alert('Live sessions are part of MAP-Style Connect (school plan).'); return; }
+        const sel = document.getElementById('host-session-class');
+        sel.innerHTML = '<option value="">No class — ad-hoc session (anyone with the code)</option>';
+        const { data } = await sb.from('edu_classes').select('id,name').eq('teacher_id', window.MAP_USER.id);
+        (data || []).forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; sel.appendChild(o); });
+        openModal('modal-host-setup');
+    }
+    async function hostCreateSession() {
+        const name = (document.getElementById('host-session-name').value || '').trim() || 'Live Reading Session';
+        const classId = document.getElementById('host-session-class').value || null;
+        const mode = document.getElementById('host-session-mode').value;
+        const showBoard = document.getElementById('host-show-board').checked;
+        await ensureProfile('teacher');
+        const { data, error } = await sb.from('edu_group_sessions').insert({
+            teacher_id: window.MAP_USER.id, class_id: classId, name, join_code: generateJoinCode(),
+            mode, show_student_leaderboard: showBoard
+        }).select('id,name,join_code,mode,status').single();
+        if (error) { alert('Could not create session: ' + error.message); return; }
+        closeModal('modal-host-setup');
+        openHostScreen(data);
+    }
+    function openHostScreen(sess) {
+        hostCloseScreen(true);
+        HOST = { sessionId: sess.id, name: sess.name, code: sess.join_code, mode: sess.mode, status: sess.status };
+        document.getElementById('host-live-name').innerText = sess.name;
+        document.getElementById('host-live-code').innerText = sess.join_code;
+        let debounce = null;
+        HOST.channel = sb.channel('live-host-' + sess.id)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'edu_group_participants', filter: 'session_id=eq.' + sess.id },
+                () => { clearTimeout(debounce); debounce = setTimeout(refreshHostBoard, 400); })
+            .subscribe();
+        HOST.pollTimer = setInterval(refreshHostBoard, 10000);
+        renderHostControls();
+        refreshHostBoard();
+        openModal('modal-host-live');
+    }
+    function renderHostControls() {
+        if (!HOST) return;
+        const st = HOST.status;
+        const show = (id, on) => { document.getElementById(id).style.display = on ? '' : 'none'; };
+        show('host-btn-start', st === 'waiting');
+        show('host-btn-pause', st === 'active');
+        show('host-btn-resume', st === 'paused');
+        show('host-btn-end', st !== 'ended');
+        const labels = { waiting: '⏳ Waiting — students can join now', active: '🟢 LIVE', paused: '⏸ PAUSED', ended: '■ Ended' };
+        document.getElementById('host-live-status').innerText = labels[st] || st;
+    }
+    async function hostSetStatus(status) {
+        if (!HOST) return;
+        const upd = { status };
+        if (status === 'active' && HOST.status === 'waiting') upd.started_at = new Date().toISOString();
+        if (status === 'ended') upd.ended_at = new Date().toISOString();
+        const { error } = await sb.from('edu_group_sessions').update(upd).eq('id', HOST.sessionId);
+        if (error) { alert(error.message); return; }
+        HOST.status = status;
+        renderHostControls();
+        refreshHostBoard();
+    }
+    // Two-click confirmation instead of window.confirm(): some browsers
+    // silently suppress confirm dialogs (the v3.0 Cancel-button bug), which
+    // would make ending a session impossible.
+    let hostEndArmed = false, hostEndTimer = null;
+    function hostEndSession() {
+        const btn = document.getElementById('host-btn-end');
+        if (!hostEndArmed) {
+            hostEndArmed = true;
+            btn.innerText = 'Click again to end for everyone';
+            hostEndTimer = setTimeout(() => { hostEndArmed = false; btn.innerText = '■ End session'; }, 4000);
+            return;
+        }
+        clearTimeout(hostEndTimer); hostEndArmed = false; btn.innerText = '■ End session';
+        hostSetStatus('ended');
+    }
+    async function refreshHostBoard() {
+        if (!HOST) return;
+        const { data, error } = await sb.rpc('get_live_leaderboard', { p_session_id: HOST.sessionId });
+        const box = document.getElementById('host-live-board');
+        if (error) { box.innerHTML = `<p style="color:#dc2626; font-size:12px;">${escapeHtml(error.message)}</p>`; return; }
+        const rows = (data || []).slice().sort((a, b) => (b.current_rit || 0) - (a.current_rit || 0));
+        const limit = MODE_LIMITS[HOST.mode] || 40;
+        let on = 0, paused = 0, off = 0, done = 0;
+        const dot = r => {
+            if (r.status === 'finished') { done++; return '🏁'; }
+            if (!r.is_connected) { off++; return '🔴'; }
+            if (r.status === 'paused' || HOST.status === 'paused') { paused++; return '🟡'; }
+            on++; return '🟢';
+        };
+        const body = rows.map((r, i) => {
+            const d = dot(r);
+            const pct = Math.min(100, Math.round(((r.current_question_index || 0) / limit) * 100));
+            return `<div style="display:grid; grid-template-columns:34px 1fr 120px 60px 24px; gap:8px; align-items:center; padding:8px 10px; border-radius:10px; margin-bottom:4px; background:${i < 3 ? '#fff7ed' : 'var(--bg)'};">
+                <b>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.'}</b>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(r.display_name)}</span>
+                <span title="Q${r.current_question_index || 0} of ${limit}"><span style="display:inline-block; width:80px; height:6px; background:#e2e8f0; border-radius:4px; vertical-align:middle;"><span style="display:block; height:6px; width:${pct}%; background:var(--primary-grad); border-radius:4px;"></span></span> <small>${r.current_question_index || 0}/${limit}</small></span>
+                <b style="text-align:right;">${r.current_rit || '—'}</b>
+                <span>${d}</span>
+            </div>`;
+        }).join('');
+        document.getElementById('host-live-counts').innerHTML =
+            `🟢 ${on} online &nbsp; 🟡 ${paused} paused &nbsp; 🔴 ${off} disconnected &nbsp; 🏁 ${done} finished`;
+        box.innerHTML = rows.length
+            ? `<div style="display:grid; grid-template-columns:34px 1fr 120px 60px 24px; gap:8px; font-size:11px; color:#94a3b8; padding:0 10px 4px;"><span>#</span><span>Student</span><span>Progress</span><span style="text-align:right;">RIT</span><span></span></div>` + body
+            : '<p style="font-size:13px; color:#94a3b8; text-align:center; padding:20px;">No students yet — share the code above.</p>';
+    }
+    function hostCloseScreen(silent) {
+        if (HOST) {
+            if (HOST.channel && sb) sb.removeChannel(HOST.channel);
+            clearInterval(HOST.pollTimer);
+        }
+        HOST = null;
+        if (!silent) closeModal('modal-host-live');
     }
 
     if (sb) {
@@ -5705,7 +6066,8 @@
     // server-enforced; what IS server-enforced is that only paid-plan
     // sessions can create classes/live sessions (see RLS policies).
     function simulationLocked(mode) {
-        return isSimulationMode(mode) && mode !== 'trial_20' && window.MAP_ENTITLEMENT !== 'full';
+        const inLiveSession = (typeof LIVE !== 'undefined' && LIVE && LIVE.role === 'student');
+        return isSimulationMode(mode) && mode !== 'trial_20' && window.MAP_ENTITLEMENT !== 'full' && !inLiveSession;
     }
     function refreshSimulationLockLabels() {
         const sel = document.getElementById('mode-select');
@@ -5830,6 +6192,7 @@
         if (state.current >= state.limit) { finish(); return; }
         state.pageTime = 0;
         maybeShowSignInNudge();
+        if (typeof LIVE !== 'undefined' && LIVE) liveHeartbeat();
 
         const mode = document.getElementById('mode-select').value;
 
@@ -6108,6 +6471,7 @@
     }
 
     function endTest(wasCancelled) {
+        if (typeof onLiveTestFinished === 'function') onLiveTestFinished(!!wasCancelled);
         clearInterval(state.timerObj);
         clearActiveSession();
         document.getElementById('view-test').classList.add('hidden');

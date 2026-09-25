@@ -61,6 +61,9 @@ Decided: no "flaming red" combat framing for competitive features (kept as a rea
   8. Plans were only free/full → now `free/pro/educator/connect` (constraint + `current_plan()`), existing 'full' rows migrated to 'pro'. Class creation server-enforced to Educator (max 2, via `my_class_count()`) or Connect; live-session creation to Connect only.
 - **Known, accepted limitations** (not bugs): Simulation paywall is client-side only (generation runs in-browser; can't be server-enforced without moving generation server-side); `map_test_sessions` insert is self-reported, so leaderboard scores are spoofable by a technical user — acceptable at this stage, revisit if Connect is used for anything high-stakes.
 
+- **Sign-in redirect bug diagnosed**: magic links landed on planet-of-the-apps.vercel.app because the shared Supabase project's Auth Site URL belongs to that app and map-trainer-six.vercel.app was never added to Auth → URL Configuration → Redirect URLs (so Supabase fell back to the Site URL). Fix = add `https://map-trainer-six.vercel.app/**` to Redirect URLs; do NOT change Site URL (would break Planet of the Apps). Also corrected an earlier wrong inference: the "locks disappeared" observation came from the old cache-first service worker serving the pre-paywall version, not from a successful Connect sign-in.
+- **STANDING APP-FACTORY CHECKLIST ITEM**: every app deployed on the shared `API Verifier LIVE` project must have its production URL (with `/**`) added to Auth → Redirect URLs, or its sign-in emails will bounce to whichever app owns the Site URL.
+
 ## Backlog (in priority order)
 
 ## Roadmap — organized from everything discussed, not yet all built
