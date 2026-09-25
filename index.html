@@ -603,6 +603,17 @@
                     <button onclick="signOutUser()" style="width:100%; padding:10px; border-radius:10px; background:#f1f5f9; color:#334155; border:none; font-weight:700; cursor:pointer;">Sign out</button>
 
                     <hr style="margin:16px 0;">
+                    <h3 style="margin:0 0 8px; font-size:15px;">Leaderboard Name</h3>
+                    <p style="font-size:12px; color:#64748b; margin:0 0 10px;">Your choice — this is what other students and your teacher see on any leaderboard.</p>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; margin-bottom:6px;">
+                        <input type="radio" name="nickname-choice" value="real" id="nickname-real" onchange="onNicknameChoiceChange()"> Show my real name
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                        <input type="radio" name="nickname-choice" value="nick" id="nickname-nick" onchange="onNicknameChoiceChange()"> Show a nickname instead
+                    </label>
+                    <input type="text" id="nickname-input" placeholder="Choose a nickname" maxlength="20" style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border); margin-top:8px;" oninput="onNicknameChoiceChange()">
+
+                    <hr style="margin:16px 0;">
                     <h3 style="margin:0 0 8px; font-size:15px;">Classes &amp; Leaderboards</h3>
                     <div id="my-classes-list" style="margin-bottom:12px;"></div>
                     <div style="display:flex; gap:8px; margin-bottom:8px;">
@@ -1035,6 +1046,7 @@
             document.getElementById('auth-current-email').textContent = session.user.email;
             document.getElementById('auth-current-plan').textContent = window.MAP_ENTITLEMENT === 'full' ? 'Full (A1–C2)' : 'Free (A1–A2)';
             loadMyClasses();
+            loadNicknamePreference();
         }
         if (typeof updateMenu === 'function') updateMenu();
         refreshTrialOptionVisibility();
@@ -1067,6 +1079,32 @@
     // Makes sure a map_profiles row exists before any class action — the
     // leaderboard function needs a display_name to show, and there's no
     // other point in the app where a profile gets created.
+    // Loads the student's current nickname choice into the Account modal —
+    // called whenever that view is shown, so it always reflects what's
+    // actually saved rather than defaulting blank.
+    async function loadNicknamePreference() {
+        if (!sb || !window.MAP_USER) return;
+        const { data } = await sb.from('map_profiles').select('use_nickname,nickname').eq('id', window.MAP_USER.id).maybeSingle();
+        const useNick = !!(data && data.use_nickname);
+        const realRadio = document.getElementById('nickname-real');
+        const nickRadio = document.getElementById('nickname-nick');
+        const nickInput = document.getElementById('nickname-input');
+        if (realRadio) realRadio.checked = !useNick;
+        if (nickRadio) nickRadio.checked = useNick;
+        if (nickInput) nickInput.value = (data && data.nickname) || '';
+    }
+    let nicknameSaveTimer = null;
+    function onNicknameChoiceChange() {
+        clearTimeout(nicknameSaveTimer);
+        nicknameSaveTimer = setTimeout(saveNicknamePreference, 500); // debounced — typing a nickname shouldn't fire a write per keystroke
+    }
+    async function saveNicknamePreference() {
+        if (!sb || !window.MAP_USER) return;
+        await ensureProfile(); // guarantees a profile row (with display_name) exists first
+        const useNick = document.getElementById('nickname-nick').checked;
+        const nickname = (document.getElementById('nickname-input').value || '').trim();
+        await sb.from('map_profiles').update({ use_nickname: useNick, nickname }).eq('id', window.MAP_USER.id);
+    }
     async function ensureProfile(inferredRole) {
         if (!sb || !window.MAP_USER) return;
         const name = (document.getElementById('student-name') || {}).value || 'Student';
@@ -1091,14 +1129,14 @@
         const nameEl = document.getElementById('new-class-name');
         const name = (nameEl.value || '').trim();
         if (!name) return;
-        const { count } = await sb.from('map_classes').select('id', { count: 'exact', head: true }).eq('teacher_id', window.MAP_USER.id);
+        const { count } = await sb.from('edu_classes').select('id', { count: 'exact', head: true }).eq('teacher_id', window.MAP_USER.id);
         if ((count || 0) >= MAX_CLASSES_PER_TEACHER) {
             alert(`Educator accounts can create up to ${MAX_CLASSES_PER_TEACHER} classes. Need more? That's what MAP-Style Connect (school-wide) is for.`);
             return;
         }
         await ensureProfile('teacher');
         const joinCode = generateJoinCode();
-        const { error } = await sb.from('map_classes').insert({ teacher_id: window.MAP_USER.id, name, join_code: joinCode });
+        const { error } = await sb.from('edu_classes').insert({ teacher_id: window.MAP_USER.id, name, join_code: joinCode });
         if (error) { alert('Could not create class: ' + error.message); return; }
         nameEl.value = '';
         loadMyClasses();
@@ -1109,14 +1147,14 @@
         const code = (codeEl.value || '').trim().toUpperCase();
         if (!code) return;
         await ensureProfile('student');
-        const { data: cls, error } = await sb.from('map_classes').select('id,name').eq('join_code', code).maybeSingle();
+        const { data: cls, error } = await sb.from('edu_classes').select('id,name').eq('join_code', code).maybeSingle();
         if (error || !cls) { alert('No class found with that code.'); return; }
-        const { count } = await sb.from('map_class_members').select('student_id', { count: 'exact', head: true }).eq('class_id', cls.id);
+        const { count } = await sb.from('edu_class_members').select('student_id', { count: 'exact', head: true }).eq('class_id', cls.id);
         if ((count || 0) >= MAX_STUDENTS_PER_CLASS) {
             alert(`This class already has ${MAX_STUDENTS_PER_CLASS} students — ask your teacher to check the class roster.`);
             return;
         }
-        const { error: joinErr } = await sb.from('map_class_members').insert({ class_id: cls.id, student_id: window.MAP_USER.id });
+        const { error: joinErr } = await sb.from('edu_class_members').insert({ class_id: cls.id, student_id: window.MAP_USER.id });
         if (joinErr && !joinErr.message.includes('duplicate')) { alert('Could not join class: ' + joinErr.message); return; }
         codeEl.value = '';
         loadMyClasses();
@@ -1125,13 +1163,13 @@
         const listEl = document.getElementById('my-classes-list');
         if (!sb || !window.MAP_USER || !listEl) return;
         const [{ data: owned }, { data: memberships }] = await Promise.all([
-            sb.from('map_classes').select('id,name,join_code').eq('teacher_id', window.MAP_USER.id),
-            sb.from('map_class_members').select('class_id').eq('student_id', window.MAP_USER.id)
+            sb.from('edu_classes').select('id,name,join_code').eq('teacher_id', window.MAP_USER.id),
+            sb.from('edu_class_members').select('class_id').eq('student_id', window.MAP_USER.id)
         ]);
         let joined = [];
         if (memberships && memberships.length) {
             const ids = memberships.map(m => m.class_id);
-            const { data: joinedClasses } = await sb.from('map_classes').select('id,name,join_code').in('id', ids);
+            const { data: joinedClasses } = await sb.from('edu_classes').select('id,name,join_code').in('id', ids);
             joined = joinedClasses || [];
         }
         const rows = [];
