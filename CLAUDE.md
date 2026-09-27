@@ -66,6 +66,14 @@ Simulation/Training mode split, one-answer-per-question lock (`state.answerLocke
 
 Done 2026-09-27 (for history): PRs #1–#3 merged; migrations `map_connect_faster_disconnect`, `map_teacher_controls`, `map_class_analytics_ccss`, `map_revoke_anon_function_execute` applied via `apply_migration`; content-depth items from the audit; E built.
 
+## MAP Growth Reading alignment (2026-09-28, "80% for 20% of the work")
+Simulation mode only (Training unchanged):
+- **Selector** `drawForSimulation(band)`: next question from the least-represented MAP area (Literary `RL` / Informational `RI` / Vocabulary), preferring non-multiple-choice items while under ~30% and DOK 2–3 types while under ~45%. DOK is tagged per question **type** (`DOK_OF_TYPE`), not per item. Top bands borrow interactive items from the band below; passage sets are skipped when their area is already ahead. Measured mix: areas ~13/13/13 per 40; interactive ~30% (Grade-1 level ~18%, few A1 interactive frames); DOK 2–3 ranges ~25% (A-levels, literal by nature) to ~65% (C-levels).
+- **Report:** "MAP-style areas": Literary / Informational / Vocabulary, each with an estimated RIT range (overall RIT ± up to 15 by area accuracy vs overall) and Relative strength / On par / Focus area; question-mix line; "about half right is normal" note. Also in the Simulation description.
+- **Answer eliminator:** ✕ on multiple-choice options strikes them out (tap again to undo).
+- **Wording:** "Est. RIT" in the test header, "Estimated RIT (practice)" on the report (English; other report languages keep their wording), and a footnote: practice estimates, not official NWEA scores.
+- Not done (deliberately): untimed default (#1), 43-question length (#2), seasons (#9), per-area separately estimated RIT, highlighter / line reader / notepad.
+
 ## Languages (status 2026-09-27)
 - **Questions stay English** (it's an English reading assessment).
 - **Report translation:** 11 languages (es, fr, zh, ja, ko, ru, ar, vi, th, km, mn) via the report language selector.

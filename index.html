@@ -91,6 +91,10 @@
         /* INTERACTIVES */
         .option-card { padding: 9px 13px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 12px; }
         .option-card:hover { border-color: var(--primary); background: #f8faff; }
+        .opt-elim { margin-left: auto; border: none; background: transparent; color: #94a3b8; font-size: 13px; font-weight: 900; cursor: pointer; padding: 2px 6px; border-radius: 6px; }
+        .opt-elim:hover { background: #fee2e2; color: #b91c1c; }
+        .option-card.eliminated .opt-text { text-decoration: line-through; opacity: .45; }
+        .option-card.eliminated .option-letter { opacity: .45; }
         .option-card:focus-visible, .ms-option:focus-visible, .cp-opt:focus-visible {
             outline: 3px solid var(--primary-mid); outline-offset: 2px; border-color: var(--primary-mid);
         }
@@ -902,7 +906,7 @@
             <div class="nav-stats" style="display:flex; gap:24px; align-items:center;">
                 <div class="stat-box"><div class="stat-label">TOTAL TIME</div><div id="total-timer" class="timer-val">00:00</div></div>
                 <div class="stat-box"><div class="stat-label">PAGE TIMER</div><div id="page-timer" class="timer-val">00:00</div></div>
-                <div class="stat-box"><div class="stat-label">RIT</div><div id="stat-rit" class="stat-val">---</div></div>
+                <div class="stat-box" title="Estimated RIT — a practice estimate, not an official NWEA score"><div class="stat-label">Est. RIT</div><div id="stat-rit" class="stat-val">---</div></div>
                 <div class="stat-box"><div class="stat-label">LEXILE</div><div id="stat-lex" class="stat-val">---</div></div>
                 <div style="position:relative;">
                     <button onclick="toggleWordInfoPopover()" title="Question settings" aria-label="Open question settings" aria-haspopup="true" style="background:#f1f5f9; color:#334155; border:none; width:36px; height:36px; border-radius:10px; font-weight:800; cursor:pointer; font-size:16px;">⚙️</button>
@@ -1035,7 +1039,7 @@
             </div>
             <p><b>Student:</b> <span id="res-name"></span> | <b>Time:</b> <span id="res-time"></span></p>
             <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:15px; margin:20px 0;">
-                <div class="report-box" style="background:#f8fafc; padding:15px; border-radius:10px; text-align:center;"><span id="i18n-finalRit">Final RIT Score</span><br><b id="res-rit" style="font-size:32px"></b></div>
+                <div class="report-box" style="background:#f8fafc; padding:15px; border-radius:10px; text-align:center;"><span id="i18n-finalRit">Estimated RIT (practice)</span><br><b id="res-rit" style="font-size:32px"></b></div>
                 <div class="report-box" style="background:#f8fafc; padding:15px; border-radius:10px; text-align:center;"><span id="i18n-lexileLevel">Lexile Level</span><br><b id="res-lex" style="font-size:32px"></b></div>
             </div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; background:#f8fafc; padding:10px 14px; border-radius:10px;">
@@ -1074,6 +1078,8 @@
             <svg id="history-graph" width="100%" height="140" style="background:#fafafa; border-radius:10px; margin-bottom:4px;"></svg>
             <p id="growth-caption" style="font-size:11px; color:#94a3b8; margin:0 0 20px;"></p>
             <div id="res-summary" style="background:#eef2ff; padding:20px; border-radius:15px; font-size:14px; margin-bottom:20px;"></div>
+            <p style="font-size:10px; color:#94a3b8; margin:-12px 0 16px;">All RIT and Lexile numbers in this app are practice estimates from its own adaptive engine, not official NWEA MAP Growth scores.</p>
+            <div id="res-map-areas" style="margin-bottom:20px;"></div>
             <div id="res-strengths-section" style="margin-bottom:20px;">
                 <h3 style="margin-bottom:6px;">Your Strengths</h3>
                 <div id="res-strengths-list" style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;"></div>
@@ -2273,6 +2279,61 @@
     // Readable name for an internal question type ("MainIdea" -> "Main Idea").
     const SKILL_TYPE_LABELS = { MainIdea: 'Main Idea', CauseEffect: 'Cause & Effect', FactOpinion: 'Fact & Opinion', CommandTerm: 'Command Terms' };
     function skillTypeLabel(t) { return SKILL_TYPE_LABELS[t] || String(t || '').replace(/([a-z])([A-Z])/g, '$1 $2'); }
+    // ===================== MAP-STYLE SIMULATION SELECTOR =====================
+    // Nudges Simulation toward MAP Growth Reading's publicly described shape
+    // without a new engine: roughly equal Literary / Informational /
+    // Vocabulary questions, ~30% technology-enhanced (non-multiple-choice)
+    // items, and ~45% DOK 2-3 thinking. DOK is tagged per question TYPE, not
+    // per item (80/20). Low bands have few DOK 2-3 / TE frames, so targets
+    // are best-effort there.
+    const DOK_OF_TYPE = {
+        Detail: 1, Sequence: 1, Vocabulary: 1,
+        MainIdea: 2, CauseEffect: 2, Compare: 2, Character: 2, Inference: 2, Evidence: 2,
+        Purpose: 2, Tone: 2, Structure: 2, FactOpinion: 2,
+        Argument: 3, Synthesis: 3, Evaluate: 3, Nuance: 3, Rhetoric: 3
+    };
+    function mapAreaOf(q) {
+        if (q.type === 'Vocabulary') return 'vocab';
+        return (q.ccss || '').startsWith('RL') ? 'literary' : 'informational';
+    }
+    const MAP_AREA_FILTER = { literary: 'littext', informational: 'infotext', vocab: 'vocab' };
+    function simulationMix(results) {
+        const n = results.length || 0;
+        const area = { literary: 0, informational: 0, vocab: 0 };
+        let te = 0, dok23 = 0;
+        results.forEach(r => {
+            area[mapAreaOf(r.q)]++;
+            if ((r.q.interaction || 'multiple_choice') !== 'multiple_choice') te++;
+            if ((DOK_OF_TYPE[r.q.type] || 1) >= 2) dok23++;
+        });
+        return { n, area, te, dok23 };
+    }
+    function drawForSimulation(band) {
+        const mix = simulationMix(state.results);
+        const least = Math.min(...Object.values(mix.area));
+        const areas = Object.keys(mix.area).filter(a => mix.area[a] === least);
+        const area = areas[Math.floor(Math.random() * areas.length)];
+        const filter = SKILL_FILTERS[MAP_AREA_FILTER[area]];
+        let lvl = band;
+        if (!FRAMES[lvl].some(filter)) lvl = nearestSkillLevel(band, filter) || band;
+        const frames = FRAMES[lvl].filter(filter);
+        if (!frames.length) return drawForLevel(band, null, null);
+        const wantTE = mix.n === 0 ? Math.random() < 0.3 : mix.te / mix.n < 0.3;
+        const wantDok = mix.n === 0 ? Math.random() < 0.45 : mix.dok23 / mix.n < 0.45;
+        // Top bands have few interactive frames: borrow one from the band below.
+        const isTE = f => frameInteraction(f) !== 'multiple_choice';
+        if (wantTE && !frames.some(isTE)) {
+            const below = LEVELS[LEVELS.indexOf(lvl) - 1];
+            const alt = below ? FRAMES[below].filter(f => filter(f) && isTE(f)) : [];
+            if (alt.length) return drawFrame(alt[Math.floor(Math.random() * alt.length)], below);
+        }
+        const score = f => ((frameInteraction(f) !== 'multiple_choice') === wantTE ? 2 : 0)
+            + (((DOK_OF_TYPE[f.type] || 1) >= 2) === wantDok ? 1 : 0)
+            + (f.queue.length > 0 ? 0.5 : 0);
+        const best = Math.max(...frames.map(score));
+        const pool = frames.filter(f => score(f) === best);
+        return drawFrame(pool[Math.floor(Math.random() * pool.length)], lvl);
+    }
     // Fine-grained skill groups (question `type` -> student-facing skill). Every
     // type belongs to exactly one group; levels without a group's types borrow
     // from the nearest level that has them (nearestSkillLevel).
@@ -3753,7 +3814,9 @@
             const d = document.createElement('div');
             d.className = 'option-card';
             const letter = String.fromCharCode(65 + i);
-            d.innerHTML = `<div class="option-letter">${letter}</div> ${opt}`;
+            d.innerHTML = `<div class="option-letter">${letter}</div> <span class="opt-text" style="flex:1;">${opt}</span><button type="button" class="opt-elim" title="Rule out this answer" aria-label="Rule out option ${letter}">✕</button>`;
+            // Answer eliminator (like MAP's): strike an option out; tap ✕ again to undo.
+            d.querySelector('.opt-elim').onclick = (e) => { e.stopPropagation(); d.classList.toggle('eliminated'); };
             d.onclick = () => {
                 // immediate score for MC (legacy UX)
                 const correctVal = q.answerKey ? (Array.isArray(q.answerKey.correct) ? q.answerKey.correct[0] : q.answerKey.correct) : q.answer;
@@ -7344,7 +7407,14 @@
         const mode = document.getElementById('mode-select').value;
         const p = mode === 'adaptive_40_sets' ? 0.75 : 0.35;
         if (Math.random() > p) return null;
-        return buildPassageSet(band);
+        const set = buildPassageSet(band);
+        // Simulation keeps the three MAP areas balanced: skip a set whose area
+        // is already ahead (e.g. back-to-back literary story sets at A1).
+        if (set && set.length && isSimulationMode(mode)) {
+            const mix = simulationMix(state.results);
+            if (mix.area[mapAreaOf(set[0])] > Math.min(...Object.values(mix.area))) return null;
+        }
+        return set;
     }
 
     // ===================== STATE =====================
@@ -7454,7 +7524,7 @@
         return m || 'accurate';
     }
     const MODE_CATEGORY_DESC = {
-        sim: '⏱️ Timed &nbsp;•&nbsp; 🧠 Adaptive difficulty &nbsp;•&nbsp; 🚫 No instant answers &nbsp;•&nbsp; 🎯 Minimal distractions &nbsp;•&nbsp; 🖥️ Realistic test interface &nbsp;•&nbsp; 📄 Full-length simulation &nbsp;•&nbsp; 📊 Results afterward',
+        sim: '💡 Adaptive: expect to get about half right — that is how it finds your level &nbsp;•&nbsp; ⏱️ Timed &nbsp;•&nbsp; 🧠 Adaptive difficulty &nbsp;•&nbsp; 🚫 No instant answers &nbsp;•&nbsp; 🎯 Minimal distractions &nbsp;•&nbsp; 🖥️ Realistic test interface &nbsp;•&nbsp; 📄 Full-length simulation &nbsp;•&nbsp; 📊 Results afterward',
         train: '💬 Practice freely with feedback and explanations enabled after each question.'
     };
     function setModeCategory(cat) {
@@ -7946,7 +8016,7 @@
                 q = setItems[0];
                 state.setQueue = setItems.slice(1);
             } else {
-                q = drawForLevel(band, null, state.skillFilter);
+                q = (!state.skillFilter && isSimulationMode(mode)) ? drawForSimulation(band) : drawForLevel(band, null, state.skillFilter);
                 q.band = band;
                 state.activeSetId = null;
             }
@@ -8433,7 +8503,7 @@
     // dynamically from many combinations and is not machine-translated here —
     // the report says so plainly rather than silently leaving it in English.
     const REPORT_I18N = {
-        en: { reportTitle:"Diagnostic Report", finalRit:"Final RIT Score", lexileLevel:"Lexile Level", personalGrowth:"Personal Growth", growthDesc:"Compares this attempt to this student's own past attempts of the same test type.", achievement:"ACHIEVEMENT (RIT)", growthSinceLast:"GROWTH SINCE LAST", approxLexile:"APPROX. LEXILE", cefrLevelAttained:"CEFR Level Attained", attainmentByBand:"Attainment by CEFR Band", tblBand:"Band", tblQuestions:"Questions", tblCorrect:"Correct", tblAccuracy:"Accuracy", analysis:"Analysis", teacherCanDo:"What the Teacher Can Do", studentCanDo:"What the Student Can Do", diagnosticBreakdown:"Diagnostic Breakdown", reference:"Reference", kindReminders:"Kind Reminders", noPerfectScore:"There is no perfect score. The test is computer-adaptive, meaning questions get harder or easier based on answers, so there is no maximum or \"100%\" score.", growthMatters:"Growth matters most. Typical academic growth per term ranges from 2 to 8 points, and progress over time is more important than a single score.", ritDisclaimer:"RIT score is a proprietary adaptive scoring index of NWEA MAP. It has been used here as an approximate only.", typicalRit:"Typical RIT Scores by Grade (Reading)", tblGrade:"Grade", tblTypicalRange:"Typical RIT Range", assessIntends:"This Assessment Intends to Assess", vocabDesc:"Vocabulary and Word Meaning: Tests word choice, word relationships, and figuring out word meanings using context.", infoDesc:"Comprehension of Informational Texts: Measures how well students understand, analyze, and find details in non-fiction and factual texts.", litDesc:"Comprehension of Literary Texts: Assesses the interpretation and analysis of stories, poems, and other fictional works.", viewPdf:"View PDF", sendTo:"Send To...", restart:"Restart", dynamicNote:"(Personalized feedback below is generated dynamically and currently shown in English only.)" },
+        en: { reportTitle:"Diagnostic Report", finalRit:"Estimated RIT (practice)", lexileLevel:"Lexile Level", personalGrowth:"Personal Growth", growthDesc:"Compares this attempt to this student's own past attempts of the same test type.", achievement:"ACHIEVEMENT (RIT)", growthSinceLast:"GROWTH SINCE LAST", approxLexile:"APPROX. LEXILE", cefrLevelAttained:"CEFR Level Attained", attainmentByBand:"Attainment by CEFR Band", tblBand:"Band", tblQuestions:"Questions", tblCorrect:"Correct", tblAccuracy:"Accuracy", analysis:"Analysis", teacherCanDo:"What the Teacher Can Do", studentCanDo:"What the Student Can Do", diagnosticBreakdown:"Diagnostic Breakdown", reference:"Reference", kindReminders:"Kind Reminders", noPerfectScore:"There is no perfect score. The test is computer-adaptive, meaning questions get harder or easier based on answers, so there is no maximum or \"100%\" score.", growthMatters:"Growth matters most. Typical academic growth per term ranges from 2 to 8 points, and progress over time is more important than a single score.", ritDisclaimer:"RIT score is a proprietary adaptive scoring index of NWEA MAP. It has been used here as an approximate only.", typicalRit:"Typical RIT Scores by Grade (Reading)", tblGrade:"Grade", tblTypicalRange:"Typical RIT Range", assessIntends:"This Assessment Intends to Assess", vocabDesc:"Vocabulary and Word Meaning: Tests word choice, word relationships, and figuring out word meanings using context.", infoDesc:"Comprehension of Informational Texts: Measures how well students understand, analyze, and find details in non-fiction and factual texts.", litDesc:"Comprehension of Literary Texts: Assesses the interpretation and analysis of stories, poems, and other fictional works.", viewPdf:"View PDF", sendTo:"Send To...", restart:"Restart", dynamicNote:"(Personalized feedback below is generated dynamically and currently shown in English only.)" },
         es: { reportTitle:"Informe de Diagnóstico", finalRit:"Puntuación RIT Final", lexileLevel:"Nivel Lexile", personalGrowth:"Crecimiento Personal", growthDesc:"Compara este intento con los intentos anteriores del mismo tipo de prueba de este estudiante.", achievement:"LOGRO (RIT)", growthSinceLast:"CRECIMIENTO DESDE LA ÚLTIMA VEZ", approxLexile:"LEXILE APROX.", cefrLevelAttained:"Nivel CEFR Alcanzado", attainmentByBand:"Logro por Nivel CEFR", tblBand:"Nivel", tblQuestions:"Preguntas", tblCorrect:"Correctas", tblAccuracy:"Precisión", analysis:"Análisis", teacherCanDo:"Qué Puede Hacer el Docente", studentCanDo:"Qué Puede Hacer el Estudiante", diagnosticBreakdown:"Desglose Diagnóstico", reference:"Referencia", kindReminders:"Recordatorios Importantes", noPerfectScore:"No existe una puntuación perfecta. La prueba es adaptativa por computadora, lo que significa que las preguntas se vuelven más difíciles o más fáciles según las respuestas, por lo que no hay una puntuación máxima ni un \"100%\".", growthMatters:"El crecimiento es lo más importante. El crecimiento académico típico por trimestre varía entre 2 y 8 puntos, y el progreso a lo largo del tiempo es más importante que una sola puntuación.", ritDisclaimer:"La puntuación RIT es un índice de puntuación adaptativa patentado de NWEA MAP. Aquí se ha utilizado solo como una aproximación.", typicalRit:"Puntuaciones RIT Típicas por Grado (Lectura)", tblGrade:"Grado", tblTypicalRange:"Rango RIT Típico", assessIntends:"Esta Evaluación Pretende Evaluar", vocabDesc:"Vocabulario y Significado de Palabras: Evalúa la elección de palabras, las relaciones entre palabras y la capacidad de deducir significados usando el contexto.", infoDesc:"Comprensión de Textos Informativos: Mide qué tan bien los estudiantes comprenden, analizan y encuentran detalles en textos no ficticios y factuales.", litDesc:"Comprensión de Textos Literarios: Evalúa la interpretación y el análisis de cuentos, poemas y otras obras de ficción.", viewPdf:"Ver PDF", sendTo:"Enviar a...", restart:"Reiniciar", dynamicNote:"(La retroalimentación personalizada a continuación se genera dinámicamente y actualmente se muestra solo en inglés.)" },
         fr: { reportTitle:"Rapport de Diagnostic", finalRit:"Score RIT Final", lexileLevel:"Niveau Lexile", personalGrowth:"Croissance Personnelle", growthDesc:"Compare cette tentative aux tentatives précédentes de cet élève pour le même type de test.", achievement:"RÉUSSITE (RIT)", growthSinceLast:"CROISSANCE DEPUIS LA DERNIÈRE FOIS", approxLexile:"LEXILE APPROX.", cefrLevelAttained:"Niveau CECR Atteint", attainmentByBand:"Réussite par Niveau CECR", tblBand:"Niveau", tblQuestions:"Questions", tblCorrect:"Correctes", tblAccuracy:"Précision", analysis:"Analyse", teacherCanDo:"Ce Que l'Enseignant Peut Faire", studentCanDo:"Ce Que l'Élève Peut Faire", diagnosticBreakdown:"Détail du Diagnostic", reference:"Référence", kindReminders:"Rappels Utiles", noPerfectScore:"Il n'y a pas de score parfait. Le test est informatisé et adaptatif, ce qui signifie que les questions deviennent plus difficiles ou plus faciles selon les réponses ; il n'y a donc pas de score maximal ni de \"100 %\".", growthMatters:"La progression est ce qui compte le plus. La croissance académique typique par trimestre varie de 2 à 8 points, et les progrès dans le temps sont plus importants qu'un score isolé.", ritDisclaimer:"Le score RIT est un indice de notation adaptative propriétaire de NWEA MAP. Il est utilisé ici uniquement à titre indicatif.", typicalRit:"Scores RIT Typiques par Niveau Scolaire (Lecture)", tblGrade:"Niveau scolaire", tblTypicalRange:"Plage RIT Typique", assessIntends:"Cette Évaluation Vise à Évaluer", vocabDesc:"Vocabulaire et Sens des Mots : Évalue le choix des mots, les relations entre les mots et la capacité à déduire le sens à partir du contexte.", infoDesc:"Compréhension de Textes Informatifs : Mesure la capacité des élèves à comprendre, analyser et repérer des détails dans des textes factuels et non fictionnels.", litDesc:"Compréhension de Textes Littéraires : Évalue l'interprétation et l'analyse d'histoires, de poèmes et d'autres œuvres de fiction.", viewPdf:"Voir le PDF", sendTo:"Envoyer à...", restart:"Recommencer", dynamicNote:"(Les commentaires personnalisés ci-dessous sont générés dynamiquement et actuellement affichés en anglais uniquement.)" },
         zh: { reportTitle:"诊断报告", finalRit:"最终RIT分数", lexileLevel:"Lexile等级", personalGrowth:"个人成长", growthDesc:"将本次测试结果与该学生过去同类型测试的历次结果进行比较。", achievement:"本次成绩（RIT）", growthSinceLast:"较上次的进步", approxLexile:"大约Lexile值", cefrLevelAttained:"达到的CEFR等级", attainmentByBand:"各CEFR等级的表现", tblBand:"等级", tblQuestions:"题数", tblCorrect:"正确数", tblAccuracy:"正确率", analysis:"分析", teacherCanDo:"教师可以做什么", studentCanDo:"学生可以做什么", diagnosticBreakdown:"诊断明细", reference:"参考信息", kindReminders:"温馨提示", noPerfectScore:"没有满分。该测试是计算机自适应测试，题目难度会根据作答情况变化，因此没有最高分或“100%”这一说法。", growthMatters:"进步最重要。每学期的典型学业进步幅度约为2到8分，长期的进步比单次分数更重要。", ritDisclaimer:"RIT分数是NWEA MAP的专有自适应评分指标，此处仅作为近似参考使用。", typicalRit:"各年级典型RIT分数范围（阅读）", tblGrade:"年级", tblTypicalRange:"典型RIT范围", assessIntends:"本测试旨在评估", vocabDesc:"词汇与词义：测试选词能力、词语关系，以及利用上下文推断词义的能力。", infoDesc:"说明性文本理解：衡量学生理解、分析非虚构类和事实性文本，并从中提取细节的能力。", litDesc:"文学文本理解：评估学生对故事、诗歌及其他虚构作品的理解与分析能力。", viewPdf:"查看PDF", sendTo:"发送至...", restart:"重新开始", dynamicNote:"（以下个性化反馈为动态生成内容，目前仅提供英文版本。）" },
@@ -8572,6 +8642,7 @@
         renderPersonalGrowth();
         renderStudentSupport(weak, strong, finalBand);
         renderSkillStrengths();
+        renderMapAreas();
 
         const savedLang = localStorage.getItem('report_lang') || 'en';
         const langSel = document.getElementById('report-lang-select');
@@ -8888,6 +8959,30 @@
         const sel = document.getElementById('mode-select');
         if (sel) sel.value = modeValue;
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    // MAP Growth Reading reports three instructional areas. Estimate: overall
+    // RIT shifted by how this area went relative to the whole test (±15 max),
+    // shown as a small range. A practice estimate, not an official area score.
+    function renderMapAreas() {
+        const box = document.getElementById('res-map-areas');
+        if (!box) return;
+        const res = state.results;
+        if (res.length < 9) { box.innerHTML = ''; return; }
+        const overall = res.filter(r => r.correct).length / res.length;
+        const names = { literary: 'Literary Text', informational: 'Informational Text', vocab: 'Vocabulary' };
+        const rows = Object.keys(names).map(a => {
+            const items = res.filter(r => mapAreaOf(r.q) === a);
+            if (items.length < 3) return `<div class="pf-row" style="grid-template-columns:1fr auto;"><span>${names[a]}</span><span style="color:#94a3b8;">Not enough questions</span></div>`;
+            const acc = items.filter(r => r.correct).length / items.length;
+            const est = Math.round(state.rit + Math.max(-15, Math.min(15, (acc - overall) * 40)));
+            const label = acc - overall >= 0.1 ? ['🟢', 'Relative strength'] : acc - overall <= -0.1 ? ['🔴', 'Focus area'] : ['🟡', 'On par'];
+            return `<div class="pf-row" style="grid-template-columns:1fr 120px 150px;"><span><b>${names[a]}</b> <small style="color:#94a3b8;">(${items.length} questions)</small></span>
+                <span>Est. RIT ${est - 3}–${est + 3}</span><span>${label[0]} ${label[1]}</span></div>`;
+        }).join('');
+        const mix = simulationMix(res);
+        box.innerHTML = `<h3 style="margin-bottom:6px;">MAP-style areas</h3>${rows}
+            <p style="font-size:11px; color:#64748b; margin:8px 0 0;">Question mix: ${Math.round(mix.te / mix.n * 100)}% interactive (non-multiple-choice) · ${Math.round(mix.dok23 / mix.n * 100)}% deeper-thinking (DOK 2–3).</p>
+            <p style="font-size:12px; color:#0e7490; margin:6px 0 0;">💡 Adaptive tests are designed so students get <b>about half</b> of the questions right. Hard questions mean the test found your level; they are not a bad sign.</p>`;
     }
     function renderSkillStrengths() {
         const byType = computeByTypeAccuracy(state.results);
