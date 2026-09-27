@@ -343,7 +343,7 @@ as $function$
              then pr.nickname
              else coalesce(pr.display_name, 'Student') end as display_name,
         p.status,
-        (now() - p.last_seen_at) < interval '45 seconds' as is_connected,
+        (now() - p.last_seen_at) < interval '20 seconds' as is_connected,
         p.current_question_index,
         p.current_rit
     from edu_group_participants p
