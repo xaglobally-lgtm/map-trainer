@@ -29,8 +29,15 @@ NWEA MAP-style adaptive reading assessment PWA. Single-file HTML app (`index.htm
 - Get the anon key from Supabase dashboard → Settings → API (already wired into `index.html` — don't need to repaste unless rotating). Never expose the service role key client-side.
 
 ## Verified content count (2026-09-27, via Node vm harness — not estimated)
-- Main bank (`FRAMES`, A1–C2, 59 frames): 68,553 variants; Bloom's (`BLOOM_FRAMES`): 88; **total 68,641** (as of the content-depth PR). Passage sets: 11 templates (A1 and C2 now have 3 each).
-- Down from 85,169 on 2026-09-26 **on purpose**: the content audit removed incoherent slot combinations (vocab words paired with contradicting contexts, verb × topic Bloom nonsense like "Implement the weather"). Every remaining variant should make sense.
+**Primary metric = content variants**: raw slot combinations with every slot that is just the `NAMES` list divided out (a new name is not a new question). Raw totals are reported too but are misleading — until 2026-09-27 one frame (`B2_dd_match`, three independent name slots) was 52,488 of 68,553 raw variants.
+
+| Level | A1 | A2 | B1 | B2 | C1 | C2 | Total |
+|---|---|---|---|---|---|---|---|
+| Content variants | 8,449 | 764 | 467 | 251 | 256 | 166 | **10,353** |
+| Before F (2026-09-27) | 8,449 | 336 | 223 | 117 | 122 | 78 | 9,325 |
+
+Raw: 22,576 main bank + 88 Bloom's = 22,664. Passage-set templates: 9 (A1 and C2 have 3 each). A1's count is mostly `A1_color`'s colour × animal × place × feeling product — real but shallow; A2–C2 are bundle-based.
+- Harness scripts used: `content_count.js` (metric above), `sweep.js` (template leaks, single-char/duplicate options, key-in-options, "a"+vowel, `.?`), `verify_routing.js` (18 skill × level combos must be 500/500 on-skill), `pronscan.js` (passages must not open with a dangling It/They/This). Rebuild them from the "Verification method" section if the scratchpad is gone.
 - **Content rule:** slots that must agree (word ↔ context sentence, weather ↔ action, place ↔ animal, verb ↔ prompt) are stored together as one bundle, never as independent slots.
 - **Label rule:** skill modes filter on `type === 'Vocabulary'` and on `ccss` starting with `RI` (Informational) or `RL` (Literary). Label by the *text type* (story vs nonfiction), not the question type — a story tagged `RI` leaks into Informational mode.
 
