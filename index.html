@@ -2403,7 +2403,14 @@
     // the sentence itself must make the meaning clear. Until this bank has
     // entries, Grade 1 vocabulary practice borrows A2 items (nearestSkillLevel).
     const A1_VOCAB = [
-        // TODO: add 4-8 Grade 1 words in the format described above.
+        { word: "huge", def: "very big", wrong: ["very small", "very fast", "very wet"], ctx: "{n} saw a huge dog. It was as big as a pony!" },
+        { word: "tiny", def: "very small", wrong: ["very big", "very loud", "very old"], ctx: "{n} found a tiny bug. It was as small as a seed." },
+        { word: "soggy", def: "very wet", wrong: ["very dry", "very hot", "very hard"], ctx: "{n} dropped the bread in the rain. Now it was soggy and wet." },
+        { word: "gentle", def: "soft and kind", wrong: ["loud and rough", "fast and wild", "sad and slow"], ctx: "{n} was gentle with the baby bird. {n} held it softly." },
+        { word: "grumpy", def: "in a bad mood", wrong: ["in a happy mood", "very sleepy", "very hungry"], ctx: "{n} was grumpy. {n} frowned and did not want to play." },
+        { word: "silly", def: "funny and not serious", wrong: ["sad and quiet", "mean and angry", "tired and slow"], ctx: "{n} made a silly face. Everyone laughed and laughed." },
+        { word: "shiny", def: "bright and glowing", wrong: ["dark and dull", "soft and furry", "cold and wet"], ctx: "{n} found a shiny coin. It glowed in the sun." },
+        { word: "chilly", def: "a little cold", wrong: ["very hot", "very dry", "very loud"], ctx: "It was chilly outside, so {n} put on a warm hat." }
     ];
     const A1_vocab = F("Vocabulary", "L.1.4", "feelings",
         { name: NAMES, w: A1_VOCAB },
