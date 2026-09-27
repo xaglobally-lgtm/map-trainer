@@ -8538,7 +8538,7 @@
             </div>`).join('') + '<p style="font-size:10px; color:#94a3b8; margin:4px 0 0;">Weakest first. Hover a bar for the number of questions behind it.</p>'
             : '<p style="font-size:12px; color:#94a3b8;">Skill breakdown appears after a finished test or signed-in practice.</p>';
         const fmtD = d => new Date(d).toLocaleDateString();
-        const label = x => x.practice ? modeOptionLabel(x.mode) : (x.mode ? modeOptionLabel(x.mode) : 'Adaptive test');
+        const label = x => x.practice ? modeOptionLabel(x.mode) : (x.questions ? `Adaptive test (${x.questions} questions)` : 'Adaptive test');
         const recent = sessions.slice(-10).reverse().map(x => `<div class="pf-row"><span>${fmtD(x.date)}</span>
             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${x.practice ? '📚' : '🎯'} ${escapeHtml(label(x))}</span>
             <b style="text-align:right;">${x.questions ? Math.round(x.correct / x.questions * 100) + '%' : '—'}${x.rit != null && !x.practice ? ` · ${x.rit}` : ''}</b></div>`).join('');
