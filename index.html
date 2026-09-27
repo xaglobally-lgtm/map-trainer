@@ -185,6 +185,13 @@
         .badge-theme { background: #fef3c7; color: #b45309; }
         .badge-cefr { background: #d1fae5; color: #047857; }
         .badge-progress { background: #f1f5f9; color: #475569; }
+        .host-ctl { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 6px; padding: 3px 7px; font-size: 11px; font-weight: 800; cursor: pointer; }
+        .cd-tab { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 800; cursor: pointer; font-size: 12px; }
+        .cd-tab.on { background: var(--primary-grad); color: white; border-color: transparent; }
+        .cd-row { display: grid; grid-template-columns: 1.4fr .6fr .9fr .7fr .9fr; gap: 8px; align-items: center; padding: 7px 10px; border-radius: 8px; font-size: 12px; }
+        .cd-row:nth-child(even) { background: var(--bg); }
+        .cd-flag { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; font-size: 12px; display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .cd-btn { background: var(--primary-grad); color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; }
         /* Question track: one green segment per question; each fades out as it's completed. */
         .q-track { display: flex; align-items: center; gap: 10px; padding: 6px 20px; background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .q-segs { flex: 1; display: flex; gap: 2px; height: 14px; align-items: center; min-width: 0; }
@@ -714,6 +721,32 @@
             </div>
         </div>
 
+        <!-- CLASS DASHBOARD (teacher): analytics, suggestions, assignments -->
+        <div id="modal-class-dash" class="modal hidden">
+            <div class="modal-content" style="max-width:860px; width:95%; max-height:92vh; overflow-y:auto;">
+                <button type="button" class="modal-close" onclick="closeModal('modal-class-dash')" title="Close" aria-label="Close">×</button>
+                <h2 id="cd-title" style="margin-top:0;">Class dashboard</h2>
+                <div style="display:flex; gap:8px; margin-bottom:12px;">
+                    <button id="cd-tab-students" class="cd-tab on" onclick="setClassDashTab('students')">👥 Students &amp; suggestions</button>
+                    <button id="cd-tab-assign" class="cd-tab" onclick="setClassDashTab('assign')">📌 Assigned practice</button>
+                </div>
+                <div id="cd-students"></div>
+                <div id="cd-assign" class="hidden">
+                    <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:12px;">
+                        <div style="font-weight:900; margin-bottom:8px;">New assignment</div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <select id="cd-new-mode" style="flex:2; min-width:200px; padding:8px; border-radius:8px; border:1px solid var(--border);"></select>
+                            <select id="cd-new-student" style="flex:1; min-width:150px; padding:8px; border-radius:8px; border:1px solid var(--border);"></select>
+                            <input id="cd-new-due" type="date" title="Due date (optional)" style="padding:8px; border-radius:8px; border:1px solid var(--border);">
+                        </div>
+                        <input id="cd-new-note" maxlength="500" placeholder="Note for students (optional)" style="width:100%; margin-top:8px; padding:8px; border-radius:8px; border:1px solid var(--border);">
+                        <button class="cd-btn" style="margin-top:8px; padding:8px 14px;" onclick="createAssignmentFromForm()">Assign</button>
+                    </div>
+                    <div id="cd-assign-list"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- LEADERBOARD -->
         <div id="modal-leaderboard" class="modal hidden">
             <div class="modal-content" style="max-height:90vh; overflow-y:auto;">
@@ -750,6 +783,7 @@
             </label>
 
             <div id="player-card" class="hidden" style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:16px;"></div>
+            <div id="assigned-practice" class="hidden" style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:12px 14px; margin-bottom:16px; text-align:left;"></div>
             <div id="smart-recommendation" class="hidden" style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px 14px; margin-bottom:16px;"></div>
 
             <!-- CERTIFICATES -->
@@ -810,7 +844,7 @@
     <!-- TESTING -->
     <div id="live-pause-overlay" class="hidden" style="position:fixed; inset:0; z-index:200; background:rgba(15,23,42,0.85); color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px;">
         <div style="font-size:64px;">⏸</div>
-        <div style="font-size:28px; font-weight:900; margin-top:10px;">Your teacher has paused the session</div>
+        <div id="live-pause-title" style="font-size:28px; font-weight:900; margin-top:10px;">Your teacher has paused the session</div>
         <div style="font-size:15px; opacity:0.8; margin-top:8px;">Your time is frozen. The test will continue when your teacher resumes.</div>
     </div>
     <div id="live-student-board" class="hidden" style="position:fixed; right:16px; bottom:16px; z-index:90; width:230px; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:14px; box-shadow:0 6px 20px rgba(0,0,0,0.15); padding:10px 12px; font-size:12px;"></div>
@@ -1177,6 +1211,7 @@
             loadMyClasses();
             loadNicknamePreference();
         }
+        if (typeof loadMyAssignments === 'function') loadMyAssignments();
         if (typeof updateMenu === 'function') updateMenu();
         refreshTrialOptionVisibility();
         refreshConnectButtons();
@@ -1308,7 +1343,8 @@
         const rows = [];
         (owned || []).forEach(c => rows.push(`<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:#f8fafc; border-radius:8px; margin-bottom:4px; font-size:12px;">
             <span>👩‍🏫 <b>${escapeHtml(c.name)}</b> — code <code>${c.join_code}</code></span>
-            <button onclick="openLeaderboard('${c.id}','${escapeHtml(c.name)}')" style="background:var(--primary-grad); color:white; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">Leaderboard</button>
+            <span style="display:flex; gap:4px;"><button onclick="openClassDashboard('${c.id}','${escapeHtml(c.name)}')" class="cd-btn" style="background:#7c3aed;">📊 Dashboard</button>
+            <button onclick="openLeaderboard('${c.id}','${escapeHtml(c.name)}')" style="background:var(--primary-grad); color:white; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">Leaderboard</button></span>
         </div>`));
         joined.forEach(c => rows.push(`<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:#f8fafc; border-radius:8px; margin-bottom:4px; font-size:12px;">
             <span>🎓 <b>${escapeHtml(c.name)}</b></span>
@@ -1316,6 +1352,201 @@
         </div>`));
         listEl.innerHTML = rows.length ? rows.join('') : '<p style="font-size:11px; color:#94a3b8;">No classes yet.</p>';
     }
+    // ===================== CLASS DASHBOARD (teacher) =====================
+    let CD = null; // { classId, name, rows, assignments }
+    function trainingModeOptions() {
+        return Array.from(document.querySelectorAll('#mode-select option'))
+            .filter(o => o.dataset.cat === 'train' || (o.parentElement && o.parentElement.dataset && o.parentElement.dataset.cat === 'train'))
+            .map(o => ({ value: o.value, label: (o.dataset.baseLabel || o.textContent).replace(/^🔒 /, '') }));
+    }
+    function modeLabel(mode) {
+        const o = trainingModeOptions().find(x => x.value === mode);
+        return o ? o.label : mode;
+    }
+    async function openClassDashboard(classId, name) {
+        CD = { classId, name, rows: [], assignments: [] };
+        document.getElementById('cd-title').innerText = '📊 ' + name;
+        document.getElementById('cd-students').innerHTML = '<p style="font-size:12px; color:#94a3b8;">Loading…</p>';
+        setClassDashTab('students');
+        openModal('modal-class-dash');
+        const { data, error } = await sb.rpc('get_class_analytics', { p_class_id: classId });
+        if (error) { document.getElementById('cd-students').innerHTML = `<p style="color:#dc2626; font-size:12px;">${escapeHtml(error.message)}</p>`; return; }
+        CD.rows = data || [];
+        renderClassStudents();
+        const sel = document.getElementById('cd-new-mode');
+        sel.innerHTML = trainingModeOptions().map(o => `<option value="${o.value}">${escapeHtml(o.label)}</option>`).join('');
+        const stu = document.getElementById('cd-new-student');
+        stu.innerHTML = '<option value="">Whole class</option>' + CD.rows.map(r => `<option value="${r.student_id}">${escapeHtml(r.display_name)}</option>`).join('');
+        loadClassAssignments();
+    }
+    function setClassDashTab(tab) {
+        document.getElementById('cd-students').classList.toggle('hidden', tab !== 'students');
+        document.getElementById('cd-assign').classList.toggle('hidden', tab !== 'assign');
+        document.getElementById('cd-tab-students').classList.toggle('on', tab === 'students');
+        document.getElementById('cd-tab-assign').classList.toggle('on', tab === 'assign');
+    }
+    const DAY_MS = 86400000;
+    // Rule-based flags from the student's own history; each suggests a
+    // Training mode the teacher can assign in one click.
+    function interventionsFor(r) {
+        const out = [];
+        const weak = Object.entries(r.by_type || {})
+            .filter(([, v]) => v.total >= 5)
+            .map(([type, v]) => ({ type, ccss: v.ccss, pct: v.correct / v.total }))
+            .sort((a, b) => a.pct - b.pct)[0];
+        const weakMode = weak ? closestSkillPracticeMode(weak.type, weak.ccss) : 'vocab_20';
+        if (!r.last_active) {
+            out.push({ text: 'Has not finished any test or practice yet.', mode: 'tech_5' });
+            return out;
+        }
+        const idle = Math.floor((Date.now() - new Date(r.last_active).getTime()) / DAY_MS);
+        if (idle >= 14) out.push({ text: `No activity for ${idle} days.`, mode: weakMode });
+        if (r.tests_completed >= 2 && r.latest_rit != null && r.first_rit != null && r.latest_rit <= r.first_rit - 3)
+            out.push({ text: `RIT dropped ${r.first_rit - r.latest_rit} points since the first test.`, mode: weakMode });
+        if (r.avg_accuracy != null && r.avg_accuracy < 0.5)
+            out.push({ text: `Average accuracy is ${Math.round(r.avg_accuracy * 100)}%.`, mode: weakMode });
+        if (weak && weak.pct < 0.6)
+            out.push({ text: `Struggling with ${weak.type} (${Math.round(weak.pct * 100)}% correct).`, mode: weakMode });
+        return out;
+    }
+    function renderClassStudents() {
+        const box = document.getElementById('cd-students');
+        if (!CD.rows.length) { box.innerHTML = '<p style="font-size:12px; color:#94a3b8;">No students have joined this class yet. Share the class code from the Account screen.</p>'; return; }
+        const rows = CD.rows.slice().sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
+        // One line per student: all their flags together, one suggested practice.
+        const flags = [];
+        rows.forEach(r => {
+            const fs = interventionsFor(r);
+            if (fs.length) flags.push({ r, f: { text: fs.map(x => x.text).join(' '), mode: fs[0].mode } });
+        });
+        const flagHtml = flags.length
+            ? flags.map(({ r, f }, k) => `<div class="cd-flag"><span>⚠️ <b>${escapeHtml(r.display_name)}</b>: ${escapeHtml(f.text)}</span>
+                <button class="cd-btn" onclick="assignSuggested(${k})">Assign ${escapeHtml(modeLabel(f.mode))}</button></div>`).join('')
+            : '<p style="font-size:12px; color:#16a34a;">✅ No students need attention right now.</p>';
+        CD.flags = flags;
+        const fmtDate = d => d ? new Date(d).toLocaleDateString() : '—';
+        const table = rows.map(r => {
+            const delta = (r.latest_rit != null && r.first_rit != null) ? r.latest_rit - r.first_rit : null;
+            const weak = Object.entries(r.by_type || {}).filter(([, v]) => v.total >= 5)
+                .map(([t, v]) => [t, v.correct / v.total]).sort((a, b) => a[1] - b[1])[0];
+            return `<div class="cd-row">
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><b>${escapeHtml(r.display_name)}</b><br><small style="color:#64748b;">${r.tests_completed} tests · ${r.practice_completed} practice</small></span>
+                <span>${r.latest_rit ?? '—'}${delta != null ? `<br><small style="color:${delta >= 0 ? '#16a34a' : '#dc2626'};">${delta >= 0 ? '+' : ''}${delta}</small>` : ''}</span>
+                <span>${r.avg_accuracy != null ? Math.round(r.avg_accuracy * 100) + '%' : '—'}</span>
+                <span>${fmtDate(r.last_active)}</span>
+                <span>${weak ? `${escapeHtml(weak[0])} <small>(${Math.round(weak[1] * 100)}%)</small>` : '—'}</span>
+            </div>`;
+        }).join('');
+        box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">Suggestions</div>${flagHtml}
+            <div style="font-weight:900; margin:14px 0 6px;">Students</div>
+            <div style="overflow-x:auto;"><div style="min-width:520px;">
+            <div class="cd-row" style="color:#94a3b8; font-size:11px;"><span>Student</span><span>RIT (Δ)</span><span>Accuracy</span><span>Last active</span><span>Weakest skill</span></div>
+            ${table}</div></div>
+            <p style="font-size:10px; color:#94a3b8; margin-top:8px;">RIT comes from adaptive tests only. Accuracy and skills include practice. Skills need at least 5 answered questions.</p>`;
+    }
+    async function assignSuggested(k) {
+        const item = CD && CD.flags && CD.flags[k];
+        if (!item) return;
+        await createAssignment({ mode: item.f.mode, studentId: item.r.student_id, note: item.f.text });
+    }
+    async function createAssignmentFromForm() {
+        const due = document.getElementById('cd-new-due').value;
+        await createAssignment({
+            mode: document.getElementById('cd-new-mode').value,
+            studentId: document.getElementById('cd-new-student').value || null,
+            note: (document.getElementById('cd-new-note').value || '').trim() || null,
+            dueAt: due ? new Date(due + 'T23:59:00').toISOString() : null
+        });
+        document.getElementById('cd-new-note').value = '';
+    }
+    async function createAssignment({ mode, studentId, note, dueAt }) {
+        if (!CD || !mode) return;
+        const { error } = await sb.from('edu_assignments').insert({
+            class_id: CD.classId, teacher_id: window.MAP_USER.id, student_id: studentId || null,
+            mode, title: modeLabel(mode), note: note || null, due_at: dueAt || null
+        });
+        if (error) { alert('Could not assign: ' + error.message); return; }
+        const who = studentId ? (CD.rows.find(r => r.student_id === studentId) || {}).display_name : 'the whole class';
+        showDashNotice(`Assigned "${modeLabel(mode)}" to ${who}.`);
+        loadClassAssignments();
+    }
+    function showDashNotice(text) {
+        const box = document.getElementById('cd-title');
+        const n = document.createElement('div');
+        n.style.cssText = 'font-size:12px; color:#16a34a; font-weight:800; margin:-4px 0 8px;';
+        n.innerText = '✓ ' + text;
+        box.after(n);
+        setTimeout(() => n.remove(), 4000);
+    }
+    async function loadClassAssignments() {
+        const list = document.getElementById('cd-assign-list');
+        const { data, error } = await sb.from('edu_assignments').select('*').eq('class_id', CD.classId).order('created_at', { ascending: false });
+        if (error) { list.innerHTML = `<p style="color:#dc2626; font-size:12px;">${escapeHtml(error.message)}</p>`; return; }
+        CD.assignments = data || [];
+        if (!CD.assignments.length) { list.innerHTML = '<p style="font-size:12px; color:#94a3b8;">No assignments yet.</p>'; return; }
+        const progress = await Promise.all(CD.assignments.map(a => sb.rpc('get_assignment_progress', { p_assignment_id: a.id }).then(r => r.data || [])));
+        list.innerHTML = CD.assignments.map((a, i) => {
+            const pr = progress[i];
+            const done = pr.filter(x => x.completed);
+            const who = a.student_id ? escapeHtml((CD.rows.find(r => r.student_id === a.student_id) || {}).display_name || 'One student') : 'Whole class';
+            const pending = pr.filter(x => !x.completed).map(x => escapeHtml(x.display_name)).join(', ');
+            return `<div style="border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:8px; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+                    <b>📌 ${escapeHtml(a.title)}</b>
+                    <span><b style="color:${done.length === pr.length && pr.length ? '#16a34a' : '#b45309'};">${done.length}/${pr.length} done</b>
+                    <button class="host-ctl" style="margin-left:6px;" onclick="deleteAssignment('${a.id}')" title="Remove assignment">🗑</button></span>
+                </div>
+                <div style="color:#64748b; margin-top:2px;">${who}${a.due_at ? ' · due ' + new Date(a.due_at).toLocaleDateString() : ''}${a.note ? ' · ' + escapeHtml(a.note) : ''}</div>
+                ${pending ? `<div style="margin-top:4px;">Not done yet: ${pending}</div>` : ''}
+            </div>`;
+        }).join('');
+    }
+    async function deleteAssignment(id) {
+        if (!confirm('Remove this assignment for everyone?')) return;
+        const { error } = await sb.from('edu_assignments').delete().eq('id', id);
+        if (error) { alert(error.message); return; }
+        loadClassAssignments();
+    }
+
+    // ===================== ASSIGNED PRACTICE (student) =====================
+    async function loadMyAssignments() {
+        const box = document.getElementById('assigned-practice');
+        if (!box) return;
+        if (!sb || !window.MAP_USER) { box.classList.add('hidden'); return; }
+        const { data: asg } = await sb.from('edu_assignments').select('id,mode,title,note,due_at,created_at,student_id,class_id')
+            .order('created_at', { ascending: false }).limit(20);
+        // RLS returns only assignments for my classes (whole class or me), but a
+        // teacher would also see their own — only show ones where I'm a member.
+        const { data: mem } = await sb.from('edu_class_members').select('class_id').eq('student_id', window.MAP_USER.id);
+        const myClasses = new Set((mem || []).map(m => m.class_id));
+        const mine = (asg || []).filter(a => myClasses.has(a.class_id));
+        if (!mine.length) { box.classList.add('hidden'); return; }
+        const { data: done } = await sb.from('map_test_sessions').select('mode,completed_at')
+            .eq('user_id', window.MAP_USER.id).eq('cancelled', false).not('completed_at', 'is', null)
+            .in('mode', [...new Set(mine.map(a => a.mode))]);
+        const isDone = a => (done || []).some(d => d.mode === a.mode && new Date(d.completed_at) >= new Date(a.created_at));
+        const pending = mine.filter(a => !isDone(a));
+        if (!pending.length) { box.classList.add('hidden'); return; }
+        box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">📌 Assigned by your teacher</div>` + pending.map(a => `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; border-top:1px solid #ede9fe; flex-wrap:wrap;">
+                <span style="font-size:13px;"><b>${escapeHtml(a.title)}</b>${a.due_at ? ` <small style="color:#7c3aed;">due ${new Date(a.due_at).toLocaleDateString()}</small>` : ''}${a.note ? `<br><small style="color:#64748b;">${escapeHtml(a.note)}</small>` : ''}</span>
+                <button class="cd-btn" style="background:#7c3aed;" onclick="startAssignedPractice('${a.mode}')">Start →</button>
+            </div>`).join('');
+        box.classList.remove('hidden');
+    }
+    function startAssignedPractice(mode) {
+        const sel = document.getElementById('mode-select');
+        const opt = sel && Array.from(sel.options).find(o => o.value === mode);
+        if (!opt) return;
+        const cat = opt.dataset.cat || (opt.parentElement && opt.parentElement.dataset && opt.parentElement.dataset.cat) || 'train';
+        setModeCategory(cat);
+        sel.value = mode;
+        if (typeof onModeSelectChange === 'function') onModeSelectChange();
+        const nameEl = document.getElementById('student-name');
+        if (nameEl && !nameEl.value.trim()) { nameEl.focus(); alert('Type your name first, then press Start again.'); return; }
+        startSession();
+    }
+
     let currentLeaderboardClassId = null;
     let currentLeaderboardRows = [];
     async function openLeaderboard(classId, className) {
@@ -1369,7 +1600,7 @@
                 completed_at: new Date().toISOString(),
                 by_type: summary.byType || null
             }).select('id').single();
-            if (sessionRow) {
+            if (sessionRow && !summary.practiceOnly) { // practice has no RIT to chart
                 await sb.from('map_history_points').insert({
                     user_id: window.MAP_USER.id, session_id: sessionRow.id,
                     rit: summary.ritEnd, lexile: summary.lexileEnd
@@ -1443,12 +1674,21 @@
         const row = data[0];
         const { data: sess } = await sb.from('edu_group_sessions').select('show_student_leaderboard,status').eq('id', row.session_id).maybeSingle();
         stopLiveStudent(true);
+        const { data: me } = await sb.from('edu_group_participants')
+            .select('teacher_paused,extra_seconds,reset_count')
+            .eq('session_id', row.session_id).eq('student_id', window.MAP_USER.id).maybeSingle();
         LIVE = { role: 'student', sessionId: row.session_id, name: row.session_name, mode: row.session_mode,
-                 showBoard: !sess || sess.show_student_leaderboard !== false, status: row.session_status, timers: [] };
+                 showBoard: !sess || sess.show_student_leaderboard !== false, status: row.session_status, timers: [],
+                 teacherPaused: !!(me && me.teacher_paused), extraSeconds: (me && me.extra_seconds) || 0,
+                 resetCount: (me && me.reset_count) || 0, finished: false };
         localStorage.setItem('live_code', code); // lets a page reload rejoin automatically
         LIVE.channel = sb.channel('live-student-' + LIVE.sessionId)
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'edu_group_sessions', filter: 'id=eq.' + LIVE.sessionId },
                 payload => onLiveSessionStatus(payload.new.status))
+            // RLS only lets a student read their OWN participant row, so this
+            // delivers just the teacher's per-student controls for this student.
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'edu_group_participants', filter: 'session_id=eq.' + LIVE.sessionId },
+                payload => onOwnParticipantChange(payload.new))
             .subscribe();
         LIVE.timers.push(setInterval(() => liveHeartbeat(), LIVE_HEARTBEAT_MS));
         LIVE.timers.push(setInterval(() => refreshStudentBoard(), 5000));
@@ -1469,7 +1709,7 @@
             if (statusEl) statusEl.innerText = 'Waiting for your teacher to start…';
             startBtn.classList.add('hidden');
         } else if (status === 'active') {
-            hideLivePause();
+            applyLivePause();
             if (!isTestRunning()) {
                 // Fresh start (waiting -> active) begins immediately; a rejoin
                 // into an already-running session asks first, so it doesn't
@@ -1481,7 +1721,7 @@
                 }
             }
         } else if (status === 'paused') {
-            if (isTestRunning()) showLivePause();
+            if (isTestRunning()) applyLivePause();
             else if (statusEl) statusEl.innerText = 'Session paused by your teacher.';
         } else if (status === 'ended') {
             hideLivePause();
@@ -1498,8 +1738,55 @@
         if (sel) sel.value = LIVE.mode;
         startSession();
         if (LIVE.showBoard) document.getElementById('live-student-board').classList.remove('hidden');
+        LIVE.finished = false;
         refreshStudentBoard();
         liveHeartbeat({ status: 'active' });
+        applyLivePause(); // teacher may have paused this student before the start
+    }
+    // The teacher's per-student controls arrive as updates to this student's row.
+    function onOwnParticipantChange(row) {
+        if (!LIVE || !row || !window.MAP_USER || row.student_id !== window.MAP_USER.id) return;
+        if ((row.reset_count || 0) > LIVE.resetCount) {
+            LIVE.resetCount = row.reset_count;
+            LIVE.teacherPaused = false; LIVE.extraSeconds = 0;
+            restartLiveAttempt();
+            return;
+        }
+        if ((row.extra_seconds || 0) > LIVE.extraSeconds) {
+            const addedMin = Math.round(((row.extra_seconds || 0) - LIVE.extraSeconds) / 60);
+            showLiveNotice(`⏱ Your teacher gave you ${addedMin} more minute${addedMin === 1 ? '' : 's'}.`);
+        }
+        LIVE.extraSeconds = row.extra_seconds || 0;
+        if (!!row.teacher_paused !== LIVE.teacherPaused) {
+            LIVE.teacherPaused = !!row.teacher_paused;
+            applyLivePause();
+        }
+    }
+    // Paused if the whole session is paused OR the teacher paused just this student.
+    function applyLivePause() {
+        if (!LIVE) return;
+        const byTeacher = LIVE.teacherPaused;
+        const paused = LIVE.status === 'paused' || byTeacher;
+        const title = document.getElementById('live-pause-title');
+        if (title) title.innerText = (byTeacher && LIVE.status !== 'paused') ? 'Your teacher has paused your test' : 'Your teacher has paused the session';
+        if (paused && isTestRunning()) showLivePause();
+        else hideLivePause();
+    }
+    function restartLiveAttempt() {
+        if (!LIVE || LIVE.status === 'waiting') return;
+        clearInterval(state.timerObj); state.timerObj = null;
+        hideLivePause();
+        ['view-results', 'view-test'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+        showLiveNotice('↺ Your teacher reset your attempt. Starting again from question 1.');
+        startLiveTest();
+    }
+    function showLiveNotice(text) {
+        const el = document.createElement('div');
+        el.setAttribute('role', 'status');
+        el.style.cssText = 'position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:300; background:#0f172a; color:white; padding:12px 18px; border-radius:12px; font-weight:800; font-size:14px; box-shadow:0 10px 30px rgba(0,0,0,.3); max-width:90vw; text-align:center;';
+        el.innerText = text;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 5000);
     }
     async function liveHeartbeat(extra) {
         if (!LIVE || !sb || !window.MAP_USER) return;
@@ -1509,8 +1796,10 @@
             .eq('session_id', LIVE.sessionId).eq('student_id', window.MAP_USER.id);
     }
     function showLivePause() {
+        const ov = document.getElementById('live-pause-overlay');
+        if (ov && !ov.classList.contains('hidden')) return; // already paused
         clearInterval(state.timerObj); state.timerObj = null;
-        document.getElementById('live-pause-overlay').classList.remove('hidden');
+        ov.classList.remove('hidden');
         liveHeartbeat({ status: 'paused' });
     }
     function hideLivePause() {
@@ -1539,7 +1828,9 @@
         if (!LIVE) return;
         liveHeartbeat({ status: wasCancelled ? 'paused' : 'finished' });
         document.getElementById('live-student-board').classList.add('hidden');
-        if (!wasCancelled) { localStorage.removeItem('live_code'); stopLiveStudent(); }
+        // Keep listening (not stopLiveStudent) so a teacher reset still
+        // reaches a finished student; the session ending cleans up.
+        if (!wasCancelled) { localStorage.removeItem('live_code'); LIVE.finished = true; }
     }
     function stopLiveStudent(keepCode) {
         if (!LIVE) return;
@@ -1636,6 +1927,23 @@
         clearTimeout(hostEndTimer); hostEndArmed = false; btn.innerText = '■ End session';
         hostSetStatus('ended');
     }
+    // Per-student controls (teacher_control_participant checks server-side
+    // that the caller runs this session). Reset needs a second click.
+    let hostResetArmed = null, hostResetTimer = null;
+    async function hostControl(studentId, action) {
+        if (!HOST) return;
+        if (action === 'reset' && hostResetArmed !== studentId) {
+            hostResetArmed = studentId;
+            clearTimeout(hostResetTimer);
+            hostResetTimer = setTimeout(() => { hostResetArmed = null; refreshHostBoard(); }, 4000);
+            refreshHostBoard();
+            return;
+        }
+        if (action === 'reset') { hostResetArmed = null; clearTimeout(hostResetTimer); }
+        const { error } = await sb.rpc('teacher_control_participant', { p_session_id: HOST.sessionId, p_student_id: studentId, p_action: action, p_seconds: 300 });
+        if (error) alert(error.message);
+        refreshHostBoard();
+    }
     async function refreshHostBoard() {
         if (!HOST) return;
         const { data, error } = await sb.rpc('get_live_leaderboard', { p_session_id: HOST.sessionId });
@@ -1647,24 +1955,32 @@
         const dot = r => {
             if (r.status === 'finished') { done++; return '🏁'; }
             if (!r.is_connected) { off++; return '🔴'; }
-            if (r.status === 'paused' || HOST.status === 'paused') { paused++; return '🟡'; }
+            if (r.status === 'paused' || r.teacher_paused || HOST.status === 'paused') { paused++; return '🟡'; }
             on++; return '🟢';
         };
         const body = rows.map((r, i) => {
             const d = dot(r);
             const pct = Math.min(100, Math.round(((r.current_question_index || 0) / limit) * 100));
-            return `<div style="display:grid; grid-template-columns:34px 1fr 120px 60px 24px; gap:8px; align-items:center; padding:8px 10px; border-radius:10px; margin-bottom:4px; background:${i < 3 ? '#fff7ed' : 'var(--bg)'};">
+            const sid = r.student_id;
+            const armed = hostResetArmed === sid;
+            const ctl = `<span style="display:flex; gap:4px; justify-content:flex-end;">
+                    <button class="host-ctl" title="${r.teacher_paused ? 'Resume this student' : 'Pause this student'}" onclick="hostControl('${sid}','${r.teacher_paused ? 'resume' : 'pause'}')">${r.teacher_paused ? '▶' : '⏸'}</button>
+                    <button class="host-ctl" title="Give 5 more minutes" onclick="hostControl('${sid}','extend')">+5m</button>
+                    <button class="host-ctl" title="Reset this student's attempt" onclick="hostControl('${sid}','reset')" style="${armed ? 'background:#dc2626; color:white;' : ''}">${armed ? 'Sure?' : '↺'}</button>
+                </span>`;
+            return `<div style="display:grid; grid-template-columns:34px 1fr 120px 60px 24px 132px; gap:8px; align-items:center; padding:8px 10px; border-radius:10px; margin-bottom:4px; background:${i < 3 ? '#fff7ed' : 'var(--bg)'};">
                 <b>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.'}</b>
-                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(r.display_name)}</span>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(r.display_name)}${r.extra_seconds ? ` <small style="color:#0e7490;">+${Math.round(r.extra_seconds / 60)}m</small>` : ''}${r.teacher_paused ? ' <small style="color:#b45309;">paused</small>' : ''}</span>
                 <span title="Q${r.current_question_index || 0} of ${limit}"><span style="display:inline-block; width:80px; height:6px; background:#e2e8f0; border-radius:4px; vertical-align:middle;"><span style="display:block; height:6px; width:${pct}%; background:var(--primary-grad); border-radius:4px;"></span></span> <small>${r.current_question_index || 0}/${limit}</small></span>
                 <b style="text-align:right;">${r.current_rit || '—'}</b>
                 <span>${d}</span>
+                ${ctl}
             </div>`;
         }).join('');
         document.getElementById('host-live-counts').innerHTML =
             `🟢 ${on} online &nbsp; 🟡 ${paused} paused &nbsp; 🔴 ${off} disconnected &nbsp; 🏁 ${done} finished`;
         box.innerHTML = rows.length
-            ? `<div style="display:grid; grid-template-columns:34px 1fr 120px 60px 24px; gap:8px; font-size:11px; color:#94a3b8; padding:0 10px 4px;"><span>#</span><span>Student</span><span>Progress</span><span style="text-align:right;">RIT</span><span></span></div>` + body
+            ? `<div style="overflow-x:auto;"><div style="min-width:560px;"><div style="display:grid; grid-template-columns:34px 1fr 120px 60px 24px 132px; gap:8px; font-size:11px; color:#94a3b8; padding:0 10px 4px;"><span>#</span><span>Student</span><span>Progress</span><span style="text-align:right;">RIT</span><span></span><span style="text-align:right;">Controls</span></div>` + body + `</div></div>`
             : '<p style="font-size:13px; color:#94a3b8; text-align:center; padding:20px;">No students yet — share the code above.</p>';
     }
     function hostCloseScreen(silent) {
@@ -3394,7 +3710,9 @@
     }
     function getSimulationTimeLimitSeconds() {
         const mins = parseInt(localStorage.getItem('sim_time_limit_minutes'), 10);
-        return (mins && mins > 0 ? mins : 80) * 60;
+        // In a live session the teacher can grant this student extra time.
+        const extra = (typeof LIVE !== 'undefined' && LIVE && LIVE.extraSeconds) || 0;
+        return (mins && mins > 0 ? mins : 80) * 60 + extra;
     }
     function onSimTimeLimitChange() {
         const el = document.getElementById('sim-time-limit');
@@ -7017,7 +7335,22 @@
         if (state.practiceOnly) {
             // Practice tools (Command Terms / Bloom's, skill-focus quizzes) never
             // produce a diagnostic report and never pollute the long-term RIT
-            // history graph used by real adaptive tests.
+            // history graph used by real adaptive tests. Completed practice IS
+            // synced (practice_only = true) so teachers can see assigned
+            // practice was done; gamification and leaderboards ignore it.
+            if (!state.cancelled && typeof syncSessionToServer === 'function') {
+                syncSessionToServer({
+                    mode: document.getElementById('mode-select').value,
+                    bandStart: null, bandEnd: null, ritStart: null, ritEnd: null, lexileEnd: null,
+                    totalTime: state.totalTime || 0,
+                    questionCount: state.results.length,
+                    correctCount: state.results.filter(r => r.correct).length,
+                    cancelled: false, practiceOnly: true,
+                    startedAt: new Date(Date.now() - (state.totalTime || 0) * 1000).toISOString(),
+                    byType: computeByTypeAccuracy(state.results)
+                });
+            }
+            if (typeof loadMyAssignments === 'function') setTimeout(loadMyAssignments, 1500);
             if (state.cancelled) {
                 showPracticeCancelledScreen(() => returnToSetup());
             } else {
@@ -7692,6 +8025,7 @@
             .select('rit_end,lexile_end,correct_count,question_count,completed_at,by_type')
             .eq('user_id', window.MAP_USER.id)
             .eq('cancelled', false)
+            .eq('practice_only', false) // practice is synced for assignments, not for XP/badges
             .neq('mode', 'trial_20')
             .not('completed_at', 'is', null)
             .order('completed_at', { ascending: true });
