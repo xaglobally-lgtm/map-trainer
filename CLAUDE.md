@@ -61,7 +61,7 @@ Simulation/Training mode split, adaptive RIT/Lexile/CEFR engine, skill-group pra
    - While it runs, query `edu_group_participants` / `edu_assignments` to separate realtime problems from write/RLS problems.
 2. ~~Student Profile page~~ — done 2026-09-27 (player card → 👤 My profile; teacher: click a name in the class dashboard, via `get_student_sessions()`).
 3. ~~Leaderboard types/seasons~~ — done 2026-09-27: All time / This month (season = sessions since the 1st, local time; nothing reset or stored) × Highest RIT / Most improved / Best accuracy / Most practice, via `get_class_leaderboard_period(class, since)`.
-4. **Real SMTP (user action)** — Supabase built-in email is rate-limited; set up Resend (or similar) SMTP in Supabase Auth settings before school launch. Needs the user's account/API key.
+4. **Launch setup (user action, all at once when the domain is ready)** — follow `LAUNCH_SETUP.md`: custom domain on Vercel (`app.<domain>`), add it to Supabase Redirect URLs (never touch Site URL), Google OAuth client (free) pasted into Supabase → Providers → Google, custom SMTP (Brevo/Resend). The Google/Microsoft buttons are already built and **auto-appear** when the provider is enabled (the app reads `/auth/v1/settings`); no code change needed. After it's done: update the production URL at the top of this file.
 5. Deferred: curated offline image art bank (decision: no live image-gen API).
 
 Done 2026-09-27 (for history): PRs #1–#3 merged; migrations `map_connect_faster_disconnect`, `map_teacher_controls`, `map_class_analytics_ccss`, `map_revoke_anon_function_execute` applied via `apply_migration`; content-depth items from the audit; E built.
