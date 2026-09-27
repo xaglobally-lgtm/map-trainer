@@ -773,10 +773,15 @@
             <div class="modal-content" style="max-height:90vh; overflow-y:auto;">
                 <button type="button" class="modal-close" onclick="closeModal('modal-leaderboard')" title="Close" aria-label="Close">×</button>
                 <h2 id="leaderboard-class-name" style="margin-top:0;">Leaderboard</h2>
+                <div style="display:flex; gap:6px; margin-bottom:10px;" role="group" aria-label="Leaderboard period">
+                    <button onclick="setLeaderboardPeriod('all')" id="lb-period-all" class="cd-tab on">All time</button>
+                    <button onclick="setLeaderboardPeriod('month')" id="lb-period-month" class="cd-tab">This month</button>
+                </div>
                 <div style="display:flex; gap:8px; margin-bottom:14px;">
                     <button onclick="renderLeaderboard('best')" id="lb-tab-best" class="lb-tab-btn" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-weight:700; cursor:pointer; font-size:12px;">🏆 Highest RIT</button>
                     <button onclick="renderLeaderboard('improved')" id="lb-tab-improved" class="lb-tab-btn" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-weight:700; cursor:pointer; font-size:12px;">📈 Most Improved</button>
                     <button onclick="renderLeaderboard('accuracy')" id="lb-tab-accuracy" class="lb-tab-btn" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-weight:700; cursor:pointer; font-size:12px;">🎯 Best Accuracy</button>
+                    <button onclick="renderLeaderboard('practice')" id="lb-tab-practice" class="lb-tab-btn" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-weight:700; cursor:pointer; font-size:12px;">📚 Most practice</button>
                 </div>
                 <div id="leaderboard-rows"></div>
             </div>
@@ -1574,38 +1579,65 @@
         startSession();
     }
 
-    let currentLeaderboardClassId = null;
+    let currentLeaderboardClassId = null, currentLeaderboardClassName = '';
     let currentLeaderboardRows = [];
+    let currentLeaderboardPeriod = 'all', currentLeaderboardMetric = 'best';
+    // "This month" is a season: the same boards computed from sessions since
+    // the 1st of the month (local time). Nothing is reset or stored.
+    function leaderboardSince() {
+        if (currentLeaderboardPeriod !== 'month') return null;
+        const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0);
+        return d.toISOString();
+    }
     async function openLeaderboard(classId, className) {
-        currentLeaderboardClassId = classId;
-        document.getElementById('leaderboard-class-name').innerText = '🏆 ' + className;
-        document.getElementById('leaderboard-rows').innerHTML = '<p style="font-size:12px; color:#94a3b8;">Loading…</p>';
+        currentLeaderboardClassId = classId; currentLeaderboardClassName = className;
         openModal('modal-leaderboard');
-        const { data, error } = await sb.rpc('get_class_leaderboard', { p_class_id: classId });
+        await loadLeaderboard();
+    }
+    async function setLeaderboardPeriod(period) {
+        currentLeaderboardPeriod = period;
+        ['all', 'month'].forEach(p => document.getElementById('lb-period-' + p).classList.toggle('on', p === period));
+        await loadLeaderboard();
+    }
+    async function loadLeaderboard() {
+        const monthName = new Date().toLocaleDateString(undefined, { month: 'long' });
+        document.getElementById('leaderboard-class-name').innerText = '🏆 ' + currentLeaderboardClassName
+            + (currentLeaderboardPeriod === 'month' ? ` — ${monthName} season` : '');
+        document.getElementById('leaderboard-rows').innerHTML = '<p style="font-size:12px; color:#94a3b8;">Loading…</p>';
+        const { data, error } = await sb.rpc('get_class_leaderboard_period', { p_class_id: currentLeaderboardClassId, p_since: leaderboardSince() });
         if (error) {
             document.getElementById('leaderboard-rows').innerHTML = `<p style="font-size:12px; color:#dc2626;">Could not load leaderboard: ${escapeHtml(error.message)}</p>`;
             return;
         }
         currentLeaderboardRows = data || [];
-        renderLeaderboard('best');
+        renderLeaderboard(currentLeaderboardMetric);
     }
     function renderLeaderboard(metric) {
-        ['best', 'improved', 'accuracy'].forEach(m => {
+        currentLeaderboardMetric = metric;
+        ['best', 'improved', 'accuracy', 'practice'].forEach(m => {
             const btn = document.getElementById('lb-tab-' + m);
             if (btn) { btn.style.background = m === metric ? 'var(--primary-grad)' : 'var(--card)'; btn.style.color = m === metric ? 'white' : 'inherit'; }
         });
         const rowsEl = document.getElementById('leaderboard-rows');
-        if (!currentLeaderboardRows.length) { rowsEl.innerHTML = '<p style="font-size:12px; color:#94a3b8;">No completed tests yet for this class.</p>'; return; }
-        const withMetric = currentLeaderboardRows.map(r => ({
-            name: r.display_name,
-            value: metric === 'best' ? r.best_rit : metric === 'improved' ? (r.latest_rit - r.first_rit) : Math.round((r.avg_accuracy || 0) * 100),
-            tests: r.tests_completed
-        }));
+        // Each board only ranks students who have data for it (e.g. "most
+        // improved" needs 2+ adaptive tests in the period).
+        const valueOf = r => metric === 'best' ? (r.tests_completed ? r.best_rit : null)
+            : metric === 'improved' ? (r.tests_completed >= 2 ? r.latest_rit - r.first_rit : null)
+            : metric === 'accuracy' ? (r.tests_completed ? Math.round((r.avg_accuracy || 0) * 100) : null)
+            : (r.practice_completed || null);
+        const withMetric = currentLeaderboardRows
+            .map(r => ({ name: r.display_name, value: valueOf(r), tests: metric === 'practice' ? r.questions_answered : r.tests_completed }))
+            .filter(r => r.value != null);
+        if (!withMetric.length) {
+            const why = { best: 'No finished adaptive tests', improved: 'Nobody has 2+ adaptive tests', accuracy: 'No finished adaptive tests', practice: 'No finished practice' }[metric];
+            rowsEl.innerHTML = `<p style="font-size:12px; color:#94a3b8;">${why} ${currentLeaderboardPeriod === 'month' ? 'this month' : 'yet'} for this class.</p>`;
+            return;
+        }
         withMetric.sort((a, b) => b.value - a.value);
-        const unit = metric === 'accuracy' ? '%' : (metric === 'improved' ? ' RIT' : '');
+        const unit = metric === 'accuracy' ? '%' : metric === 'improved' ? ' RIT' : metric === 'practice' ? ' sessions' : '';
         const sign = metric === 'improved' ? (v => v >= 0 ? '+' + v : String(v)) : (v => String(v));
         rowsEl.innerHTML = withMetric.map((r, i) => `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:${i < 3 ? '#fff7ed' : '#f8fafc'}; border-radius:8px; margin-bottom:4px;">
-            <span style="font-size:13px;">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1) + '.'} &nbsp; ${escapeHtml(r.name)} <span style="color:#94a3b8; font-size:11px;">(${r.tests} tests)</span></span>
+            <span style="font-size:13px;">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1) + '.'} &nbsp; ${escapeHtml(r.name)} <span style="color:#94a3b8; font-size:11px;">(${r.tests} ${metric === 'practice' ? (r.tests === 1 ? 'question' : 'questions') : (r.tests === 1 ? 'test' : 'tests')})</span></span>
             <b style="font-size:14px;">${sign(r.value)}${unit}</b>
         </div>`).join('');
     }
