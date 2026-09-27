@@ -186,6 +186,18 @@
         .badge-cefr { background: #d1fae5; color: #047857; }
         .badge-progress { background: #f1f5f9; color: #475569; }
         .host-ctl { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 6px; padding: 3px 7px; font-size: 11px; font-weight: 800; cursor: pointer; }
+        .pf-stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 14px; }
+        .pf-stat { flex: 1; min-width: 110px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; }
+        .pf-stat .v { font-size: 20px; font-weight: 900; color: var(--text); }
+        .pf-stat .l { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
+        .pf-h { font-weight: 900; margin: 14px 0 6px; }
+        .pf-skill { display: grid; grid-template-columns: 170px 1fr 52px auto; gap: 8px; align-items: center; font-size: 12px; margin-bottom: 6px; }
+        .pf-bar { height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; }
+        .pf-bar > span { display: block; height: 100%; background: var(--primary-mid); border-radius: 0 4px 4px 0; }
+        .pf-row { display: grid; grid-template-columns: 90px 1fr 70px; gap: 8px; font-size: 12px; padding: 5px 8px; border-radius: 6px; }
+        .pf-row:nth-child(even) { background: var(--bg); }
+        .pf-chart .pt:hover, .pf-chart .pt:focus { r: 7; outline: none; }
+        @media (max-width: 600px) { .pf-skill { grid-template-columns: 1fr 70px 44px; } .pf-skill .pf-go { grid-column: 1 / -1; justify-self: start; } }
         .cd-tab { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 800; cursor: pointer; font-size: 12px; }
         .cd-tab.on { background: var(--primary-grad); color: white; border-color: transparent; }
         .cd-row { display: grid; grid-template-columns: 1.4fr .6fr .9fr .7fr .9fr; gap: 8px; align-items: center; padding: 7px 10px; border-radius: 8px; font-size: 12px; }
@@ -744,6 +756,15 @@
                     </div>
                     <div id="cd-assign-list"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- STUDENT PROFILE (own, or a teacher viewing a class member) -->
+        <div id="modal-profile" class="modal hidden">
+            <div class="modal-content" style="max-width:760px; width:95%; max-height:92vh; overflow-y:auto; text-align:left;">
+                <button type="button" class="modal-close" onclick="closeModal('modal-profile')" title="Close" aria-label="Close">×</button>
+                <h2 id="pf-title" style="margin-top:0;">Profile</h2>
+                <div id="pf-body"><p style="font-size:12px; color:#94a3b8;">Loading…</p></div>
             </div>
         </div>
 
@@ -1436,7 +1457,7 @@
             const weak = Object.entries(r.by_type || {}).filter(([, v]) => v.total >= 5)
                 .map(([t, v]) => [t, v.correct / v.total]).sort((a, b) => a[1] - b[1])[0];
             return `<div class="cd-row">
-                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><b>${escapeHtml(r.display_name)}</b><br><small style="color:#64748b;">${r.tests_completed} tests · ${r.practice_completed} practice</small></span>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><a href="javascript:void(0)" title="Open profile" onclick="openStudentProfile({ classId: CD.classId, studentId: '${r.student_id}', name: CD.rows.find(x => x.student_id === '${r.student_id}').display_name })" style="color:inherit;"><b>${escapeHtml(r.display_name)}</b></a><br><small style="color:#64748b;">${r.tests_completed} tests · ${r.practice_completed} practice</small></span>
                 <span>${r.latest_rit ?? '—'}${delta != null ? `<br><small style="color:${delta >= 0 ? '#16a34a' : '#dc2626'};">${delta >= 0 ? '+' : ''}${delta}</small>` : ''}</span>
                 <span>${r.avg_accuracy != null ? Math.round(r.avg_accuracy * 100) + '%' : '—'}</span>
                 <span>${fmtDate(r.last_active)}</span>
@@ -8413,6 +8434,128 @@
         const completedThisWeek = hist.filter(h => h.date >= weekStart).length;
         return { completed: Math.min(completedThisWeek, WEEKLY_MISSION_TARGET), target: WEEKLY_MISSION_TARGET, done: completedThisWeek >= WEEKLY_MISSION_TARGET };
     }
+    // ===================== STUDENT PROFILE =====================
+    const SKILL_GROUP_LABELS = {
+        details: 'Key Details & Sequence', mainidea: 'Main Idea & Central Claim', inference: 'Inference & Character',
+        craft: "Author's Purpose & Craft", evidence: 'Evidence & Reasoning', vocab: 'Vocabulary'
+    };
+    // One common shape for every source: { date, mode, rit, lexile, questions, correct, practice, byType }.
+    async function loadProfileSessions(opts, name) {
+        const fromRows = rows => (rows || []).map(r => ({
+            date: new Date(r.completed_at).getTime(), mode: r.mode, rit: r.rit_end, lexile: r.lexile_end,
+            questions: r.question_count || 0, correct: r.correct_count || 0,
+            practice: !!r.practice_only, byType: r.by_type || {}
+        }));
+        let out;
+        if (opts.studentId) {
+            const { data, error } = await sb.rpc('get_student_sessions', { p_class_id: opts.classId, p_student_id: opts.studentId });
+            if (error) throw error;
+            out = fromRows(data);
+        } else if (window.MAP_USER) {
+            const { data } = await sb.from('map_test_sessions')
+                .select('mode,rit_end,lexile_end,question_count,correct_count,completed_at,practice_only,by_type')
+                .eq('user_id', window.MAP_USER.id).eq('cancelled', false).neq('mode', 'trial_20')
+                .not('completed_at', 'is', null).order('completed_at', { ascending: false }).limit(300);
+            out = fromRows(data);
+        } else {
+            const tests = getAllHistoryForName(name).map(h => ({
+                date: h.date, mode: null, rit: h.rit, lexile: h.lexile, questions: h.questionCount || 0,
+                correct: Math.round((h.accuracy || 0) * (h.questionCount || 0)), practice: false, byType: h.byType || {}
+            }));
+            let act = {};
+            try { act = JSON.parse(localStorage.getItem('xag_activity_v1') || '{}'); } catch (e) {}
+            const practice = (act[getPlayerKey(name)] || []).filter(e => e.practice)
+                .map(e => ({ date: e.date, mode: e.mode, rit: null, lexile: null, questions: e.questions, correct: e.correct, practice: true, byType: {} }));
+            out = tests.concat(practice);
+        }
+        return out.sort((a, b) => a.date - b.date);
+    }
+    // Single-series line (one hue, 2px), >=8px markers with native hover
+    // tooltips, a direct label on the latest point, recessive grid, one axis.
+    function ritChartSvg(points) {
+        if (points.length < 2) return '<p style="font-size:12px; color:#94a3b8;">Finish 2 or more adaptive tests to see a RIT trend.</p>';
+        const W = 600, H = 190, L = 40, R = 46, T = 14, B = 26;
+        const rits = points.map(p => p.rit);
+        const lo = Math.floor((Math.min(...rits) - 5) / 10) * 10, hi = Math.ceil((Math.max(...rits) + 5) / 10) * 10;
+        const x = i => L + (points.length === 1 ? 0 : i * (W - L - R) / (points.length - 1));
+        const y = v => T + (hi - v) * (H - T - B) / (hi - lo);
+        const ticks = [lo, Math.round((lo + hi) / 2), hi];
+        const grid = ticks.map(t => `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--border)" stroke-width="1"/>
+            <text x="${L - 6}" y="${y(t) + 4}" text-anchor="end" font-size="10" fill="#64748b">${t}</text>`).join('');
+        const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.rit).toFixed(1)}`).join(' ');
+        const fmt = d => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        const dots = points.map((p, i) => `<circle class="pt" tabindex="0" cx="${x(i)}" cy="${y(p.rit)}" r="4.5" fill="var(--primary-mid)" stroke="var(--card)" stroke-width="2"><title>${fmt(p.date)}: RIT ${p.rit}</title></circle>`).join('');
+        const last = points[points.length - 1];
+        return `<svg class="pf-chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="RIT over ${points.length} adaptive tests, from ${points[0].rit} to ${last.rit}">
+            ${grid}
+            <path d="${path}" fill="none" stroke="var(--primary-mid)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            ${dots}
+            <text x="${x(points.length - 1) + 8}" y="${y(last.rit) + 4}" font-size="12" font-weight="800" fill="var(--text)">${last.rit}</text>
+            <text x="${L}" y="${H - 6}" font-size="10" fill="#64748b">${fmt(points[0].date)}</text>
+            <text x="${W - R}" y="${H - 6}" font-size="10" fill="#64748b" text-anchor="end">${fmt(last.date)}</text>
+        </svg>`;
+    }
+    async function openStudentProfile(opts = {}) {
+        const self = !opts.studentId;
+        const name = self ? ((document.getElementById('student-name') || {}).value || '') : opts.name;
+        const shown = self ? (window.MAP_USER ? (window.MAP_USER.email || name) : name) : name;
+        document.getElementById('pf-title').innerText = '👤 ' + (shown || 'Profile');
+        const body = document.getElementById('pf-body');
+        body.innerHTML = '<p style="font-size:12px; color:#94a3b8;">Loading…</p>';
+        openModal('modal-profile');
+        let sessions;
+        try { sessions = await loadProfileSessions(opts, name); }
+        catch (e) { body.innerHTML = `<p style="color:#dc2626; font-size:12px;">${escapeHtml(e.message || String(e))}</p>`; return; }
+        if (!sessions.length) { body.innerHTML = '<p style="font-size:13px; color:#94a3b8;">No finished tests or practice yet.</p>'; return; }
+        const tests = sessions.filter(x => !x.practice && x.rit != null);
+        const practice = sessions.filter(x => x.practice);
+        const answered = sessions.reduce((a, x) => a + x.questions, 0);
+        const correct = sessions.reduce((a, x) => a + x.correct, 0);
+        const latest = tests[tests.length - 1], first = tests[0];
+        const delta = latest && first && tests.length > 1 ? latest.rit - first.rit : null;
+        const stat = (v, l) => `<div class="pf-stat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+        const stats = `<div class="pf-stats">
+            ${stat(latest ? latest.rit : '—', 'Latest RIT')}
+            ${stat(delta == null ? '—' : `<span style="color:${delta >= 0 ? '#16a34a' : '#dc2626'};">${delta >= 0 ? '+' : ''}${delta}</span>`, 'Since first test')}
+            ${stat(latest && latest.lexile != null ? (latest.lexile < 0 ? 'BR' : latest.lexile + 'L') : '—', 'Lexile')}
+            ${stat(tests.length + ' · ' + practice.length, 'Tests · practice')}
+            ${stat(answered ? Math.round(correct / answered * 100) + '%' : '—', 'Accuracy')}
+        </div>`;
+        // Skill groups across tests and practice (practice logged offline has no per-skill data).
+        const agg = {};
+        sessions.forEach(x => Object.entries(x.byType || {}).forEach(([t, v]) => {
+            const g = SKILL_GROUP_OF[t]; if (!g) return;
+            (agg[g] = agg[g] || { correct: 0, total: 0 });
+            agg[g].correct += v.correct || 0; agg[g].total += v.total || 0;
+        }));
+        const groups = Object.entries(agg).filter(([, v]) => v.total > 0)
+            .map(([g, v]) => ({ g, pct: v.correct / v.total, total: v.total })).sort((a, b) => a.pct - b.pct);
+        const skills = groups.length ? groups.map(r => `<div class="pf-skill">
+                <span>${escapeHtml(SKILL_GROUP_LABELS[r.g] || r.g)}</span>
+                <span class="pf-bar" title="${r.total} questions"><span style="width:${Math.max(4, Math.round(r.pct * 100))}%"></span></span>
+                <b>${Math.round(r.pct * 100)}%</b>
+                ${self && r.total >= 5 && r.pct < 0.8 ? `<button class="cd-btn pf-go" onclick="closeModal('modal-profile'); startAssignedPractice('${r.g}_20')">Practice</button>` : '<span></span>'}
+            </div>`).join('') + '<p style="font-size:10px; color:#94a3b8; margin:4px 0 0;">Weakest first. Hover a bar for the number of questions behind it.</p>'
+            : '<p style="font-size:12px; color:#94a3b8;">Skill breakdown appears after a finished test or signed-in practice.</p>';
+        const fmtD = d => new Date(d).toLocaleDateString();
+        const label = x => x.practice ? modeOptionLabel(x.mode) : (x.questions ? `Adaptive test (${x.questions} questions)` : 'Adaptive test');
+        const recent = sessions.slice(-10).reverse().map(x => `<div class="pf-row"><span>${fmtD(x.date)}</span>
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${x.practice ? '📚' : '🎯'} ${escapeHtml(label(x))}</span>
+            <b style="text-align:right;">${x.questions ? Math.round(x.correct / x.questions * 100) + '%' : '—'}${x.rit != null && !x.practice ? ` · ${x.rit}` : ''}</b></div>`).join('');
+        let badges = '';
+        if (self) {
+            const hist = await getPlayerHistory(name);
+            const have = computeBadgesFromHistory(hist);
+            badges = `<div class="pf-h">Badges</div>` + (have.length
+                ? have.map(id => BADGE_DEFS[id] ? `<span title="${BADGE_DEFS[id].label}" style="font-size:22px; margin-right:6px;">${BADGE_DEFS[id].icon}</span>` : '').join('') + ` <a href="javascript:void(0)" onclick="closeModal('modal-profile'); openCertificates()" style="font-size:11px; font-weight:700; color:var(--primary-mid);">Certificates →</a>`
+                : '<p style="font-size:12px; color:#94a3b8; margin:0;">No badges yet.</p>');
+        }
+        body.innerHTML = stats
+            + `<div class="pf-h">RIT over time <small style="font-weight:600; color:#64748b;">(adaptive tests)</small></div>${ritChartSvg(tests.map(t => ({ date: t.date, rit: t.rit })))}`
+            + `<div class="pf-h">Skills</div>${skills}`
+            + `<div class="pf-h">Recent activity</div><div class="pf-row" style="color:#94a3b8; font-size:11px;"><span>Date</span><span>Session</span><span style="text-align:right;">Score · RIT</span></div>${recent}`
+            + badges;
+    }
     // ===================== DAILY & SKILL MISSIONS =====================
     // Like everything else in gamification, missions are derived from an
     // activity history, never stored as counters. Unlike XP/badges they
@@ -8456,7 +8599,7 @@
     }
     function modeOptionLabel(mode) {
         const o = document.querySelector(`#mode-select option[value="${mode}"]`);
-        return o ? (o.dataset.baseLabel || o.textContent).replace(/^🔒 /, '').replace(/: \d+ Questions$/, '') : mode;
+        return o ? (o.dataset.baseLabel || o.textContent).replace(/^🔒 /, '').replace(/ \((full learning report|no report)\)/, '').replace(/: \d+ Questions$/, '') : mode;
     }
     async function renderMissions(name, testHist) {
         const box = document.getElementById('missions-card');
@@ -8872,7 +9015,7 @@
                     </div>
                     ${missionHtml}
                 </div>
-                <div style="text-align:right;">${badgesHtml || '<span style="font-size:11px; color:#cbd5e1;">No badges yet</span>'}${certLinkHtml}</div>
+                <div style="text-align:right;">${badgesHtml || '<span style="font-size:11px; color:#cbd5e1;">No badges yet</span>'}${certLinkHtml}<div style="margin-top:4px;"><a href="javascript:void(0)" onclick="openStudentProfile()" style="font-size:11px; font-weight:700; color:var(--primary-mid);">👤 My profile →</a></div></div>
             </div>
             <div style="background:#e2e8f0; border-radius:6px; height:8px; margin-top:8px; overflow:hidden;">
                 <div style="background:var(--primary-grad); height:100%; width:${pct}%;"></div>

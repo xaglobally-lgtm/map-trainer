@@ -214,3 +214,26 @@ grant execute on function public.current_plan(), public.my_class_count(), public
     public.join_class_by_code(text), public.join_group_session(text), public.get_class_leaderboard(uuid),
     public.get_live_leaderboard(uuid), public.get_assignment_progress(uuid), public.get_class_analytics(uuid)
     to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 5. Student profile for teachers (migration map_student_sessions_for_teacher)
+-- ---------------------------------------------------------------------
+create or replace function public.get_student_sessions(p_class_id uuid, p_student_id uuid)
+ returns table(mode text, rit_end integer, lexile_end integer, question_count integer, correct_count integer,
+               completed_at timestamptz, practice_only boolean, by_type jsonb)
+ language sql
+ stable security definer
+ set search_path to 'public'
+as $function$
+    select s.mode, s.rit_end, s.lexile_end, s.question_count, s.correct_count,
+           s.completed_at, coalesce(s.practice_only, false), s.by_type
+    from map_test_sessions s
+    where s.user_id = p_student_id
+      and s.cancelled = false and s.completed_at is not null and s.mode <> 'trial_20'
+      and is_class_teacher(p_class_id)
+      and exists (select 1 from edu_class_members m where m.class_id = p_class_id and m.student_id = p_student_id)
+    order by s.completed_at desc
+    limit 300;
+$function$;
+revoke execute on function public.get_student_sessions(uuid, uuid) from public, anon;
+grant execute on function public.get_student_sessions(uuid, uuid) to authenticated;

@@ -24,7 +24,7 @@ NWEA MAP-style adaptive reading assessment PWA. Single-file HTML app (`index.htm
   - participants also have teacher-only `teacher_paused`, `extra_seconds`, `reset_count` (column privileges: clients may UPDATE only `status, current_question_index, current_rit, last_seen_at`; teacher changes go through `teacher_control_participant()`)
 - `edu_assignments` — assigned practice (class-wide, or one student via `student_id`); completion = a finished `map_test_sessions` row in that mode after `created_at`
 - Practice (Training) completions are synced to `map_test_sessions` with `practice_only = true` (since 2026-09-27); gamification/`fetchCloudHistory` and leaderboards exclude them
-- Key SECURITY DEFINER functions (execute: `authenticated` only, not `anon`): `current_plan()`, `is_class_member/teacher()`, `is_session_participant/teacher()`, `my_class_count()`, `join_class_by_code()`, `join_group_session()`, `get_class_leaderboard()`, `get_live_leaderboard()`, `teacher_control_participant()`, `get_assignment_progress()`, `get_class_analytics()`
+- Key SECURITY DEFINER functions (execute: `authenticated` only, not `anon`): `current_plan()`, `is_class_member/teacher()`, `is_session_participant/teacher()`, `my_class_count()`, `join_class_by_code()`, `join_group_session()`, `get_class_leaderboard()`, `get_live_leaderboard()`, `get_student_sessions()` (teacher: one class member's sessions), `teacher_control_participant()`, `get_assignment_progress()`, `get_class_analytics()`
 - **Important constraint:** this Supabase project is shared with other apps. Never touch tables without the `map_`/`edu_` prefix. Auth → URL Configuration → Redirect URLs must keep `https://map-trainer-six.vercel.app/**` — do not touch Site URL (it belongs to another app on the same project).
 - Get the anon key from Supabase dashboard → Settings → API (already wired into `index.html` — don't need to repaste unless rotating). Never expose the service role key client-side.
 
@@ -42,14 +42,14 @@ Raw: 22,576 main bank + 88 Bloom's = 22,664. Passage-set templates: 9 (A1 and C2
 - **Label rule:** skill modes filter on `type === 'Vocabulary'` and on `ccss` starting with `RI` (Informational) or `RL` (Literary). Label by the *text type* (story vs nonfiction), not the question type — a story tagged `RI` leaks into Informational mode.
 
 ## Progress (approximate — judgement estimates, not measured)
-- **Core app (content/modes/gamification/monetization): ~93%**
+- **Core app (content/modes/gamification/monetization): ~95%**
   - F done 2026-09-27 (PR #5): A2–C2 content roughly doubled (see content table).
   - Skill-group practice modes + daily/skill missions (this PR).
-  - Remaining: Student Profile page, leaderboard types/seasons, real SMTP.
+  - Student Profile page done. Remaining: leaderboard types/seasons, real SMTP.
 - **MAP Connect: ~85%**
   - D — live session core: **~92%** (only the real two-device test remains).
   - E — teacher control room: **~80%** (merged PR #4; UI verified with mocked data, not yet with real accounts).
-- **Overall product: ~88%**
+- **Overall product: ~89%**
 
 ## What's built (don't rebuild)
 Simulation/Training mode split, adaptive RIT/Lexile/CEFR engine, skill-group practice modes (`SKILL_GROUP_OF`: details / mainidea / inference / craft / evidence + vocab / infotext / littext), daily + weekly skill missions (derived from an activity log: cloud rows incl. practice, or local `xag_activity_v1`), 4-tier plans (free/pro/educator/connect) with server-enforced caps (2 classes/educator, 40 students/class), one-time `trial_20` mode, cloud+local gamification (XP/levels/ranks/badges/certificates/weekly mission/smart recommendation — all derived live from history, nothing stored as counters), async leaderboards, enhanced results screen (strengths/next-target/recommended practice), MAP Connect v1 (host + join + realtime board + heartbeat + pause/resume/end), question progress track, skill-mode nearest-level fallback (`nearestSkillLevel`).
@@ -59,7 +59,7 @@ Simulation/Training mode split, adaptive RIT/Lexile/CEFR engine, skill-group pra
    - Live: join shows ≤1s; Start auto-starts student; answers update board; session Pause/Resume; per-student ⏸/▶, +5m (student sees notice, timer grows), ↺ reset (two clicks; student restarts at Q1); student reload rejoins; closed tab 🔴 ~1s; End.
    - Class dashboard (Account → class → 📊 Dashboard): student appears after joining the class; suggestions; assign practice → student sees "📌 Assigned by your teacher" → completes it → teacher sees x/y done.
    - While it runs, query `edu_group_participants` / `edu_assignments` to separate realtime problems from write/RLS problems.
-2. **Student Profile page** — one screen per student: RIT/Lexile trend, skill-group strengths (by `SKILL_GROUP_OF`), badges/certificates, recent sessions, assignments.
+2. ~~Student Profile page~~ — done 2026-09-27 (player card → 👤 My profile; teacher: click a name in the class dashboard, via `get_student_sessions()`).
 3. **Leaderboard types/seasons** — e.g. monthly season (reset view by month, not data), most practice, most improved this month.
 4. **Real SMTP (user action)** — Supabase built-in email is rate-limited; set up Resend (or similar) SMTP in Supabase Auth settings before school launch. Needs the user's account/API key.
 5. Deferred: curated offline image art bank (decision: no live image-gen API).
