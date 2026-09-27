@@ -237,3 +237,37 @@ as $function$
 $function$;
 revoke execute on function public.get_student_sessions(uuid, uuid) from public, anon;
 grant execute on function public.get_student_sessions(uuid, uuid) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 6. Leaderboard seasons + practice board (migration map_class_leaderboard_period)
+-- ---------------------------------------------------------------------
+create or replace function public.get_class_leaderboard_period(p_class_id uuid, p_since timestamptz default null)
+ returns table(user_id uuid, display_name text, best_rit integer, first_rit integer, latest_rit integer,
+               avg_accuracy numeric, tests_completed integer, practice_completed integer, questions_answered integer)
+ language sql
+ stable security definer
+ set search_path to 'public'
+as $function$
+    select
+        m.student_id,
+        case when p.use_nickname and coalesce(p.nickname,'') <> ''
+             then p.nickname else coalesce(p.display_name,'Student') end,
+        max(s.rit_end) filter (where s.mode in ('adaptive_40','adaptive_40_sets','adaptive_100')),
+        (array_agg(s.rit_end order by s.completed_at asc)  filter (where s.mode in ('adaptive_40','adaptive_40_sets','adaptive_100')))[1],
+        (array_agg(s.rit_end order by s.completed_at desc) filter (where s.mode in ('adaptive_40','adaptive_40_sets','adaptive_100')))[1],
+        avg(s.correct_count::numeric / nullif(s.question_count, 0)) filter (where s.mode in ('adaptive_40','adaptive_40_sets','adaptive_100')),
+        (count(s.id) filter (where s.mode in ('adaptive_40','adaptive_40_sets','adaptive_100')))::integer,
+        (count(s.id) filter (where coalesce(s.practice_only, false)))::integer,
+        coalesce(sum(s.question_count), 0)::integer
+    from edu_class_members m
+    join map_test_sessions s
+      on s.user_id = m.student_id and s.cancelled = false and s.completed_at is not null
+     and s.mode <> 'trial_20'
+     and (p_since is null or s.completed_at >= p_since)
+    left join map_profiles p on p.id = m.student_id
+    where m.class_id = p_class_id
+      and (is_class_member(p_class_id) or is_class_teacher(p_class_id))
+    group by m.student_id, p.display_name, p.use_nickname, p.nickname;
+$function$;
+revoke execute on function public.get_class_leaderboard_period(uuid, timestamptz) from public, anon;
+grant execute on function public.get_class_leaderboard_period(uuid, timestamptz) to authenticated;
