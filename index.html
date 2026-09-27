@@ -1920,8 +1920,23 @@
         { place: "the park", doing: "sitting in a tree", animals: ["birds"], loc: null },
         { place: "the zoo", doing: "resting in the sun", animals: ["turtles", "goats"], loc: null },
         { place: "the garden", doing: "hopping between the flowers", animals: ["rabbits", "frogs"], loc: null },
-        { place: "the beach", doing: "flying over the waves", animals: ["birds"], loc: 'water' }
+        { place: "the beach", doing: "flying over the waves", animals: ["birds"], loc: 'water' },
+        { place: "the farm", doing: "rolling in the mud", animals: ["pigs"], loc: null },
+        { place: "the farm", doing: "standing in the field", animals: ["cows", "horses"], loc: null },
+        { place: "the park", doing: "climbing up a tree", animals: ["squirrels"], loc: null },
+        { place: "the garden", doing: "flying from flower to flower", animals: ["butterflies", "bees"], loc: null },
+        { place: "the garden", doing: "crawling on the leaves", animals: ["snails", "ladybugs"], loc: null },
+        { place: "the zoo", doing: "swinging from the branches", animals: ["monkeys"], loc: null },
+        { place: "the zoo", doing: "splashing in the pool", animals: ["elephants", "penguins"], loc: 'water' },
+        { place: "the zoo", doing: "sleeping in the shade", animals: ["lions"], loc: null },
+        { place: "the pond", doing: "drinking at the edge of the water", animals: ["deer"], loc: 'water' },
+        { place: "the beach", doing: "walking sideways on the sand", animals: ["crabs"], loc: 'water' },
+        { place: "the river", doing: "swimming near the rocks", animals: ["fish", "ducks"], loc: 'water' },
+        { place: "the woods", doing: "sitting on a branch", animals: ["owls"], loc: null }
     ];
+    const A2_NUMBER_SUBJ = {"dogs":"dog","ducks":"duck","rabbits":"rabbit","goats":"goat","birds":"bird","turtles":"turtle","frogs":"frog","sheep":"sheep","hens":"hen",
+        "pigs":"pig","cows":"cow","horses":"horse","squirrels":"squirrel","butterflies":"butterfly","bees":"bee","snails":"snail","ladybugs":"ladybug",
+        "monkeys":"monkey","elephants":"elephant","penguins":"penguin","lions":"lion","fish":"fish","owls":"owl"};
     const A2_NUMBER_PAIRS = A2_NUMBER_SITES.flatMap(s => s.animals.map(a => ({ place: s.place, doing: s.doing, animal: a, loc: s.loc })));
     const A2_number = F("Detail", "RL.2.1", "nature",
         {
@@ -1935,8 +1950,8 @@
             answer: v.num,
             options: [v.num, ...sampleExcl(["2", "3", "4", "5", "6", "7", "8", "9"], 3, v.num)],
             hint: `Look for the number in the second sentence.`,
-            icon: ({"dogs":"dog","ducks":"duck","rabbits":"rabbit","birds":"bird","turtles":"turtle","frogs":"frog"})[v.site.animal] || 'person',
-            scene: { subject: ({"dogs":"dog","ducks":"duck","rabbits":"rabbit","goats":"goat","birds":"bird","turtles":"turtle","frogs":"frog","sheep":"sheep","hens":"bird"})[v.site.animal] || null, color: null, mood: null, location: v.site.loc, count: Math.min(parseInt(v.num, 10) || 1, 6) }
+            icon: A2_NUMBER_SUBJ[v.site.animal] || 'person',
+            scene: { subject: A2_NUMBER_SUBJ[v.site.animal] || null, color: null, mood: null, location: v.site.loc, count: Math.min(parseInt(v.num, 10) || 1, 6) }
         })
     );
     const A2_EVENTS = [
@@ -1957,14 +1972,22 @@
     // Each weather lists only reactions that make sense for it: [past form
     // for the passage, base form for the question ("Why did Sofia hold...")].
     const A2_CAUSE_ACTS = {
-        "started to rain":    [["grabbed an umbrella", "grab an umbrella"], ["put on rain boots", "put on rain boots"]],
-        "became very windy":  [["held onto a hat", "hold onto a hat"], ["zipped up a jacket", "zip up a jacket"]],
-        "got very sunny":     [["put on sunglasses", "put on sunglasses"], ["put on sunscreen", "put on sunscreen"]],
-        "began to snow":      [["put on snow boots", "put on snow boots"], ["found some warm mittens", "find some warm mittens"]],
-        "turned very cold":   [["put on a warm coat", "put on a warm coat"], ["wore a thick scarf", "wear a thick scarf"]],
-        "got foggy":          [["walked slowly and carefully", "walk slowly and carefully"]],
-        "became stormy":      [["closed all the windows", "close all the windows"]],
-        "got hot and sticky": [["wore shorts and a T-shirt", "wear shorts and a T-shirt"]]
+        "started to rain":    [["grabbed an umbrella", "grab an umbrella"], ["put on rain boots", "put on rain boots"], ["put on a raincoat", "put on a raincoat"], ["tucked the homework into a plastic bag", "tuck the homework into a plastic bag"]],
+        "became very windy":  [["held onto a hat", "hold onto a hat"], ["zipped up a jacket", "zip up a jacket"], ["brought a kite to fly", "bring a kite to fly"]],
+        "got very sunny":     [["put on sunglasses", "put on sunglasses"], ["put on sunscreen", "put on sunscreen"], ["put on a sun hat", "put on a sun hat"]],
+        "began to snow":      [["put on snow boots", "put on snow boots"], ["found some warm mittens", "find some warm mittens"], ["grabbed a sled", "grab a sled"], ["put on snow pants", "put on snow pants"]],
+        "turned very cold":   [["put on a warm coat", "put on a warm coat"], ["wore a thick scarf", "wear a thick scarf"], ["wore two pairs of socks", "wear two pairs of socks"], ["put on a wool hat", "put on a wool hat"]],
+        "got foggy":          [["put on a bright jacket so drivers could see", "put on a bright jacket so drivers could see"], ["turned on the bike light", "turn on the bike light"]],
+        "became stormy":      [["closed all the windows", "close all the windows"], ["brought the outdoor toys inside", "bring the outdoor toys inside"], ["checked that the flashlight worked", "check that the flashlight worked"]],
+        "got hot and sticky": [["wore shorts and a T-shirt", "wear shorts and a T-shirt"], ["filled a big water bottle", "fill a big water bottle"], ["wore sandals", "wear sandals"]]
+    };
+    // Weather that could ALSO explain an action (snow vs. cold, rain vs. storm...)
+    // is never offered as a distractor for it.
+    const A2_CAUSE_NEAR = {
+        "started to rain": ["became stormy"], "became very windy": ["became stormy"],
+        "got very sunny": ["got hot and sticky"], "got hot and sticky": ["got very sunny"],
+        "began to snow": ["turned very cold"], "turned very cold": ["began to snow"],
+        "got foggy": ["became stormy"], "became stormy": ["started to rain", "became very windy", "got foggy"]
     };
     const A2_CAUSE_PAIRS = A2_EVENTS.flatMap(e => A2_CAUSE_ACTS[e.cond].map(([past, base]) => ({ cond: e.cond, ans: e.ans, past, base })));
     const A2_cause = F("CauseEffect", "RL.2.3", "weather",
@@ -1977,7 +2000,7 @@
             question: `Why did ${v.name} ${v.ev.base}?`,
             answer: v.ev.ans,
             // Distractors: only weather that would NOT also explain this action.
-            options: [v.ev.ans, ...sampleExcl(A2_EVENTS.filter(e => !A2_CAUSE_ACTS[e.cond].some(a => a[1] === v.ev.base)).map(e => e.ans), 3, v.ev.ans)],
+            options: [v.ev.ans, ...sampleExcl(A2_EVENTS.filter(e => !A2_CAUSE_ACTS[e.cond].some(a => a[1] === v.ev.base) && !(A2_CAUSE_NEAR[v.ev.cond] || []).includes(e.cond)).map(e => e.ans), 3, v.ev.ans)],
             hint: `Look at the first sentence to see what the weather was like.`,
             icon: 'person',
             scene: { subject: A2_WEATHER_SCENE[v.ev.cond] || null, color: null, mood: null, location: null, count: 1 }
@@ -1993,10 +2016,21 @@
         { word: "terrified", def: "extremely scared", wrong: ["very proud", "very silly", "very full"], ev: ["seeing a huge spider on the pillow", "hearing a loud noise in the dark", "getting lost in a big crowd"] },
         { word: "curious", def: "eager to learn or know something", wrong: ["afraid to try new things", "ready to go to sleep", "upset about something"], ev: ["finding a strange box in the attic", "seeing a bug with glowing wings", "hearing a secret knock at the door"] },
         { word: "grateful", def: "thankful for something", wrong: ["jealous of someone", "bored with something", "angry at someone"], ev: ["a friend shared a snack", "a neighbor helped fix the broken bike", "the teacher helped with the hard homework"] },
-        { word: "nervous", def: "worried or anxious about something", wrong: ["calm about something", "proud of something", "bored by something"], ev: ["waiting to give a speech", "hearing about the big test tomorrow", "waiting for the school play to start"] }
+        { word: "nervous", def: "worried or anxious about something", wrong: ["calm about something", "proud of something", "bored by something"], ev: ["waiting to give a speech", "hearing about the big test tomorrow", "waiting for the school play to start"] },
+        { word: "gloomy", def: "sad and down", wrong: ["very excited", "very brave", "very hungry"], ev: ["hearing the class trip was canceled", "watching the rain ruin the picnic", "saying goodbye to a best friend who was moving away"] },
+        { word: "proud", def: "pleased about something you did well", wrong: ["worried about something", "sorry about something", "bored with something"], ev: ["finishing the big puzzle alone", "reading a whole chapter book for the first time", "scoring the winning goal"] },
+        { word: "lonely", def: "sad from being alone", wrong: ["very full", "very busy", "very brave"], ev: ["eating lunch alone every day", "moving to a town with no friends yet", "spending the whole weekend with no one to play with"] },
+        { word: "embarrassed", def: "feeling silly in front of others", wrong: ["feeling brave", "feeling hungry", "feeling sleepy"], ev: ["tripping on stage in front of the class", "calling the teacher \"Mom\" by mistake", "spilling milk in front of everyone"] },
+        { word: "relieved", def: "glad that a worry is over", wrong: ["upset that something went wrong", "sleepy after a long day", "angry at a friend"], ev: ["finding the lost homework just in time", "hearing the storm had passed", "learning the hurt kitten would be fine"] },
+        { word: "puzzled", def: "confused and not sure what is going on", wrong: ["very sure", "very angry", "very sleepy"], ev: ["reading the tricky riddle", "finding a note written in a strange code", "seeing the toy box moved with no one around"] },
+        { word: "cheerful", def: "happy and bright", wrong: ["grumpy and cross", "tired and slow", "scared and shaky"], ev: ["taking a sunny morning walk", "singing songs with friends", "getting a big hug from Grandpa"] },
+        { word: "bored", def: "tired of having nothing fun to do", wrong: ["very excited", "very scared", "very proud"], ev: ["waiting in a long line all afternoon", "watching the rain with no games to play", "sitting through the long car ride"] },
+        { word: "jealous", def: "wanting what someone else has", wrong: ["happy to share", "afraid of the dark", "ready for bed"], ev: ["watching a friend get the last cookie", "seeing a classmate get the new bike everyone wanted", "watching a cousin open the toy on the wish list"] },
+        { word: "brave", def: "not afraid to do something hard", wrong: ["very scared", "very sleepy", "very silly"], ev: ["jumping into the deep end for the first time", "speaking in front of the whole school", "holding still for a shot at the doctor's office"] }
     ];
     const A2_VOCAB_PAIRS = A2_VOCAB.flatMap(w => w.ev.map(ev => ({ ...w, ev })));
-    const A2_VOCAB_MOOD = { joyful: 'happy', furious: 'angry', exhausted: 'tired', delighted: 'happy', terrified: 'scared', curious: null, grateful: 'happy', nervous: 'scared' };
+    const A2_VOCAB_MOOD = { joyful: 'happy', furious: 'angry', exhausted: 'tired', delighted: 'happy', terrified: 'scared', curious: null, grateful: 'happy', nervous: 'scared',
+        gloomy: 'sad', proud: 'happy', lonely: 'sad', embarrassed: null, relieved: 'happy', puzzled: null, cheerful: 'happy', bored: null, jealous: null, brave: null };
     const A2_vocab = F("Vocabulary", "L.2.4", "feelings",
         {
             name: NAMES,
@@ -2024,8 +2058,35 @@
         { group: "camels", phen: "fat-storing humps", mech: "store fat in their humps", reason: "survive for days without food or water", hab: "the desert", icon: "mountain" },
         { group: "octopuses", phen: "ink clouds", mech: "release a cloud of dark ink", reason: "confuse predators and swim away", hab: "coral reefs", icon: "fish" },
         { group: "woodpeckers", phen: "strong, pointed beaks", mech: "peck rapidly at tree trunks", reason: "find insects hiding under the bark", hab: "forests", icon: "bird" },
-        { group: "penguins", phen: "a thick layer of blubber", mech: "store fat under their skin", reason: "stay warm in freezing water", hab: "Antarctica", icon: "penguin" }
+        { group: "penguins", phen: "a thick layer of blubber", mech: "store fat under their skin", reason: "stay warm in freezing water", hab: "Antarctica", icon: "penguin" },
+        { group: "giraffes", phen: "very long necks", mech: "stretch up to reach the tops of tall trees", reason: "eat leaves that other animals cannot reach", hab: "the grasslands of Africa", icon: "tree" },
+        { group: "porcupines", phen: "sharp quills", mech: "raise hundreds of stiff, pointed quills", reason: "keep hungry predators away", hab: "forests", icon: "tree" },
+        { group: "hummingbirds", phen: "long, thin beaks", mech: "reach deep inside flowers", reason: "sip the sweet nectar hidden inside", hab: "gardens and forests", icon: "bird" },
+        { group: "ducks", phen: "webbed feet", mech: "push against the water with their wide, flat feet", reason: "paddle quickly across ponds", hab: "ponds and lakes", icon: "duck" },
+        { group: "polar bears", phen: "thick fur and a layer of fat", mech: "keep a warm coat of fur and fat over their bodies", reason: "stay warm on the freezing sea ice", hab: "the Arctic", icon: "bear" },
+        { group: "owls", phen: "large, forward-facing eyes", mech: "see well even when there is very little light", reason: "hunt for mice at night", hab: "woods and fields", icon: "owl" },
+        { group: "beavers", phen: "strong front teeth", mech: "chew through tree trunks", reason: "build dams and lodges out of wood", hab: "rivers and streams", icon: "tree" },
+        { group: "geckos", phen: "toe pads covered in tiny hairs", mech: "grip smooth surfaces tightly", reason: "move easily over walls and ceilings", hab: "warm places around the world", icon: "frog" },
+        { group: "kangaroos", phen: "powerful back legs", mech: "hop long distances with big, springy jumps", reason: "travel far across dry land to find food and water", hab: "Australia", icon: "sun" },
+        { group: "whales", phen: "blowholes on top of their heads", mech: "come up to the surface and breathe through them", reason: "breathe air without lifting their whole heads out of the water", hab: "the ocean", icon: "fish" },
+        { group: "fish", phen: "gills", mech: "pull oxygen out of the water", reason: "breathe underwater", hab: "lakes, rivers, and oceans", icon: "fish" },
+        { group: "squirrels", phen: "a strong memory for hiding places", mech: "remember where they buried many of their nuts", reason: "find food again during the winter", hab: "parks and forests", icon: "squirrel" },
+        { group: "sea turtles", phen: "paddle-shaped flippers", mech: "sweep their flippers through the water like wings", reason: "swim long distances across the ocean", hab: "warm oceans", icon: "turtle" },
+        { group: "cheetahs", phen: "long legs and a bendy spine", mech: "run faster than any other land animal", reason: "catch fast-moving prey", hab: "the grasslands of Africa", icon: "sun" },
+        { group: "bats", phen: "echolocation", mech: "make high sounds and listen for the echoes", reason: "find insects in the dark", hab: "caves and forests", icon: "moon" },
+        { group: "honeybees", phen: "a waggle dance", mech: "wiggle in special patterns inside the hive", reason: "show other bees where to find flowers", hab: "hives", icon: "bee" }
     ];
+    // Category tags: a reason that shares a tag with the key (e.g. two ways to
+    // escape predators, or two ways to stay warm) is never offered as a distractor.
+    const B1_ITEM_CAT = {
+        "deep-sea creatures": "food", "chameleons": "predator", "arctic foxes": "predator", "monarch butterflies": "move",
+        "bears": "cold", "electric eels": "food predator", "camels": "dry", "octopuses": "predator", "woodpeckers": "food",
+        "penguins": "cold", "giraffes": "food", "porcupines": "predator", "hummingbirds": "food", "ducks": "move",
+        "polar bears": "cold", "owls": "food", "beavers": "build", "geckos": "move", "kangaroos": "move dry",
+        "whales": "breathe", "fish": "breathe", "squirrels": "cold food", "sea turtles": "move", "cheetahs": "food",
+        "bats": "food", "honeybees": "talk"
+    };
+    const b1CatNear = (a, b) => (B1_ITEM_CAT[a] || a).split(' ').some(c => (B1_ITEM_CAT[b] || b).split(' ').includes(c));
     const B1_inference = F("Detail", "RI.4.1", "ocean",
         {
             it: B1_ITEMS,
@@ -2035,7 +2096,7 @@
             passage: `${cap(v.it.group)} have a special adaptation: ${v.it.phen}. They ${v.it.mech}. ${v.conn} ${v.it.reason}. They live in ${v.it.hab}.`,
             question: `Based on the passage, why do ${v.it.group} use ${v.it.phen}?`,
             answer: `To ${v.it.reason}`,
-            options: [`To ${v.it.reason}`, ...sampleExcl(B1_ITEMS.map(x => `To ${x.reason}`), 3, `To ${v.it.reason}`)],
+            options: [`To ${v.it.reason}`, ...sampleExcl(B1_ITEMS.filter(x => !b1CatNear(x.group, v.it.group)).map(x => `To ${x.reason}`), 3, `To ${v.it.reason}`)],
             hint: `Look at the sentence that begins with "${v.conn}".`,
             icon: v.it.icon,
             scene: { subject: v.it.icon, color: null, mood: null, location: mapLocationPhrase(v.it.hab), count: 1 }
@@ -2044,18 +2105,34 @@
     const B1_TOPICS = [
         { t: "Bees are important insects.", d: ["They pollinate flowers so plants can grow.", "They produce honey that people eat.", "They live together in large groups called hives."], icon: "bee" },
         { t: "Recycling helps protect our planet.", d: ["It reduces the amount of trash in landfills.", "It saves natural resources like trees and water.", "It helps lower pollution in the air."], icon: "tree" },
-        { t: "The water cycle moves water around Earth.", d: ["Water evaporates from oceans and lakes into the air.", "It forms clouds when it cools down high in the sky.", "It falls back to the ground as rain or snow."], icon: "ocean" },
+        { t: "The water cycle moves water around Earth.", d: ["Water evaporates from oceans and lakes into the air.", "The water vapor forms clouds when it cools high in the sky.", "The water falls back to the ground as rain or snow."], icon: "ocean" },
         { t: "Regular exercise is good for your body.", d: ["It makes your heart and muscles stronger.", "It helps you sleep better at night.", "It can improve your mood and energy."], icon: "person" },
         { t: "Getting enough sleep is important for kids.", d: ["It helps your brain remember what you learned.", "It gives your body time to grow and heal.", "It helps you feel less cranky during the day."], icon: "moon" },
         { t: "Libraries offer more than just books.", d: ["They have computers people can use for free.", "They host events like story time for kids.", "They lend movies, music, and even games."], icon: "book" },
-        { t: "Volcanoes form in interesting ways.", d: ["Melted rock called magma builds up under the ground.", "Pressure pushes the magma up through cracks.", "It erupts onto the surface as hot lava."], icon: "mountain" },
+        { t: "Volcanoes form in interesting ways.", d: ["Melted rock called magma builds up under the ground.", "Pressure pushes the magma up through cracks.", "The magma erupts onto the surface as hot lava."], icon: "mountain" },
         { t: "The solar system has eight planets.", d: ["Each planet travels in its own path around the sun.", "Some planets are rocky, while others are made of gas.", "The sun's gravity keeps all the planets in orbit."], icon: "star" },
         { t: "Rainforests are home to countless species.", d: ["More than half of the world's plants and animals live there.", "The thick trees create several layers of habitat.", "Rainforests also help produce oxygen for the planet."], icon: "tree" },
         { t: "Ancient Egyptians built incredible pyramids.", d: ["They used enormous stone blocks to build them.", "The pyramids were built as tombs for pharaohs.", "It took thousands of workers many years to finish one."], icon: "house" },
         { t: "Spiders are surprisingly helpful creatures.", d: ["They eat insects that can damage crops or spread disease.", "Their silk is stronger than steel of the same thickness.", "Almost every spider species is not dangerous to humans."], icon: "bee" },
         { t: "Coral reefs are sometimes called the rainforests of the sea.", d: ["They provide homes for thousands of ocean species.", "They protect coastlines from strong waves and storms.", "Reefs grow slowly, sometimes only inches every year."], icon: "fish" },
         { t: "The invention of the printing press changed the world.", d: ["It allowed books to be made faster and cheaper.", "More people were able to learn how to read.", "Ideas could spread more quickly between countries."], icon: "book" },
-        { t: "Migration helps many birds survive the seasons.", d: ["They fly to warmer places when food becomes scarce.", "Some birds travel thousands of miles every year.", "They often follow the same paths their whole lives."], icon: "bird" }
+        { t: "Migration helps many birds survive the seasons.", d: ["They fly to warmer places when food becomes scarce.", "Some birds travel thousands of miles every year.", "They often follow the same paths their whole lives."], icon: "bird" },
+        { t: "Octopuses are clever ocean animals.", d: ["They can solve simple puzzles to get food.", "Some carry shells to use as hiding places.", "They can squeeze through very small openings."], icon: "fish" },
+        { t: "Trees are important for people and animals.", d: ["They give off oxygen that we breathe.", "Their shade keeps streets and homes cooler.", "Birds, squirrels, and insects make homes in them."], icon: "tree" },
+        { t: "The moon seems to change shape during the month.", d: ["We only see the part of the moon that the sun lights up.", "As the moon travels around Earth, we see more or less of that lit part.", "It takes about a month to go from one full moon to the next."], icon: "moon" },
+        { t: "Earthworms help gardens grow.", d: ["They dig tunnels that let air and water reach plant roots.", "They eat dead leaves and turn them into rich soil.", "Their tunnels make the soil softer for roots to spread."], icon: "flower" },
+        { t: "Dogs have been helping people for thousands of years.", d: ["Some dogs guide people who are blind.", "Others herd sheep and cattle on farms.", "Search-and-rescue dogs use their noses to find lost hikers."], icon: "dog" },
+        { t: "Glaciers are giant rivers of ice.", d: ["They form when snow piles up for many years and presses into ice.", "They move so slowly that it is hard to see them moving.", "As they move, they carve out valleys and lakes."], icon: "mountain" },
+        { t: "Hurricanes are powerful storms.", d: ["They form over warm ocean water.", "Hurricane winds can blow faster than 74 miles per hour.", "They can bring heavy rain and flooding to coastlines."], icon: "storm" },
+        { t: "Some animals help each other survive.", d: ["Clownfish live safely among the stinging arms of sea anemones.", "Oxpecker birds eat ticks off the backs of zebras and rhinos.", "Tiny cleaner fish pick food scraps from the mouths of bigger fish."], icon: "fish" },
+        { t: "The Great Wall of China is one of the largest structures ever built.", d: ["It stretches for thousands of miles across northern China.", "Workers built and rebuilt it over hundreds of years.", "It was built to help protect the land from invaders."], icon: "mountain" },
+        { t: "Teeth need good care to stay healthy.", d: ["Brushing twice a day removes food and germs.", "Flossing cleans the spaces a toothbrush cannot reach.", "Eating fewer sugary snacks helps prevent cavities."], icon: "person" },
+        { t: "Deserts are dry places that are still full of life.", d: ["Cactuses store water in their thick stems.", "Many desert animals stay underground during the hot day.", "Some desert plants bloom only after a rare rain."], icon: "sun" },
+        { t: "Magnets can push and pull certain objects.", d: ["They attract things made of iron, like paper clips and nails.", "Two magnets can pull together or push apart depending on how they face.", "Magnets do not attract wood, plastic, or paper."], icon: "star" },
+        { t: "Frogs change a lot as they grow.", d: ["They hatch from eggs as tadpoles that live in water.", "Tadpoles breathe with gills and swim with tails.", "Over time, they grow legs and lungs so they can live on land."], icon: "frog" },
+        { t: "Wind can be used to make electricity.", d: ["Tall wind turbines have large blades that spin in the breeze.", "The spinning blades turn a machine that makes electricity.", "Wind is a clean source of energy that will not run out."], icon: "wind" },
+        { t: "Sea otters have clever ways to live in the ocean.", d: ["They use rocks as tools to crack open shellfish.", "Some wrap themselves in seaweed so they do not drift away while sleeping.", "Their thick fur keeps them warm in cold water."], icon: "fish" },
+        { t: "Maps have special parts that help people use them.", d: ["A map key explains what the symbols on the map mean.", "A compass rose shows which way is north, south, east, and west.", "A scale shows how far apart places really are."], icon: "star" }
     ];
     const B1_mainidea = F("MainIdea", "RI.4.2", "nature",
         {
@@ -2082,9 +2159,29 @@
         { word: "anxious", def: "feeling worried or nervous", wrong: ["feeling relaxed", "feeling proud", "feeling bored"], ctx: "{n} felt anxious before the test and could not stop tapping a foot." },
         { word: "confident", def: "sure of oneself and one's abilities", wrong: ["unsure and doubtful", "very tired", "very confused"], ctx: "{n} felt confident on stage and spoke loudly without looking at any notes." },
         { word: "clumsy", def: "awkward and likely to drop or bump things", wrong: ["graceful and careful", "very smart", "very quiet"], ctx: "{n} was so clumsy that the cup of juice spilled twice at breakfast." },
-        { word: "graceful", def: "moving in a smooth, elegant way", wrong: ["moving in a clumsy way", "moving very slowly", "moving very loudly"], ctx: "{n} was graceful on the ice, gliding smoothly without a single wobble." }
+        { word: "graceful", def: "moving in a smooth, elegant way", wrong: ["moving in a clumsy way", "moving very slowly", "moving very loudly"], ctx: "{n} was graceful on the ice, gliding smoothly without a single wobble." },
+        { word: "reluctant", def: "not wanting to do something", wrong: ["eager to begin", "very tired", "very proud"], ctx: "{n} was reluctant to jump into the cold lake and stood on the dock for a long time." },
+        { word: "frigid", def: "extremely cold", wrong: ["extremely hot", "extremely dry", "extremely loud"], ctx: "The frigid wind made {n}'s fingers numb, even inside thick gloves." },
+        { word: "vacant", def: "empty, with nothing or no one in it", wrong: ["crowded and busy", "brand new", "very dirty"], ctx: "{n} peeked into the vacant lot, where there were no buildings, cars, or people at all." },
+        { word: "drowsy", def: "sleepy", wrong: ["wide awake", "very hungry", "very angry"], ctx: "After the long car ride, {n} felt drowsy and could barely keep both eyes open." },
+        { word: "abundant", def: "more than enough; plentiful", wrong: ["very rare", "very tiny", "very expensive"], ctx: "Apples were abundant that fall; {n}'s family picked so many that they filled ten baskets." },
+        { word: "timid", def: "shy and easily frightened", wrong: ["bold and fearless", "very noisy", "very bossy"], ctx: "{n} was timid on the first day and hid behind the door instead of saying hello." },
+        { word: "hesitated", def: "paused because of feeling unsure", wrong: ["rushed ahead quickly", "shouted loudly", "laughed out loud"], ctx: "{n} hesitated at the edge of the diving board, unsure, before finally jumping in." },
+        { word: "scarce", def: "hard to find because there is little of it", wrong: ["easy to find everywhere", "very large", "very bright"], ctx: "Water was scarce during the dry summer, so {n}'s town asked everyone to use as little as possible." },
+        { word: "persuade", def: "to talk someone into doing or believing something", wrong: ["to forget about something", "to hide from someone", "to laugh at someone"], ctx: "{n} tried to persuade the class to vote for a park cleanup by giving three good reasons." },
+        { word: "miniature", def: "much smaller than usual", wrong: ["much larger than usual", "very colorful", "very old"], ctx: "{n} built a miniature house for the toy mouse, small enough to fit in one hand." },
+        { word: "cooperate", def: "to work together", wrong: ["to work alone", "to give up", "to argue loudly"], ctx: "The team had to cooperate, so {n} held the ladder while a friend hung the banner." },
+        { word: "astonished", def: "very surprised", wrong: ["very bored", "very sleepy", "very calm"], ctx: "{n} was astonished to see snow in May and stared out the window with wide eyes." },
+        { word: "fierce", def: "very strong and powerful", wrong: ["very gentle", "very quiet", "very warm"], ctx: "The fierce wind bent the trees and knocked over {n}'s bike." },
+        { word: "rapid", def: "very fast", wrong: ["very slow", "very calm", "very muddy"], ctx: "The rapid river rushed past so quickly that {n} could not keep up by running along the bank." },
+        { word: "damp", def: "a little wet", wrong: ["completely dry", "very hot", "very dirty"], ctx: "{n}'s socks were still damp from the rain, so they were hung by the heater to dry." },
+        { word: "precious", def: "very special and worth a lot", wrong: ["cheap and unimportant", "broken and old", "heavy and large"], ctx: "The old photo was precious to {n}, who kept it in a special box and never let it get lost." },
+        { word: "irritated", def: "annoyed or bothered", wrong: ["pleased", "sleepy", "curious"], ctx: "{n} was irritated by the buzzing fly that kept landing on the sandwich." },
+        { word: "sturdy", def: "strong and not easy to break", wrong: ["weak and easy to break", "very shiny", "very small"], ctx: "{n} built a sturdy fort that stayed standing even when the dog ran into it." },
+        { word: "demolish", def: "to tear down or destroy", wrong: ["to build up", "to paint", "to clean"], ctx: "Workers came to demolish the old garage, knocking it down piece by piece while {n} watched." },
+        { word: "observe", def: "to watch carefully", wrong: ["to ignore completely", "to draw quickly", "to shout at"], ctx: "{n} used a magnifying glass to observe the ant, watching closely as it carried a crumb." }
     ];
-    const B1_VOCAB_MOOD = { anxious: 'scared', confident: 'happy' };
+    const B1_VOCAB_MOOD = { anxious: 'scared', confident: 'happy', timid: 'scared', drowsy: 'tired', irritated: 'angry' };
     const B1_vocab = F("Vocabulary", "L.4.4", "adventure",
         {
             name: NAMES,
@@ -2113,12 +2210,26 @@
         { action: "eat more fruits and vegetables", benefit: "improves your health and well-being" },
         { action: "read for twenty minutes every day", benefit: "builds better lifelong habits" },
         { action: "support local farmers markets", benefit: "strengthens your local community" },
-        { action: "limit your screen time each day", benefit: "improves your health and well-being" }
+        { action: "limit your screen time each day", benefit: "improves your health and well-being" },
+        { action: "pack a waste-free lunch", benefit: "reduces the trash your school throws away" },
+        { action: "fix leaky faucets right away", benefit: "saves water and lowers the water bill" },
+        { action: "get at least nine hours of sleep on school nights", benefit: "helps you think clearly and stay healthy" },
+        { action: "learn basic first aid", benefit: "prepares you to help someone in an emergency" },
+        { action: "join a school club", benefit: "helps you make friends who share your interests" },
+        { action: "donate the books you have outgrown", benefit: "gives other kids the chance to enjoy reading" },
+        { action: "take the stairs instead of the elevator", benefit: "adds healthy exercise to your day" },
+        { action: "compost your fruit and vegetable scraps", benefit: "turns kitchen waste into rich soil for gardens" },
+        { action: "write a thank-you note to a teacher", benefit: "shows appreciation and brightens someone's day" },
+        { action: "wear a helmet every time you ride a bike", benefit: "protects your head from serious injury" },
+        { action: "bring your own bag to the grocery store", benefit: "cuts down on plastic waste" },
+        { action: "practice your instrument a little every day", benefit: "builds your skill steadily over time" },
+        { action: "pick up litter at your local park", benefit: "keeps the park clean and safe for wildlife" },
+        { action: "drink water instead of sugary drinks", benefit: "keeps your body healthy and hydrated" }
     ];
     const B2_persuade = F("Purpose", "RI.6.6", "environment",
         { it: B2_PERSUADE_PAIRS },
         v => ({
-            passage: `You should ${v.it.action} because it ${v.it.benefit}. Everyone can make a difference by starting today.`,
+            passage: `You should ${v.it.action} because it ${v.it.benefit}. Start today — you will be glad you did.`,
             question: `What is the author's main purpose in this passage?`,
             answer: "To persuade the reader to take a specific action",
             options: ["To persuade the reader to take a specific action", "To inform the reader with factual information", "To entertain the reader with an engaging story", "To describe a scene in vivid detail"],
@@ -2127,9 +2238,9 @@
         })
     );
     const B2_inform = F("Purpose", "RI.6.6", "science",
-        { fact: ["The human heart beats about 100,000 times a day.", "Honey never spoils if it is stored properly.", "Octopuses have three hearts and blue blood.", "Mount Everest grows about four millimeters taller every year.", "A bolt of lightning is hotter than the surface of the sun.", "Sharks existed before trees appeared on Earth.", "The Great Wall of China stretches for thousands of miles.", "Bananas are botanically classified as berries.", "A day on Venus is longer than its year.", "Sound travels faster through water than through air."] },
+        { fact: ["The human heart beats about 100,000 times a day.", "Honey never spoils if it is stored properly.", "Octopuses have three hearts and blue blood.", "Mount Everest grows about four millimeters taller every year.", "A bolt of lightning is hotter than the surface of the sun.", "Sharks existed before trees appeared on Earth.", "The Great Wall of China stretches for thousands of miles.", "Bananas are botanically classified as berries.", "A day on Venus is longer than its year.", "Sound travels faster through water than through air.", "Flamingos get their pink color from pigments in the shrimp and algae they eat.", "Light from the Sun takes about eight minutes to reach Earth.", "Water expands when it freezes, which is why ice floats.", "Some kinds of bamboo can grow more than two feet in a single day.", "A single teaspoon of healthy soil can hold millions of tiny living organisms.", "The Pacific Ocean covers more area than all of Earth's land put together.", "More than 1,000 Earths could fit inside the planet Jupiter.", "Sea otters often wrap themselves in kelp while resting so they do not drift away.", "Butterflies can taste with sensors on their feet.", "Because the Moon has no wind, astronauts' footprints there can last for a very long time.", "Babies are born with more bones than adults, because some bones fuse together as a child grows.", "Earthworms have no lungs and take in oxygen through their skin.", "Venus is the hottest planet in our solar system, even though Mercury is closer to the Sun.", "The cheetah is the fastest land animal on Earth."] },
         v => ({
-            passage: `${v.fact} Scientists have studied this phenomenon for many years to understand it fully.`,
+            passage: `${v.fact} Facts like this help us understand the world around us.`,
             question: `What is the author's main purpose in this passage?`,
             answer: "To inform the reader with factual information",
             options: ["To persuade the reader to take a specific action", "To inform the reader with factual information", "To entertain the reader with an engaging story", "To describe a scene in vivid detail"],
@@ -2148,7 +2259,19 @@
             {opener:"The old lighthouse keeper always said the sea whispered stories if you listened closely.", icon:'ocean'},
             {opener:"On Mars, the first colonists were greeted by something they never expected.", icon:'star'},
             {opener:"Every full moon, the town's cats gathered on the rooftop for reasons no human ever discovered.", icon:'cat'},
-            {opener:"A tiny seed floated on the wind for a hundred miles before finally landing somewhere unexpected.", icon:'tree'}
+            {opener:"A tiny seed floated on the wind for a hundred miles before finally landing somewhere unexpected.", icon:'tree'},
+            {opener:"The moment the museum lights went out, the dinosaur skeleton let out a very loud yawn.", icon:'star'},
+            {opener:"Nobody in the village believed the old well could grant wishes until a goat fell in and climbed out talking.", icon:'house'},
+            {opener:"When the snow globe on the shelf began to shake all by itself, the tiny town inside got ready for an adventure.", icon:'house'},
+            {opener:"A penguin named Waddles was tired of the cold, so it packed a very small suitcase for the tropics.", icon:'bird'},
+            {opener:"The school bus took one wrong turn and ended up somewhere that did not appear on any map.", icon:'car'},
+            {opener:"The garden gnome had moved again, and this time it had left a note behind.", icon:'tree'},
+            {opener:"The shy octopus at the aquarium had been quietly teaching itself to paint.", icon:'ocean'},
+            {opener:"On the first day at a new school, a talking backpack started giving some very strange advice.", icon:'book'},
+            {opener:"The bicycle had sat in the garage for years, but tonight its bell rang all by itself.", icon:'bicycle'},
+            {opener:"A lonely cloud drifted over the desert, searching for a place where it could finally rain.", icon:'sun'},
+            {opener:"The mountain goat had climbed every peak in the valley except the one everyone called impossible.", icon:'mountain'},
+            {opener:"When the fish in the class aquarium started spelling words with its bubbles, nobody knew what to say.", icon:'fish'}
         ] },
         v => ({
             passage: `${v.it.opener} What happened next would change everything.`,
@@ -2170,10 +2293,22 @@
             {scene:"The forest floor crunched with dry autumn leaves in shades of orange, red, and gold beneath the tall, bare trees.", icon:'tree'},
             {scene:"Steam rose from the bowl of noodles, carrying the smell of ginger and garlic across the tiny, crowded kitchen.", icon:'house'},
             {scene:"Stars scattered like spilled sugar across the pitch-black desert sky, with not a single cloud in sight.", icon:'star'},
-            {scene:"The old barn leaned slightly to one side, its red paint peeling to reveal weathered gray wood underneath.", icon:'house'}
+            {scene:"The old barn leaned slightly to one side, its red paint peeling to reveal weathered gray wood underneath.", icon:'house'},
+            {scene:"Golden light spilled over the wheat field at sunset, turning every swaying stalk the color of honey.", icon:'sun'},
+            {scene:"The subway station echoed with hurried footsteps, screeching brakes, and the low hum of a hundred quiet conversations.", icon:'house'},
+            {scene:"Thick fog curled around the harbor, hiding the fishing boats until only their bobbing lanterns glowed through the gray.", icon:'ocean'},
+            {scene:"The bakery window glowed warm and yellow, fogged at the edges, with rows of golden loaves cooling on the racks.", icon:'house'},
+            {scene:"Cold, clear water tumbled over smooth gray stones, splashing icy droplets onto the bright green moss along the bank.", icon:'mountain'},
+            {scene:"Thunder rumbled low over the prairie as the wide sky darkened to a deep, bruised purple.", icon:'sun'},
+            {scene:"The greenhouse was warm and damp, its glass walls dripping and its air heavy with the earthy smell of wet soil.", icon:'tree'},
+            {scene:"Fireflies blinked across the dark meadow like tiny lanterns, while crickets chirped from the tall, cool grass.", icon:'star'},
+            {scene:"The coral reef shimmered with color as schools of striped fish darted between swaying purple sea fans.", icon:'fish'},
+            {scene:"Icicles hung like glass daggers from the cabin roof, sparkling in the pale morning sun.", icon:'house'},
+            {scene:"The stadium roared with thousands of voices, and bright flags waved in every row beneath the blazing lights.", icon:'ball'},
+            {scene:"Ripe red apples hung heavy in the orchard, and the cool autumn air smelled sweet and crisp.", icon:'tree'}
         ] },
         v => ({
-            passage: `${v.it.scene} It was a moment worth remembering.`,
+            passage: `${v.it.scene} Every detail seemed to stand out.`,
             question: `What is the author's main purpose in this passage?`,
             answer: "To describe a scene in vivid detail",
             options: ["To persuade the reader to take a specific action", "To inform the reader with factual information", "To entertain the reader with an engaging story", "To describe a scene in vivid detail"],
@@ -2189,15 +2324,28 @@
         { setup: "{n} tiptoed carefully through the dark hallway, glancing back over one shoulder every few seconds.", tone: "afraid" },
         { setup: "{n} let out a long sigh, shoulders drooping, while reading the rejection letter one more time.", tone: "disappointed" },
         { setup: "{n} hummed a cheerful tune while skipping down the sunny street, waving to every neighbor.", tone: "happy" },
-        { setup: "With arms crossed, {n} rolled both eyes at the suggestion and refused to say another word.", tone: "annoyed" }
+        { setup: "With arms crossed, {n} rolled both eyes at the suggestion and refused to say another word.", tone: "annoyed" },
+        { setup: "{n} flipped through every channel twice, found nothing worth watching, and stared at the ceiling, waiting for the rainy afternoon to end.", tone: "bored" },
+        { setup: "Once the shaky rope bridge was safely behind the group, {n} let out a long breath and finally loosened a tight grip on the railing.", tone: "relieved" },
+        { setup: "While the storm rattled the windows and everyone else paced the room, {n} sat still, breathing slowly and evenly.", tone: "calm" },
+        { setup: "After tripping on stage in front of the whole school, {n} turned bright red and wished to disappear.", tone: "embarrassed" },
+        { setup: "{n} frowned at the directions, turned the map upside down and back again, and still could not tell which way was north.", tone: "confused" },
+        { setup: "{n} leaned closer to the strange humming box, turning it over and over to discover how it opened.", tone: "curious" },
+        { setup: "{n} could not stop saying thank you to the neighbor who had spent all Saturday fixing the broken bike.", tone: "grateful" },
+        { setup: "{n} held up the finished science project, beaming at months of hard work, and showed it to everyone who walked by.", tone: "proud" },
+        { setup: "{n} fell off the skateboard for the tenth time, brushed off both knees, and climbed right back on to try again.", tone: "determined" },
+        { setup: "{n} stopped mid-step, mouth falling open, at the sight of snow covering the garden in the middle of May.", tone: "surprised" }
     ];
     // Near-synonyms never appear as distractors for each other (only one defensible answer).
     const B2_NEAR_FEELINGS = {
-        nervous: ['afraid', 'anxious'], afraid: ['nervous', 'anxious'], anxious: ['nervous', 'afraid'],
-        excited: ['happy', 'proud'], happy: ['excited', 'proud'], proud: ['excited', 'happy'],
-        angry: ['annoyed'], annoyed: ['angry'], sad: ['disappointed'], disappointed: ['sad']
+        nervous: ['afraid', 'anxious', 'embarrassed', 'confused'], afraid: ['nervous', 'anxious'], anxious: ['nervous', 'afraid'],
+        excited: ['happy', 'proud', 'curious', 'surprised'], happy: ['excited', 'proud', 'grateful'], proud: ['excited', 'happy'],
+        angry: ['annoyed'], annoyed: ['angry', 'bored'], sad: ['disappointed'], disappointed: ['sad'],
+        bored: ['exhausted', 'annoyed'], exhausted: ['bored'], relieved: ['calm'], calm: ['relieved'],
+        embarrassed: ['nervous'], determined: ['embarrassed'], curious: ['excited', 'surprised', 'confused'], grateful: ['happy'],
+        surprised: ['excited', 'confused', 'curious'], confused: ['surprised', 'nervous', 'curious']
     };
-    const B2_TONE_MOOD = { nervous: 'scared', excited: 'happy', angry: 'angry', exhausted: 'tired', afraid: 'scared', disappointed: 'sad', happy: 'happy', annoyed: 'angry' };
+    const B2_TONE_MOOD = { nervous: 'scared', excited: 'happy', angry: 'angry', exhausted: 'tired', afraid: 'scared', disappointed: 'sad', happy: 'happy', annoyed: 'angry', bored: 'tired', relieved: 'calm', calm: 'calm', confused: 'confused', grateful: 'happy', proud: 'happy', surprised: 'surprised' };
     const B2_tone = F("Inference", "RL.6.1", "city",
         { name: NAMES, sc: B2_TONES },
         v => {
@@ -2221,7 +2369,19 @@
         { word: "humble", def: "having a modest view of one's own importance", wrong: ["being extremely boastful", "feeling very angry", "being very careless"], ctx: "{n} was humble, thanking the whole team instead of taking credit for the win." },
         { word: "resourceful", def: "able to find quick, clever solutions to problems", wrong: ["unable to solve any problems", "always asking others for help", "very forgetful and disorganized"], ctx: "{n} was resourceful, fixing the torn poster with tape and a paper clip." },
         { word: "diligent", def: "showing care and effort in one's work", wrong: ["lazy and careless", "extremely impatient", "very disorganized"], ctx: "{n} was diligent, checking every answer twice before turning in the project." },
-        { word: "impulsive", def: "acting suddenly without thinking things through", wrong: ["always planning carefully", "extremely cautious and slow", "very shy and quiet"], ctx: "{n} was impulsive, buying the first game in the store without comparing prices." }
+        { word: "impulsive", def: "acting suddenly without thinking things through", wrong: ["always planning carefully", "extremely cautious and slow", "very shy and quiet"], ctx: "{n} was impulsive, buying the first game in the store without comparing prices." },
+        { word: "reluctant", def: "unwilling to do something", wrong: ["eager and ready to begin", "extremely confident", "very forgetful"], ctx: "{n} was reluctant to jump into the cold lake and stood on the dock for ten minutes before finally stepping in." },
+        { word: "gullible", def: "easily tricked into believing something", wrong: ["very hard to fool", "quick to become angry", "unusually strong"], ctx: "{n} was so gullible that a friend's joke about the cafeteria serving ice cream for breakfast seemed completely true." },
+        { word: "compassionate", def: "showing concern and kindness for others who are suffering", wrong: ["uninterested in other people", "very competitive", "extremely talkative"], ctx: "{n} was compassionate, sitting beside a crying classmate and listening until the tears stopped." },
+        { word: "indifferent", def: "not caring either way; having no interest", wrong: ["deeply excited and involved", "very angry and upset", "extremely careful"], ctx: "{n} seemed indifferent to the election results, shrugging and going back to reading without even asking who had won." },
+        { word: "frugal", def: "careful to spend as little money as possible", wrong: ["spending money freely", "very disorganized", "unwilling to speak"], ctx: "{n} was frugal, fixing old sneakers with glue instead of buying a new pair." },
+        { word: "eloquent", def: "able to speak or write clearly and powerfully", wrong: ["unable to explain ideas", "very sleepy", "physically very strong"], ctx: "{n} was eloquent, giving a speech so clear and moving that the audience stood and cheered." },
+        { word: "hesitant", def: "slow to act or speak because of doubt", wrong: ["quick and certain", "extremely cheerful", "very wasteful"], ctx: "{n} was hesitant, raising a hand halfway and then lowering it, unsure whether the answer was right." },
+        { word: "optimistic", def: "hopeful and confident about the future", wrong: ["expecting the worst to happen", "feeling very sleepy", "being extremely rude"], ctx: "Even after rain canceled the game, {n} stayed optimistic, sure the rescheduled match would be even better." },
+        { word: "pessimistic", def: "expecting that bad things will happen", wrong: ["always hopeful about the future", "very well organized", "extremely generous"], ctx: "{n} was pessimistic about the trip, predicting that the bus would break down and that it would rain all day." },
+        { word: "considerate", def: "careful not to bother or hurt others", wrong: ["rude and thoughtless", "very adventurous", "easily bored"], ctx: "{n} was considerate, whispering on the phone so the baby in the next room could keep sleeping." },
+        { word: "reliable", def: "able to be trusted to do what is expected", wrong: ["often late and forgetful", "extremely funny", "very nervous"], ctx: "{n} was reliable; whenever the class needed someone to feed the fish over the weekend, everyone knew the job would get done." },
+        { word: "versatile", def: "able to do many different things well", wrong: ["skilled at only one thing", "very lazy", "easily frightened"], ctx: "{n} was versatile, playing piano, drums, or guitar in the school band, depending on what each song needed." }
     ];
     const B2_vocab = F("Vocabulary", "L.6.4", "business",
         { name: NAMES, pr: B2_VOCAB },
@@ -2246,7 +2406,23 @@
         { word: "candid", def: "truthful and straightforward; frank", wrong: ["secretive and evasive", "polite but vague", "rude and mocking"], ctx: "{n} was candid with the coach: 'I skipped practice because I was scared of failing.'" },
         { word: "arduous", def: "involving great effort; difficult and tiring", wrong: ["easy and relaxing", "short and quick", "dull and boring"], ctx: "After the arduous nine-hour climb, {n} could barely lift the heavy pack." },
         { word: "austere", def: "plain, simple, and without luxury", wrong: ["luxurious and decorated", "messy and cluttered", "bright and cheerful"], ctx: "{n}'s room was austere: a bare mattress, one wooden chair, and nothing on the walls." },
-        { word: "prudent", def: "acting with care and good judgment", wrong: ["reckless and careless", "generous and kind", "lucky and fortunate"], ctx: "{n} made a prudent choice and saved half of every paycheck in case of an emergency." }
+        { word: "prudent", def: "acting with care and good judgment", wrong: ["reckless and careless", "generous and kind", "lucky and fortunate"], ctx: "{n} made a prudent choice and saved half of every paycheck in case of an emergency." },
+        { word: "benevolent", def: "kind and eager to help others", wrong: ["cruel and eager to harm others", "shy and eager to hide from others", "strict and eager to punish others"], ctx: "The benevolent neighbor shoveled {n}'s driveway every snowy morning and never once asked for anything in return." },
+        { word: "frugal", def: "careful not to waste money or resources", wrong: ["careless about spending money", "eager to show off wealth", "unable to keep track of money"], ctx: "{n} was frugal, reusing old jars as containers and mending torn clothes instead of buying new ones." },
+        { word: "lethargic", def: "lacking energy; sluggish", wrong: ["full of energy; lively", "quick to anger; irritable", "curious; alert"], ctx: "After staying up all night, {n} felt lethargic, yawning through every class and barely able to lift a pencil." },
+        { word: "gregarious", def: "fond of company; sociable", wrong: ["preferring to be alone; withdrawn", "quick to anger; hostile", "careful with money; thrifty"], ctx: "{n} was so gregarious that within an hour of arriving at camp, {n} had chatted with nearly every other camper." },
+        { word: "tentative", def: "not certain or fixed; hesitant", wrong: ["final and confirmed; certain", "loud and forceful; bold", "long and detailed; thorough"], ctx: "{n} made tentative plans for Saturday but warned everyone they might change if the weather turned bad." },
+        { word: "vigilant", def: "keeping careful watch for possible danger", wrong: ["ignoring possible danger", "causing danger on purpose", "running away from danger"], ctx: "{n} stayed vigilant on the night hike, scanning the dark trail for roots and listening for any movement in the brush." },
+        { word: "obstinate", def: "stubbornly refusing to change one's mind", wrong: ["easily persuaded to change one's mind", "unable to make up one's mind", "quick to apologize for one's mistakes"], ctx: "Even after three people showed {n} the map, {n} remained obstinate and insisted the trail went left." },
+        { word: "indifferent", def: "having no interest or concern", wrong: ["deeply interested and concerned", "openly angry and upset", "nervous and worried"], ctx: "{n} was indifferent to the game's outcome, scrolling through a phone while everyone else in the stands cheered." },
+        { word: "eloquent", def: "fluent and persuasive in speaking or writing", wrong: ["awkward and unclear in speaking or writing", "silent and unwilling to speak", "loud but unconvincing in speaking"], ctx: "{n}'s eloquent speech was so moving and well phrased that several listeners were in tears by the end." },
+        { word: "reluctant", def: "unwilling and hesitant", wrong: ["eager and enthusiastic", "angry and aggressive", "confused and lost"], ctx: "{n} was reluctant to jump into the cold lake and stood on the dock for ten minutes before finally stepping in." },
+        { word: "alleviate", def: "to make pain or a problem less severe", wrong: ["to make pain or a problem worse", "to cause a new problem", "to hide a problem from others"], ctx: "The nurse gave {n} an ice pack to alleviate the swelling, and within an hour the ankle hurt much less." },
+        { word: "conspicuous", def: "easy to notice; standing out", wrong: ["hard to notice; hidden", "easy to break; fragile", "hard to understand; confusing"], ctx: "In a room full of people dressed in black, {n}'s bright orange coat was conspicuous." },
+        { word: "deteriorate", def: "to become gradually worse", wrong: ["to become gradually better", "to stay exactly the same", "to disappear all at once"], ctx: "Left out in the rain for years, the wooden fence began to deteriorate, and {n} watched its boards rot and split one by one." },
+        { word: "impartial", def: "treating all sides equally; fair", wrong: ["favoring one side over another", "refusing to take part at all", "uninformed about the situation"], ctx: "As referee, {n} stayed impartial, calling fouls on both teams by the same rules even though a cousin played for one side." },
+        { word: "plausible", def: "seeming reasonable or likely to be true", wrong: ["clearly impossible or false", "extremely exciting or dramatic", "officially proven beyond doubt"], ctx: "{n}'s explanation for the missing cookies was plausible, since the dog had been alone in the kitchen, but no one could be sure." },
+        { word: "ominous", def: "suggesting that something bad will happen", wrong: ["suggesting that something good will happen", "extremely loud and startling", "calm and peaceful"], ctx: "Dark clouds gathered over the field, and the ominous rumble of distant thunder made {n} pack up the picnic quickly." }
     ];
     const C1_vocab = F("Vocabulary", "L.9-10.4", "mountain",
         { name: NAMES, w: C1_VOCAB },
@@ -2267,7 +2443,19 @@
         { text: "He was a lion on the battlefield, fearless and fierce.", device: "metaphor", effect: "It emphasizes his courage and ferocity by directly comparing him to a lion." },
         { text: "\"I love waiting in long lines for hours,\" she said flatly, tapping her foot in frustration.", device: "irony", effect: "It shows the gap between her sarcastic statement and her obvious annoyance." },
         { text: "The stars winked knowingly from their perch in the night sky.", device: "personification", effect: "It gives the stars a playful, human-like awareness." },
-        { text: "Time is a thief that steals our youth without a sound.", device: "metaphor", effect: "It compares time to a thief to show how it takes away youth unnoticed." }
+        { text: "Time is a thief that steals our youth without a sound.", device: "metaphor", effect: "It compares time to a thief to show how it takes away youth unnoticed." },
+        { text: "The sunflowers turned their faces toward the morning, eager to greet the day.", device: "personification", effect: "It gives the flowers human eagerness to create a hopeful mood." },
+        { text: "The rusty gate shrieked in protest every time anyone tried to push it open.", device: "personification", effect: "It gives the gate a human voice and will to show how hard it is to open." },
+        { text: "The alarm clock screamed at dawn, demanding that everyone get out of bed.", device: "personification", effect: "It gives the clock human demands to show how harsh and loud the morning feels." },
+        { text: "Snowflakes tiptoed down onto the rooftops, careful not to wake the sleeping town.", device: "personification", effect: "It gives the snow human gentleness to create a quiet, peaceful scene." },
+        { text: "After the substitute stepped out, the classroom was a zoo, with shouting and paper flying everywhere.", device: "metaphor", effect: "It calls the classroom a zoo to emphasize how wild and noisy it became." },
+        { text: "The coach's words were daggers, each one cutting deeper than the last.", device: "metaphor", effect: "It calls the words daggers to show how painful they were to hear." },
+        { text: "At night the city is a glittering jewelry box, every lit window a tiny gem.", device: "metaphor", effect: "It calls the city a jewelry box to show how beautiful its lights look." },
+        { text: "Grandpa's garden was a patchwork quilt of reds, yellows, and greens.", device: "metaphor", effect: "It calls the garden a quilt to show its neat, colorful sections." },
+        { text: "Staring at the flat tire in the pouring rain, the driver said, \"Well, this is turning out to be a fantastic day.\"", device: "irony", effect: "It shows the gap between the cheerful words and the miserable situation." },
+        { text: "\"Oh, I just love doing homework on a Friday night,\" the student groaned, dropping a stack of worksheets on the table.", device: "irony", effect: "It shows the gap between the stated love and the student's obvious dread." },
+        { text: "After the team lost by forty points, the coach smiled grimly and said, \"Great job keeping it close, everyone.\"", device: "irony", effect: "It shows the gap between the praise and the lopsided loss." },
+        { text: "\"Thanks so much for saving me a seat,\" the student said to the friend whose backpack was spread across all three chairs.", device: "irony", effect: "It shows the gap between the thanks and the friend's inconsiderate behavior." }
     ];
     const DEVICE_EFFECTS = {
         personification: "It gives a non-human thing human qualities to bring it to life.",
@@ -2293,18 +2481,34 @@
     const C1_ARGS = [
         { claim: "School days should start later in the morning.", support: ["Teenagers naturally stay up later and need more sleep.", "Later start times have been linked to improved grades and mood.", "Fewer students would be tardy or fall asleep in class."] },
         { claim: "Homework should be limited on weeknights.", support: ["Students need time to relax and pursue other interests.", "Excessive homework has not been shown to improve learning for younger students.", "Family time is important for emotional development."] },
-        { claim: "Public libraries deserve more funding from local governments.", support: ["They provide free access to books and technology for everyone.", "Libraries offer educational programs for children and adults alike.", "They serve as safe community spaces, especially for those without other resources."] },
+        { claim: "Public libraries deserve more funding from local governments.", support: ["Libraries provide free access to books and technology for everyone.", "Libraries offer educational programs for children and adults alike.", "Libraries serve as safe community spaces, especially for those without other resources."] },
         { claim: "Schools should teach financial literacy as a required course.", support: ["Many adults struggle with budgeting and managing debt.", "Understanding interest rates can prevent costly financial mistakes.", "Early financial education builds lifelong money management habits."] },
-        { claim: "Cities should invest more in public transportation.", support: ["It reduces traffic congestion and pollution.", "It provides affordable transportation for people who cannot drive.", "It can boost local economies by connecting workers to jobs."] },
-        { claim: "Students should be allowed to retake failed tests.", support: ["Learning is a process, and one bad day shouldn't define a grade.", "Retakes encourage students to review and truly understand material.", "It reduces the anxiety that can lead to poor performance in the first place."] },
-        { claim: "Companies should offer more remote work options.", support: ["It can improve employee satisfaction and work-life balance.", "It reduces commuting time and associated pollution.", "It allows companies to hire talented workers regardless of location."] },
-        { claim: "Physical education should remain a core part of school curriculums.", support: ["Regular exercise improves concentration and academic performance.", "It teaches valuable lessons about teamwork and discipline.", "It helps combat rising rates of childhood obesity."] },
-        { claim: "Museums should offer free admission to students.", support: ["It removes financial barriers to cultural and historical education.", "Exposure to art and history can inspire lifelong curiosity.", "It encourages families to spend meaningful time together."] },
-        { claim: "Space exploration funding should continue to increase.", support: ["It leads to technological innovations that benefit everyday life.", "It expands our understanding of the universe and our place in it.", "It could eventually help ensure humanity's long-term survival."] },
+        { claim: "Cities should invest more in public transportation.", support: ["Public transit reduces traffic congestion and pollution.", "Buses and trains provide affordable transportation for people who cannot drive.", "Good transit can boost local economies by connecting workers to jobs."] },
+        { claim: "Students should be allowed to retake failed tests.", support: ["Learning is a process, and one bad day shouldn't define a grade.", "Retakes encourage students to review and truly understand material.", "A second chance reduces the anxiety that can lead to poor performance in the first place."] },
+        { claim: "Companies should offer more remote work options.", support: ["Remote work can improve employee satisfaction and work-life balance.", "Working from home reduces commuting time and associated pollution.", "Remote options allow companies to hire talented workers regardless of location."] },
+        { claim: "Physical education should remain a core part of school curriculums.", support: ["Regular exercise improves concentration and academic performance.", "Physical education teaches valuable lessons about teamwork and discipline.", "Regular PE classes help combat rising rates of childhood obesity."] },
+        { claim: "Museums should offer free admission to students.", support: ["Free entry removes financial barriers to cultural and historical education.", "Exposure to art and history can inspire lifelong curiosity.", "Free museum visits encourage families to spend meaningful time together."] },
+        { claim: "Space exploration funding should continue to increase.", support: ["Space research leads to technological innovations that benefit everyday life.", "Exploring space expands our understanding of the universe and our place in it.", "Space exploration could eventually help ensure humanity's long-term survival."] },
         { claim: "All students should learn basic coding skills.", support: ["Technology plays a growing role in nearly every career field.", "Coding teaches logical thinking and problem-solving.", "Early exposure can open doors to future job opportunities."] },
-        { claim: "Cities should create more green spaces and public parks.", support: ["Parks improve mental health and provide space for exercise.", "Green spaces help reduce urban heat and improve air quality.", "They give communities a shared space to gather and connect."] },
+        { claim: "Cities should create more green spaces and public parks.", support: ["Parks improve mental health and provide space for exercise.", "Green spaces help reduce urban heat and improve air quality.", "Parks give communities a shared space to gather and connect."] },
         { claim: "Standardized testing should not be the only measure of student success.", support: ["Students have different strengths that a single test cannot capture.", "Test anxiety can prevent capable students from performing well.", "Other measures, like projects, better reflect real-world skills."] },
-        { claim: "Renewable energy should replace fossil fuels as quickly as possible.", support: ["It reduces harmful emissions that contribute to climate change.", "Renewable sources like solar and wind are becoming more affordable.", "It decreases dependence on limited natural resources."] }
+        { claim: "Renewable energy should replace fossil fuels as quickly as possible.", support: ["Clean energy reduces harmful emissions that contribute to climate change.", "Renewable sources like solar and wind are becoming more affordable.", "Renewable power decreases dependence on limited natural resources."] },
+        { claim: "Schools should require students to learn a second language.", support: ["Bilingual people can communicate with a wider range of people at work and while traveling.", "Learning another language exposes students to different cultures and ways of thinking.", "Language skills are often easier to build when practice starts at a young age."] },
+        { claim: "Communities should protect their historic buildings from demolition.", support: ["Old buildings preserve a visible record of local history.", "Restored historic districts often attract tourists and new businesses.", "Reusing an existing building avoids the waste created by tearing it down."] },
+        { claim: "Schools should teach every student basic first aid and CPR.", support: ["Bystanders are often the first people present when someone collapses.", "Quick CPR can greatly improve a person's chance of surviving cardiac arrest.", "The training takes only a few hours and can be refreshed each year."] },
+        { claim: "Cities should reduce unnecessary outdoor lighting at night.", support: ["Excess artificial light can disrupt the migration of birds.", "Bright night skies make it hard for residents to see the stars.", "Dimming or shielding lights can lower a city's energy bills."] },
+        { claim: "Grocery stores should donate unsold food instead of throwing it away.", support: ["Large amounts of edible food are discarded every day.", "Food banks often struggle to keep their shelves stocked.", "Donating food keeps it out of landfills, where rotting food releases greenhouse gases."] },
+        { claim: "Zoos should focus on protecting endangered species rather than simply entertaining visitors.", support: ["Breeding programs have helped return some threatened animals to the wild.", "Visitors who learn about conservation may be more likely to support it.", "Research carried out at zoos can improve care for the same species in the wild."] },
+        { claim: "Every student should take at least one art or music course.", support: ["Creative classes give students a way to express ideas that do not fit neatly into essays or equations.", "Performing in a band or choir teaches cooperation toward a shared goal.", "Many students discover lifelong hobbies through their first art or music class."] },
+        { claim: "Towns should expand their recycling and composting programs.", support: ["Composting food scraps turns waste into useful soil for gardens and farms.", "Recycling metal and paper reduces the need to extract new raw materials.", "Landfill space in many regions is limited and expensive to expand."] },
+        { claim: "Schools should limit phone use during class time.", support: ["Notifications can pull students' attention away from lessons.", "Teachers spend less time managing distractions when phones are put away.", "Students may talk with each other more during group work when phones are out of sight."] },
+        { claim: "Teenagers can benefit greatly from holding a part-time summer job.", support: ["A job teaches responsibility, such as arriving on time and following through on tasks.", "Earning a paycheck gives teens practical experience with budgeting.", "Working with customers and coworkers builds communication skills."] },
+        { claim: "Schools should serve healthier cafeteria meals.", support: ["Nutritious meals help students stay focused through the afternoon.", "For some students, school lunch is the most complete meal of the day.", "Healthy eating habits formed in childhood often continue into adulthood."] },
+        { claim: "Communities should build wildlife crossings over busy highways.", support: ["Collisions between vehicles and large animals injure many drivers each year.", "Highways can split animal populations and cut them off from food and mates.", "Crossings in several countries have sharply reduced the number of animals struck by cars."] },
+        { claim: "Science classes should devote more time to hands-on experiments.", support: ["Designing experiments teaches students how scientists actually test ideas.", "Many students remember concepts better when they see them in action.", "Lab work builds practical skills such as measuring carefully and recording data."] },
+        { claim: "Public buildings should be fully accessible to people with disabilities.", support: ["Ramps and elevators allow wheelchair users to reach services on their own.", "Accessible design also helps parents with strollers and older adults.", "Everyone whose taxes pay for public buildings should be able to use them."] },
+        { claim: "Schools should give students longer breaks between classes and at lunch.", support: ["Short breaks let students' minds rest before the next lesson.", "Rushed lunch periods leave some students too little time to finish eating.", "Unstructured time gives students a chance to build friendships."] },
+        { claim: "Young adults should be encouraged to vote in local elections.", support: ["Local officials make decisions about schools, parks, and roads that affect young residents.", "Turnout in local elections is often very low, so each vote carries more weight.", "Voting early in life can build a lasting habit of civic participation."] }
     ];
     const C1_mainidea = F("Argument", "RI.9-10.2", "business",
         { it: C1_ARGS, last: [false, true] },
@@ -2331,7 +2535,23 @@
         { word: "equivocal", def: "open to two or more interpretations; ambiguous", wrong: ["clear and certain", "rude and dismissive", "long and detailed"], ctx: "Asked whether {n} supported the plan, {n} gave an equivocal answer that could be read as either yes or no." },
         { word: "parsimonious", def: "extremely unwilling to spend money; stingy", wrong: ["generous with money", "careless with money", "honest about money"], ctx: "The parsimonious landlord refused to fix the heater, telling {n} that blankets were cheaper." },
         { word: "sagacious", def: "having keen judgment; wise", wrong: ["lacking judgment; foolish", "refusing to change; stubborn", "talking a great deal"], ctx: "Everyone sought {n}'s sagacious advice, because {n}'s judgments about the market had proved wise for decades." },
-        { word: "vitriolic", def: "filled with bitter criticism or malice", wrong: ["warm and kind", "neutral and balanced", "shy and hesitant"], ctx: "{n}'s vitriolic review called the chef 'a menace to food itself' and mocked every single dish." }
+        { word: "vitriolic", def: "filled with bitter criticism or malice", wrong: ["warm and kind", "neutral and balanced", "shy and hesitant"], ctx: "{n}'s vitriolic review called the chef 'a menace to food itself' and mocked every single dish." },
+        { word: "pernicious", def: "harmful in a gradual or subtle way", wrong: ["helpful in a gradual or subtle way", "harmful in a loud and sudden way", "harmless but mildly annoying"], ctx: "The rumor had a pernicious effect: over months it quietly eroded the trust between {n} and the rest of the team." },
+        { word: "laconic", def: "using very few words", wrong: ["using a great many words", "using very formal words", "using words angrily"], ctx: "{n}'s laconic reply to the long, emotional letter was a single word: 'Noted.'" },
+        { word: "magnanimous", def: "generous and forgiving, especially toward a rival", wrong: ["bitter and unforgiving toward a rival", "fearful of and avoiding a rival", "boastful and mocking toward a rival"], ctx: "In a magnanimous gesture, {n} praised the defeated opponent's skill and shared the prize money with the runner-up." },
+        { word: "recalcitrant", def: "stubbornly uncooperative; resisting control", wrong: ["eagerly obedient; easy to direct", "quietly fearful; easy to frighten", "officially in charge; directing others"], ctx: "The recalcitrant mule planted its hooves and refused to move, no matter how hard {n} pulled on the rope." },
+        { word: "sycophantic", def: "flattering powerful people to gain an advantage", wrong: ["criticizing powerful people openly", "ignoring powerful people entirely", "competing fairly with powerful people"], ctx: "{n}'s sycophantic compliments to the director, praising every idea however weak, were obviously aimed at landing the lead role." },
+        { word: "perfunctory", def: "done with minimal effort, as a mere routine", wrong: ["done with great care and enthusiasm", "done in complete secrecy", "done much too late"], ctx: "{n} gave the car a perfunctory wash, splashing one bucket over the hood and leaving the rest caked in mud." },
+        { word: "loquacious", def: "tending to talk a great deal", wrong: ["tending to stay silent", "tending to tell lies", "tending to shout"], ctx: "The loquacious tour guide talked nonstop for two hours, and {n} never managed to ask a single question." },
+        { word: "intransigent", def: "refusing to compromise or change one's position", wrong: ["willing to compromise easily", "unsure of one's own position", "unable to explain one's position"], ctx: "The negotiations stalled because {n} remained intransigent, rejecting every compromise the other side offered." },
+        { word: "ebullient", def: "cheerful and full of energy", wrong: ["gloomy and drained of energy", "calm and quiet", "cautious and suspicious"], ctx: "Ebullient after the victory, {n} bounded around the locker room, hugging teammates and laughing loudly." },
+        { word: "fastidious", def: "extremely attentive to accuracy and detail", wrong: ["careless about accuracy and detail", "quick and impatient", "relaxed and easygoing"], ctx: "{n} was so fastidious about the essay that the opening sentence was rewritten eleven times before it was submitted." },
+        { word: "didactic", def: "intended to teach, especially a moral lesson", wrong: ["intended only to entertain", "intended to frighten readers", "intended to confuse readers"], ctx: "The fable was openly didactic, ending with a line that told {n} and every other reader exactly what lesson to learn." },
+        { word: "reticent", def: "inclined to keep one's thoughts to oneself; reserved", wrong: ["eager to share every thought", "angry and argumentative", "dishonest and misleading"], ctx: "Usually reticent in meetings, {n} surprised everyone by finally speaking up after an hour of silence." },
+        { word: "pugnacious", def: "eager to argue or fight; combative", wrong: ["eager to make peace", "slow to form opinions", "easily frightened"], ctx: "The pugnacious debater interrupted {n} constantly, turning every minor point into a heated battle." },
+        { word: "quixotic", def: "extremely idealistic and unrealistic", wrong: ["practical and realistic", "cruel and selfish", "quick and efficient"], ctx: "{n}'s quixotic plan to end world hunger with a single bake sale was admirable but hopelessly unrealistic." },
+        { word: "obfuscate", def: "to make something unclear, often deliberately", wrong: ["to explain something clearly and simply", "to prove something true", "to repeat something exactly"], ctx: "Instead of admitting the error, the report tried to obfuscate it, burying the key number in pages of jargon that confused {n} and every other reader." },
+        { word: "ameliorate", def: "to make a bad situation better", wrong: ["to make a bad situation worse", "to ignore a bad situation", "to describe a bad situation"], ctx: "To ameliorate the crowding in the cafeteria, {n} proposed staggered lunch periods, which soon eased the problem." }
     ];
     const C2_vocab = F("Vocabulary", "L.11-12.4", "science",
         { name: NAMES, w: C2_VOCAB },
@@ -2352,7 +2572,19 @@
         { text: "The company's new \"eco-friendly\" factory released more pollution than any other in the state.", device: "irony", effect: "It highlights the contradiction between the factory's label and its actual environmental impact." },
         { text: "Our fearless mayor, having solved traffic by renaming every jam a \"mobility festival,\" now turns his genius to potholes.", device: "satire", effect: "It criticizes the politician's lack of honesty by pointing out the literal and figurative lack of openness." },
         { text: "Her ambition was her Achilles' heel, ultimately the cause of her spectacular failure.", device: "allusion", effect: "It references the myth of Achilles to suggest a single fatal weakness led to her downfall." },
-        { text: "He apologized a thousand times for arriving a single minute late.", device: "hyperbole", effect: "It exaggerates the number of apologies to emphasize how anxious he was about being late." }
+        { text: "He apologized a thousand times for arriving a single minute late.", device: "hyperbole", effect: "It exaggerates the number of apologies to emphasize how anxious he was about being late." },
+        { text: "The line at the passport office was so long that people at the back celebrated two birthdays before reaching the counter.", device: "hyperbole", effect: "It exaggerates the wait to emphasize how slow the line was." },
+        { text: "By exam week, the backpack weighed a ton, stuffed with every textbook the student owned.", device: "hyperbole", effect: "It exaggerates the weight to emphasize how heavy the load felt." },
+        { text: "The speech went on for an eternity; entire civilizations could have risen and fallen before the final thank-you.", device: "hyperbole", effect: "It exaggerates the speech's length to emphasize how tedious it was." },
+        { text: "The fire station burned to the ground while its crew was out fighting a fire across town.", device: "irony", effect: "It highlights the contrast between the station's purpose and what happened to it." },
+        { text: "The author of a bestselling guide to time management missed the deadline for its sequel by two years.", device: "irony", effect: "It highlights the contrast between the author's advice and the author's own behavior." },
+        { text: "\"Brilliant idea,\" the hiker said dryly, as the promised shortcut ended at the edge of a cliff.", device: "irony", effect: "It shows the contrast between the praise and the plan's obvious failure." },
+        { text: "The city council, in its infinite wisdom, has solved the housing shortage by declaring every park bench a studio apartment.", device: "satire", effect: "It mocks the council's empty solution with exaggerated praise." },
+        { text: "The company proudly announced that customer complaints had fallen to zero, thanks to its bold new policy of disconnecting the complaint line.", device: "satire", effect: "It ridicules the company for hiding problems instead of fixing them." },
+        { text: "Heroically confronting the crisis of students falling asleep in class, the school board voted to start the school day thirty minutes earlier.", device: "satire", effect: "It mocks the board's counterproductive decision by praising it as heroic." },
+        { text: "Opening the jar of long-forgotten lab samples, the student unleashed a Pandora's box of mold and foul smells.", device: "allusion", effect: "It references the Greek myth of Pandora to suggest that opening the jar released a flood of trouble." },
+        { text: "The tiny local bakery took on the national chain in a true David-and-Goliath battle for customers.", device: "allusion", effect: "It references the biblical story of David and Goliath to cast the bakery as a small underdog facing a giant." },
+        { text: "The investor seemed to have the Midas touch: every struggling business the investor bought soon turned a profit.", device: "allusion", effect: "It references the myth of King Midas to suggest that everything the investor touched turned to gold." }
     ];
     const C2_rhetorical = F("Rhetoric", "RL.11-12.4", "art",
         { it: C2_DEVICES, frame: ["Read the following excerpt:", "Consider this passage:", "Examine this line:"] },
@@ -2375,9 +2607,19 @@
         { claim: "The commercialization of scientific research risks compromising the objectivity that underpins scientific credibility.", support: ["Funding sources may implicitly or explicitly shape research outcomes.", "Pressure to produce marketable results can discourage the pursuit of foundational inquiry.", "Conflicts of interest are not always transparently disclosed to the public."] },
         { claim: "Automation, though economically efficient, presents profound challenges for labor markets ill-prepared for rapid transition.", support: ["Entire industries risk obsolescence as machines outperform human labor.", "Retraining programs often lag behind the pace of technological displacement.", "Economic inequality may widen as capital owners benefit disproportionately from automation."] },
         { claim: "Climate change adaptation strategies must account for the disproportionate vulnerability of low-income communities.", support: ["Wealthier populations often possess greater resources to relocate or rebuild.", "Low-income regions frequently lack robust infrastructure to withstand extreme weather.", "Historical inequities have often placed marginalized communities in higher-risk areas."] },
-        { claim: "The increasing reliance on algorithmic curation raises fundamental questions about intellectual autonomy.", support: ["Personalized content feeds can subtly shape what information users encounter.", "Users often remain unaware of the extent to which algorithms filter their reality.", "This curation can narrow exposure to diverse or challenging perspectives."] },
+        { claim: "The increasing reliance on algorithmic curation raises fundamental questions about intellectual autonomy.", support: ["Personalized content feeds can subtly shape what information users encounter.", "Users often remain unaware of the extent to which algorithms filter their reality.", "Algorithmic curation can narrow exposure to diverse or challenging perspectives."] },
         { claim: "Preserving linguistic diversity is essential to safeguarding humanity's collective cultural heritage.", support: ["Each language encodes unique ways of understanding and categorizing the world.", "When a language disappears, irreplaceable cultural knowledge is often lost with it.", "Linguistic diversity has been linked to greater cognitive flexibility among speakers."] },
-        { claim: "The gig economy, while offering flexibility, often shifts significant financial risk onto individual workers.", support: ["Workers frequently lack access to employer-provided benefits like healthcare.", "Income can be unpredictable, complicating long-term financial planning.", "Legal protections for gig workers often lag behind those for traditional employees."] }
+        { claim: "The gig economy, while offering flexibility, often shifts significant financial risk onto individual workers.", support: ["Workers frequently lack access to employer-provided benefits like healthcare.", "Income can be unpredictable, complicating long-term financial planning.", "Legal protections for gig workers often lag behind those for traditional employees."] },
+        { claim: "The overuse of antibiotics threatens to undermine one of modern medicine's most important tools.", support: ["Bacteria repeatedly exposed to antibiotics can evolve resistance to them.", "Antibiotics are sometimes prescribed for viral infections, against which they are ineffective.", "Resistant infections can require longer hospital stays and costlier treatments."] },
+        { claim: "The decline of local journalism weakens communities' ability to hold public institutions accountable.", support: ["Many small towns have lost their only local newspaper over the past two decades.", "Without reporters attending council meetings, questionable decisions may go unnoticed.", "Residents of areas without local news often know less about the candidates on their ballots."] },
+        { claim: "The accumulation of debris in Earth's orbit poses a growing risk to the satellites on which modern life depends.", support: ["Even small fragments travel fast enough to damage a spacecraft on impact.", "Each collision can create thousands of new fragments, raising the odds of further collisions.", "Satellites support navigation, weather forecasting, and global communications."] },
+        { claim: "Aging populations will require societies to rethink how they fund and deliver long-term care.", support: ["In many countries, the share of residents over sixty-five is rising steadily.", "A shrinking working-age population means fewer workers paying taxes for each retiree.", "Demand for trained caregivers already exceeds supply in many regions."] },
+        { claim: "The overpumping of groundwater is quietly depleting a resource that many regions cannot easily replace.", support: ["Some aquifers take thousands of years to refill but are being drained within decades.", "Heavy pumping can cause the land above an aquifer to sink.", "Farms in dry regions often depend on groundwater when rivers run low."] },
+        { claim: "Invasive species can inflict ecological and economic damage far out of proportion to their small beginnings.", support: ["A few animals released into a new habitat may multiply rapidly without natural predators.", "Invasive plants can crowd out native species that local wildlife depends on.", "Controlling an established invasion often costs far more than preventing it would have."] },
+        { claim: "Making publicly funded research freely accessible would accelerate scientific progress and strengthen public trust in science.", support: ["Subscription fees can prevent smaller institutions from reading the latest studies.", "Researchers build on one another's findings more quickly when those findings are widely available.", "Taxpayers who fund research may reasonably expect to read its results."] },
+        { claim: "Microplastic pollution has become so widespread that its long-term effects on ecosystems and human health demand urgent study.", support: ["Microplastics have been detected everywhere from deep ocean trenches to mountain snow.", "Marine animals can mistake plastic fragments for food.", "Scientists are still determining how these particles affect the organisms that absorb them."] },
+        { claim: "Chronic sleep deprivation, often treated as a badge of dedication, carries serious costs for both individuals and society.", support: ["Sleep loss impairs memory, attention, and decision-making.", "Drowsy driving contributes to many traffic accidents each year.", "Long-term sleep deprivation is linked to higher risks of heart disease and diabetes."] },
+        { claim: "Investing in pandemic preparedness costs far less than absorbing the economic and human toll of an unchecked outbreak.", support: ["Early detection systems can identify new outbreaks before they spread widely.", "Stockpiles of protective equipment allow hospitals to respond quickly in a crisis.", "Widespread outbreaks can disrupt schools, businesses, and travel for months."] }
     ];
     const C2_synthesis = F("Synthesis", "RI.11-12.2", "city",
         { it: C2_THESES, last: [false, true] },
@@ -2479,7 +2721,27 @@
         {a:"The purple flower smells sweet.", b:"The white flower has no smell.", q:"Which flower smells sweet?", ans:"The purple flower", other:"The white flower", both:"flowers", icon:"flower"},
         {a:"The small ant is busy.", b:"The large beetle is lazy.", q:"Which bug is busy?", ans:"The small ant", other:"The large beetle", both:"bugs", icon:"ant"},
         {a:"The old book is heavy.", b:"The new book is light.", q:"Which book is heavy?", ans:"The old book", other:"The new book", both:"books", icon:"book"},
-        {a:"The fast car is loud.", b:"The slow bike is quiet.", q:"Which one is loud?", ans:"The fast car", other:"The slow bike", both:"of them", icon:"car"}
+        {a:"The fast car is loud.", b:"The slow bike is quiet.", q:"Which one is loud?", ans:"The fast car", other:"The slow bike", both:"of them", icon:"car"},
+        {a:"The white cat is sleepy.", b:"The gray cat is playful.", q:"Which cat is playful?", ans:"The gray cat", other:"The white cat", both:"cats", icon:"cat"},
+        {a:"The big dog is calm.", b:"The little dog is jumpy.", q:"Which dog is calm?", ans:"The big dog", other:"The little dog", both:"dogs", icon:"dog"},
+        {a:"The red apple is sweet.", b:"The green apple is sour.", q:"Which apple is sour?", ans:"The green apple", other:"The red apple", both:"apples", icon:"apple"},
+        {a:"The wooden boat is slow.", b:"The white boat is fast.", q:"Which boat is slow?", ans:"The wooden boat", other:"The white boat", both:"boats", icon:"boat"},
+        {a:"The yellow kite flies high.", b:"The blue kite stays low.", q:"Which kite flies high?", ans:"The yellow kite", other:"The blue kite", both:"kites", icon:"kite"},
+        {a:"The brown horse is gentle.", b:"The black horse is wild.", q:"Which horse is gentle?", ans:"The brown horse", other:"The black horse", both:"horses", icon:"horse"},
+        {a:"The spotted cow is resting.", b:"The brown cow is eating.", q:"Which cow is eating?", ans:"The brown cow", other:"The spotted cow", both:"cows", icon:"cow"},
+        {a:"The red ball is soft.", b:"The blue ball is hard.", q:"Which ball is hard?", ans:"The blue ball", other:"The red ball", both:"balls", icon:"ball"},
+        {a:"The old house is dark.", b:"The new house is bright.", q:"Which house is bright?", ans:"The new house", other:"The old house", both:"houses", icon:"house"},
+        {a:"The pink pig is clean.", b:"The spotted pig is muddy.", q:"Which pig is muddy?", ans:"The spotted pig", other:"The pink pig", both:"pigs", icon:"pig"},
+        {a:"The big elephant is old.", b:"The little elephant is young.", q:"Which elephant is young?", ans:"The little elephant", other:"The big elephant", both:"elephants", icon:"elephant"},
+        {a:"The green snake is long.", b:"The brown snake is short.", q:"Which snake is long?", ans:"The green snake", other:"The brown snake", both:"snakes", icon:"snake"},
+        {a:"The red balloon is big.", b:"The blue balloon is tiny.", q:"Which balloon is tiny?", ans:"The blue balloon", other:"The red balloon", both:"balloons", icon:"balloon"},
+        {a:"The brown owl is awake.", b:"The white owl is asleep.", q:"Which owl is asleep?", ans:"The white owl", other:"The brown owl", both:"owls", icon:"owl"},
+        {a:"The little snail is slow.", b:"The big rabbit is fast.", q:"Which animal is slow?", ans:"The little snail", other:"The big rabbit", both:"animals", icon:"snail"},
+        {a:"The yellow pencil is sharp.", b:"The red pencil is dull.", q:"Which pencil is sharp?", ans:"The yellow pencil", other:"The red pencil", both:"pencils", icon:"pencil"},
+        {a:"The black bike is new.", b:"The green bike is old.", q:"Which bike is old?", ans:"The green bike", other:"The black bike", both:"bikes", icon:"bicycle"},
+        {a:"The first song is loud.", b:"The second song is soft.", q:"Which song is soft?", ans:"The second song", other:"The first song", both:"songs", icon:"star"},
+        {a:"The front garden is sunny.", b:"The back garden is shady.", q:"Which garden is shady?", ans:"The back garden", other:"The front garden", both:"gardens", icon:"flower"},
+        {a:"The gray squirrel is hungry.", b:"The red squirrel is full.", q:"Which squirrel is hungry?", ans:"The gray squirrel", other:"The red squirrel", both:"squirrels", icon:"squirrel"}
     ];
     const A2_compare = F("Detail", "RI.2.1", "nature",
         { it: A2_COMPARE_ITEMS },
@@ -2509,7 +2771,22 @@
         { name: "Zoe", event: "spilled juice all over her homework", reaction: "She groaned and rubbed her forehead, staring at the mess.", feel: "annoyed" },
         { name: "Liam", event: "saw his best friend after a whole summer apart", reaction: "He grinned wide and ran over for a big hug.", feel: "happy" },
         { name: "Sofia", event: "lost her favorite necklace at the park", reaction: "She looked down and walked home slowly without saying a word.", feel: "sad" },
-        { name: "Omar", event: "heard thunder crash right after the lights went out", reaction: "He froze in place, his heart pounding fast.", feel: "scared" }
+        { name: "Omar", event: "heard thunder crash right after the lights went out", reaction: "He froze in place, his heart pounding fast.", feel: "scared" },
+        { name: "Lena", event: "saw that the rain had washed away her chalk drawing", reaction: "Lena's shoulders dropped, and a tear rolled down her cheek.", feel: "sad" },
+        { name: "Kofi", event: "read a whole chapter book all by himself for the first time", reaction: "Kofi held the book up high and showed it to everyone in class.", feel: "proud" },
+        { name: "Hana", event: "heard the big dog next door bark loudly at the fence", reaction: "Hana hid behind her dad and held his hand tight.", feel: "scared" },
+        { name: "Mateo", event: "found out the family was going to the beach tomorrow", reaction: "Mateo cheered and ran to pack a bucket and shovel right away.", feel: "excited" },
+        { name: "Ruby", event: "had to wait for the cookies to cool before eating one", reaction: "Ruby kept asking, \"Are they ready yet? How about now?\"", feel: "impatient" },
+        { name: "Sam", event: "found out someone had eaten the last apple he had saved", reaction: "Sam crossed his arms and grumbled, \"Not again!\"", feel: "annoyed" },
+        { name: "Aisha", event: "spent the whole day at the park with her grandma", reaction: "Aisha smiled all day long and laughed at every silly joke.", feel: "happy" },
+        { name: "Theo", event: "learned that his best friend was moving far away", reaction: "Theo sat quietly on the steps and did not want to play.", feel: "sad" },
+        { name: "Mei", event: "got a gold star for the neatest handwriting in the class", reaction: "Mei stood up tall and showed the star to her whole family.", feel: "proud" },
+        { name: "Jack", event: "could not find his mom for a moment in the busy store", reaction: "Jack's knees shook, and he called out for her in a small voice.", feel: "scared" },
+        { name: "Nia", event: "saw the first snowflakes of winter falling outside", reaction: "Nia pressed her nose to the window and squealed, \"Can we go out and play?\"", feel: "excited" },
+        { name: "Leo", event: "stood in the long line for the slide", reaction: "Leo bounced on his toes and kept counting the kids ahead of him.", feel: "impatient" },
+        { name: "Rosa", event: "had to pick up the blocks her little brother kept knocking over", reaction: "Rosa rolled her eyes and let out a loud huff.", feel: "annoyed" },
+        { name: "Kai", event: "played catch with his dad on a warm, sunny afternoon", reaction: "Kai laughed and said it was the best day ever.", feel: "happy" },
+        { name: "Ella", event: "planted a seed and watched it grow into a tall sunflower", reaction: "Ella told everyone, \"I grew this all by myself!\"", feel: "proud" }
     ];
     const A2_LIT_MOOD = { sad: 'sad', proud: 'happy', scared: 'scared', excited: 'happy', impatient: null, happy: 'happy', annoyed: 'angry' };
     const A2_lit = F("Character", "RL.2.3", "adventure",
@@ -2523,7 +2800,9 @@
                 // other positive feelings out so only one option is defensible.
                 const POS = ["happy", "excited", "proud"];
                 const pool = [...new Set(A2_LIT_ITEMS.map(x => x.feel))]
-                    .filter(f => f !== v.it.feel && !(POS.includes(v.it.feel) && POS.includes(f)));
+                    .filter(f => f !== v.it.feel && !(POS.includes(v.it.feel) && POS.includes(f)))
+                    // "impatient" and "annoyed" overlap too much to be offered against each other.
+                    .filter(f => !(["impatient", "annoyed"].includes(v.it.feel) && ["impatient", "annoyed"].includes(f)));
                 return [v.it.feel, ...sampleExcl(pool, 3)];
             })(),
             hint: `Look at what ${v.it.name} did right after — actions show feelings.`,
@@ -2535,8 +2814,23 @@
         { cause: "the bridge was closed", effect: "took a different route home" },
         { cause: "the power went out", effect: "lit candles and waited" },
         { cause: "the road was flooded", effect: "took a different route home" },
-        { cause: "the train was delayed", effect: "arrived an hour late" },
-        { cause: "the store ran out of bread", effect: "baked muffins instead" }
+        { cause: "the train was delayed", effect: "read a book on the platform while waiting" },
+        { cause: "the store ran out of bread", effect: "baked muffins instead" },
+        { cause: "the library was closed for the holiday", effect: "returned the books the next day" },
+        { cause: "the ice cream shop was out of chocolate", effect: "chose strawberry instead" },
+        { cause: "the soccer game was canceled", effect: "hung the soccer cleats back in the closet" },
+        { cause: "the printer ran out of ink", effect: "wrote the report by hand" },
+        { cause: "the bike had a flat tire", effect: "patched the tire before riding to the park" },
+        { cause: "the class hamster escaped from its cage", effect: "searched under every desk" },
+        { cause: "the dog tracked mud across the kitchen floor", effect: "mopped the floor" },
+        { cause: "the kite got stuck in a tall tree", effect: "asked a neighbor with a ladder for help" },
+        { cause: "paint spilled on the finished drawing", effect: "started a fresh drawing" },
+        { cause: "the zipper on the backpack broke", effect: "carried the books in a tote bag" },
+        { cause: "the milk had gone sour", effect: "ate toast instead of cereal" },
+        { cause: "the tomato plants were wilting in the heat", effect: "watered the garden twice that day" },
+        { cause: "the new puzzle was missing a piece", effect: "cut a paper piece to fill the gap" },
+        { cause: "the cat knocked the vase off the shelf", effect: "swept up the broken pieces" },
+        { cause: "the tent had a hole in it", effect: "patched the tent with tape before the trip" }
     ];
     const B1_cause2 = F("CauseEffect", "RL.4.3", "weather",
         {
@@ -2544,16 +2838,13 @@
             pr: B1_CAUSE2_PAIRS
         },
         v => ({
-            passage: `Because ${v.pr.cause}, ${v.name} ${v.pr.effect}. It was an unexpected change of plans.`,
+            passage: `Because ${v.pr.cause}, ${v.name} ${v.pr.effect}. It was not how the day was supposed to go.`,
             question: `What happened because ${v.pr.cause}?`,
             answer: `${v.name} ${v.pr.effect}`,
-            options: [`${v.name} ${v.pr.effect}`, ...sampleExcl([
-                `${v.name} took a different route home`,
-                `${v.name} lit candles and waited`,
-                `${v.name} stayed at a friend's house`,
-                `${v.name} arrived an hour late`,
-                `${v.name} baked muffins instead`
-            ], 3, `${v.name} ${v.pr.effect}`)],
+            // Every effect in the bank is tied to one specific cause, so the
+            // others are uniquely wrong.
+            options: [`${v.name} ${v.pr.effect}`, ...sampleExcl([...new Set(B1_CAUSE2_PAIRS.map(p => p.effect))]
+                .map(e => `${v.name} ${e}`), 3, `${v.name} ${v.pr.effect}`)],
             hint: `The word "Because" introduces the cause; look for the result.`,
             icon: 'person'
         })
@@ -2584,7 +2875,38 @@
         { setup: "Instead of blaming his teammate for the loss, Sam pointed out three things the team did well and suggested a new plan.", trait: "encouraging", clue: "he focused on what went right and helped the team move forward" },
         { setup: "Priya double-checked every measurement three times before cutting the wood, even though her friends said it looked fine already.", trait: "careful", clue: "she took extra steps to make sure everything was exact" },
         { setup: "Diego admitted right away that he had broken the vase, even though no one had seen him do it.", trait: "honest", clue: "he told the truth without being caught or asked" },
-        { setup: "When the fire alarm rang, Grace calmly led the younger kids out of the building instead of panicking with everyone else.", trait: "brave", clue: "she stayed calm and led others during a stressful moment" }
+        { setup: "When the fire alarm rang, Grace calmly led the younger kids out of the building instead of panicking with everyone else.", trait: "brave", clue: "she stayed calm and led others during a stressful moment" },
+        { setup: "Mira sat by the pond for a whole hour, quietly waiting for the frog to peek out again, and never once complained.", trait: "patient", clue: "she waited calmly for a long time without complaining" },
+        { setup: "Every time Theo found a strange bug, he studied it with a magnifying glass and then looked it up in a book to learn its name.", trait: "curious", clue: "he always wanted to learn more about what he found" },
+        { setup: "Kenji fed the class fish every morning without being reminded and even left a note for the substitute about how much food to give.", trait: "responsible", clue: "he took care of his job without anyone reminding him" },
+        { setup: "When the art room ran out of paper, Lucia made a collage out of old magazines, bottle caps, and fallen leaves.", trait: "creative", clue: "she came up with a new and unusual way to make art" },
+        { setup: "Owen left his lunch at home on Monday, his homework on Tuesday, and his jacket on the bus on Wednesday.", trait: "forgetful", clue: "he kept leaving important things behind" },
+        { setup: "When a friend rode up on a shiny new bike, Nadia frowned and muttered, \"I wish that bike were mine instead of my old one.\"", trait: "jealous", clue: "she wanted what her friend had" },
+        { setup: "After the neighbors helped fix the fence, Ruben baked them cookies and wrote a thank-you card to each family.", trait: "grateful", clue: "he went out of his way to thank the people who helped" },
+        { setup: "Even after everyone showed Felix the map, he refused to turn around and insisted that his way was the right trail.", trait: "stubborn", clue: "he would not change his mind even when shown he was wrong" },
+        { setup: "When the ball rolled under the fence, Yara tied a spoon to a long stick and used it to scoop the ball back out.", trait: "clever", clue: "she solved a tricky problem in a smart way" },
+        { setup: "At the party, Ben stood near the wall and spoke so quietly that only the person beside him could hear.", trait: "shy", clue: "he stayed quiet and kept away from the crowd" },
+        { setup: "Even on a rainy, gray morning, Ivy hummed songs and greeted every classmate with a big smile.", trait: "cheerful", clue: "she stayed happy and bright no matter the weather" },
+        { setup: "Only a minute after ordering, Jada tapped her foot, sighed loudly, and asked the clerk, \"Is it done yet?\"", trait: "impatient", clue: "she could not stand waiting even a short time" },
+        { setup: "Before the game, Aiden made sure both teams had the same number of fast runners so neither side had an unfair edge.", trait: "fair", clue: "he made sure everyone had an equal chance" },
+        { setup: "When other kids laughed at his best friend's drawing, Malik stayed right beside his friend and kept sitting together at lunch all week.", trait: "loyal", clue: "he stood by his friend when others did not" },
+        { setup: "After scoring the winning goal, Zara told the reporter that the whole team deserved the credit, not just her.", trait: "humble", clue: "she did not brag and shared the credit with others" },
+        { setup: "Eli woke up early every Saturday to practice piano for an hour before going out to play.", trait: "hardworking", clue: "he put in steady effort again and again" }
+    ];
+    // Traits that could describe the same behavior are never offered together.
+    const B1_NEAR_TRAITS = [
+        ["nervous", "anxious", "shy", "impatient", "forgetful"],
+        ["anxious", "careful", "responsible"],
+        ["determined", "resilient", "stubborn", "hardworking"],
+        ["kind", "generous", "encouraging", "loyal", "grateful", "cheerful", "humble"],
+        ["honest", "fair", "responsible", "humble"],
+        ["creative", "clever"],
+        ["brave", "responsible"],
+        ["resilient", "cheerful"],
+        ["careful", "patient"],
+        ["responsible", "hardworking"],
+        ["patient", "curious"],
+        ["brave", "loyal", "kind", "honest"]
     ];
     const B1_lit = F("Character", "RL.4.3", "adventure",
         { it: B1_LIT_ITEMS },
@@ -2592,8 +2914,9 @@
             passage: v.it.setup,
             question: `Which word best describes the character in this passage?`,
             answer: v.it.trait,
-            options: [v.it.trait, ...sampleExcl(B1_LIT_ITEMS.map(x => x.trait), 3, v.it.trait)],
-            hint: `Think about ${v.it.clue}.`,
+            options: [v.it.trait, ...sampleExcl([...new Set(B1_LIT_ITEMS.map(x => x.trait))]
+                .filter(t => !B1_NEAR_TRAITS.some(g => g.includes(t) && g.includes(v.it.trait))), 3, v.it.trait)],
+            hint: `Think about how ${v.it.clue}.`,
             icon: 'person'
         })
     );
@@ -2607,7 +2930,19 @@
         {topic:"trains and airplanes", point:"both can carry passengers long distances", contrast:"one travels closer to the ground while the other flies far above it", icon:"car"},
         {topic:"painting and photography", point:"both can capture a moment or feeling", contrast:"one is built brushstroke by brushstroke while the other captures light instantly", icon:"star"},
         {topic:"public schools and homeschooling", point:"both can provide a full education", contrast:"one follows a shared classroom schedule while the other can be paced individually", icon:"book"},
-        {topic:"rivers and lakes", point:"both are freshwater habitats for many animals", contrast:"one constantly flows in one direction while the other stays mostly still", icon:"ocean"}
+        {topic:"rivers and lakes", point:"both are freshwater habitats for many animals", contrast:"one constantly flows in one direction while the other stays mostly still", icon:"ocean"},
+        {topic:"frogs and toads", point:"both are amphibians that lay their eggs in water", contrast:"one usually has smooth, moist skin while the other usually has dry, bumpy skin", icon:"tree"},
+        {topic:"the Moon and the Sun", point:"both appear to rise in the east and set in the west", contrast:"one makes its own light while the other only reflects light", icon:"moon"},
+        {topic:"bees and butterflies", point:"both help pollinate flowers", contrast:"one gathers pollen to feed its young while the other mainly sips nectar", icon:"bee"},
+        {topic:"hurricanes and tornadoes", point:"both are storms with powerful spinning winds", contrast:"one forms over warm ocean water while the other usually forms over land", icon:"sun"},
+        {topic:"whales and sharks", point:"both live in the ocean", contrast:"one is a mammal that breathes air while the other is a fish that uses gills", icon:"fish"},
+        {topic:"Earth and Mars", point:"both are rocky planets that orbit the Sun", contrast:"one has liquid oceans on its surface while the other is a cold, dry desert", icon:"star"},
+        {topic:"letters and emails", point:"both can carry messages to people far away", contrast:"one is delivered by hand while the other arrives electronically in seconds", icon:"book"},
+        {topic:"museums and zoos", point:"both let visitors learn outside a classroom", contrast:"one mostly displays objects while the other cares for living animals", icon:"house"},
+        {topic:"bicycles and cars", point:"both can carry people from place to place", contrast:"one is powered by the rider's pedaling while the other needs fuel or electricity", icon:"bicycle"},
+        {topic:"soccer and basketball", point:"both are team sports where players try to score against another team", contrast:"one is mostly played with the feet while the other is played with the hands", icon:"ball"},
+        {topic:"deserts and rainforests", point:"both are home to plants and animals adapted to survive there", contrast:"one gets very little rain while the other gets rain almost every day", icon:"tree"},
+        {topic:"volcanoes and earthquakes", point:"both are caused by forces deep inside the Earth", contrast:"one releases melted rock while the other is a sudden shaking of the ground", icon:"mountain"}
     ];
     const B2_compare = F("Compare", "RI.6.1", "science",
         { it: B2_COMPARE_ITEMS },
@@ -2626,7 +2961,20 @@
         {clue:"read the goodbye letter again and quietly wiped away a tear", feeling:"sad"},
         {clue:"let out a long breath and smiled when the doctor said nothing was broken", feeling:"relieved"},
         {clue:"crossed both arms and looked away without answering", feeling:"annoyed"},
-        {clue:"jumped up and clapped when the results were announced", feeling:"excited"}
+        {clue:"jumped up and clapped when the results were announced", feeling:"excited"},
+        {clue:"paced back and forth outside the audition room, rereading the lines again and again", feeling:"anxious"},
+        {clue:"chewed on a thumbnail and refreshed the page every few seconds, waiting for the test scores to be posted", feeling:"anxious"},
+        {clue:"hung the first-place ribbon on the wall and pointed it out to every visitor", feeling:"proud"},
+        {clue:"stood a little taller while the principal read the winning essay aloud to the whole school", feeling:"proud"},
+        {clue:"waved from the curb until a best friend's moving truck was out of sight, then walked home slowly, eyes wet", feeling:"sad"},
+        {clue:"sat alone on the swing after the team lost the final game, eyes filling with tears", feeling:"sad"},
+        {clue:"exhaled and dropped both shoulders when the teacher said the lost homework had been found", feeling:"relieved"},
+        {clue:"sank onto the bench and smiled weakly when the missing little brother came running around the corner", feeling:"relieved"},
+        {clue:"stomped into the kitchen, face red, and shouted that someone had broken the model on purpose", feeling:"angry"},
+        {clue:"rested chin on one hand, doodled in the margins, and counted ceiling tiles during the long, repetitive video", feeling:"bored"},
+        {clue:"twirled a pencil around and around, having finished the worksheet long ago with nothing left to do", feeling:"bored"},
+        {clue:"groaned and covered both ears when the car alarm outside went off for the fifth time that morning", feeling:"annoyed"},
+        {clue:"packed a suitcase a full week early and could not stop talking about the upcoming trip", feeling:"excited"}
     ];
     const B2_INFER2_MOOD = { anxious: 'scared', proud: 'happy', sad: 'sad', relieved: 'calm', annoyed: 'angry', excited: 'happy' };
     const B2_infer2 = F("Inference", "RL.6.1", "city",
@@ -2651,12 +2999,25 @@
         {text:"\"Congratulations,\" he said without smiling, \"on the promotion I trained you for.\"", tone:"bitter"},
         {text:"The comedian's timing was so absurd that even the sound technician couldn't stop laughing.", tone:"humorous"},
         {text:"She found her old team jersey in a box and smiled, remembering Saturday mornings on the field.", tone:"nostalgic"},
-        {text:"Every step through the abandoned hospital echoed strangely, and the flickering lights made the shadows seem to move.", tone:"eerie"}
+        {text:"Every step through the abandoned hospital echoed strangely, and the flickering lights made the shadows seem to move.", tone:"eerie"},
+        { text: "After finishing last for three straight seasons, the robotics team raised the championship trophy over their heads while the gym erupted.", tone: "triumphant" },
+        { text: "Rain tapped against the windows as the town gathered in silence to remember the firefighters who had not come home.", tone: "somber" },
+        { text: "The student looked at the enormous line for tickets, sighed, and settled onto the curb to wait; there was no point in complaining.", tone: "resigned" },
+        { text: "The roller coaster plunged down the first drop, and the riders screamed with delight, arms thrown high into the rushing wind.", tone: "exhilarated" },
+        { text: "The dog proudly delivered a single soggy sock to the dinner table, as though presenting a rare and priceless treasure.", tone: "humorous" },
+        { text: "The instructions promised the bookshelf would take ten minutes to build; three hours later, there were four leftover screws and a shelf that leaned like a tired giraffe.", tone: "humorous" },
+        { text: "\"Sure, take all the credit,\" the lab partner said coldly. \"I only did every calculation in the report.\"", tone: "bitter" },
+        { text: "The family had planned the beach trip for months, but they spent the whole week watching rain streak down the motel window.", tone: "disappointed" },
+        { text: "Grandparents, cousins, and neighbors filled the backyard with music and dancing to welcome the new baby home.", tone: "joyful" },
+        { text: "Flipping through the faded photo album, the old friends lingered over pictures of the summer they built a treehouse together.", tone: "nostalgic" },
+        { text: "The swings in the empty playground kept swaying back and forth, though there was not a breath of wind.", tone: "eerie" },
+        { text: "At midnight, the long-closed music box in the attic began to play by itself, its tiny tune drifting down the dark stairs.", tone: "eerie" }
     ];
     const C1_NEAR_TONES = {
-        triumphant: ['exhilarated', 'joyful'], exhilarated: ['triumphant', 'joyful'], joyful: ['triumphant', 'exhilarated'],
-        somber: ['disappointed', 'resigned', 'nostalgic'], disappointed: ['resigned', 'somber', 'bitter'],
-        resigned: ['disappointed', 'somber'], nostalgic: ['somber'], bitter: ['disappointed']
+        triumphant: ['exhilarated', 'joyful'], exhilarated: ['triumphant', 'joyful'], joyful: ['triumphant', 'exhilarated', 'nostalgic'],
+        somber: ['disappointed', 'resigned', 'nostalgic', 'eerie'], disappointed: ['resigned', 'somber', 'bitter'],
+        resigned: ['disappointed', 'somber', 'bitter'], nostalgic: ['somber', 'joyful'], bitter: ['disappointed', 'resigned'],
+        eerie: ['somber']
     };
     const C1_tone = F("Tone", "RL.9-10.4", "art",
         { it: C1_TONE_ITEMS },
@@ -2680,7 +3041,9 @@
         {claim:"Community gardens benefit neighborhoods.", support:"They give neighbors fresh produce and a reason to work together."},
         {claim:"Sleep is essential for teenagers.", support:"Well-rested teens show better memory and concentration in class."},
         {claim:"Volunteering builds stronger communities.", support:"Volunteers provide services that towns often cannot otherwise afford."},
-        {claim:"Public transportation reduces traffic congestion.", support:"Buses and trains move many passengers using far fewer vehicles."}
+        {claim:"Public transportation reduces traffic congestion.", support:"Buses and trains move many passengers using far fewer vehicles."},
+        {claim:"Reading for pleasure strengthens vocabulary.", support:"Students who read often meet thousands of new words in context."},
+        {claim:"Walking to school benefits students.", support:"Students who walk arrive more alert and get regular daily exercise."}
     ];
     const C1_STRUCTURES = ["Claim followed by supporting evidence", "Cause and effect", "Problem and solution", "Compare and contrast", "Chronological order"];
     const C1_STRUCT_TEXTS = [
@@ -2697,7 +3060,19 @@
         { structure: "Compare and contrast", text: "Solar and wind power both produce electricity without burning fuel. Solar panels work only in daylight, whereas wind turbines can run day or night when the wind blows." },
         { structure: "Chronological order", text: "In 1903, the Wright brothers flew the first powered airplane for twelve seconds. Twenty-four years later, Charles Lindbergh crossed the Atlantic alone. By 1969, astronauts had landed on the Moon." },
         { structure: "Chronological order", text: "The bridge's design was approved in 2015. Construction began the following spring, and the last section was lowered into place in 2019. The bridge opened to traffic in early 2020." },
-        { structure: "Chronological order", text: "The seed sprouted in early April. By June, the plant stood knee-high, and in August it finally produced its first ripe tomatoes." }
+        { structure: "Chronological order", text: "The seed sprouted in early April. By June, the plant stood knee-high, and in August it finally produced its first ripe tomatoes." },
+        { structure: "Cause and effect", text: "A late frost struck the orchards in April. As a result, most of the peach blossoms froze, and the fall harvest was the smallest in a decade." },
+        { structure: "Cause and effect", text: "When the town lowered the speed limit near the school, drivers slowed down. Consequently, the number of accidents on that street fell sharply over the next year." },
+        { structure: "Cause and effect", text: "Because the lake warmed during an unusually hot summer, algae spread rapidly across its surface. The thick algae blocked sunlight, which caused many underwater plants to die." },
+        { structure: "Problem and solution", text: "The cafeteria line was so long that some students had only ten minutes to eat. To solve this, the school opened a second serving station, and waits dropped to five minutes." },
+        { structure: "Problem and solution", text: "Hikers kept getting lost where the trail split in two. The park service fixed the problem by installing clear signs and painting colored markers on the trees." },
+        { structure: "Problem and solution", text: "The team's old equipment was worn out, and there was no money to replace it. The players organized a car wash and raised enough to buy new gear by spring." },
+        { structure: "Compare and contrast", text: "Alligators and crocodiles are both large reptiles that live near water. However, alligators have wide, U-shaped snouts, while crocodiles have narrower, V-shaped snouts." },
+        { structure: "Compare and contrast", text: "A sprint and a marathon are both running races. A sprint rewards explosive speed over a short distance, whereas a marathon demands endurance over more than twenty-six miles." },
+        { structure: "Compare and contrast", text: "Paper maps and phone navigation apps can both guide travelers to a destination. Unlike an app, a paper map works without a signal, but an app can update routes when traffic changes." },
+        { structure: "Chronological order", text: "In 1869, the first transcontinental railroad in the United States was completed. Within a few years, travelers were crossing the country in about a week instead of several months." },
+        { structure: "Chronological order", text: "First, the volunteers cleared the empty lot of trash. Next, they built raised garden beds, and later that spring, they planted the first rows of vegetables." },
+        { structure: "Chronological order", text: "The caterpillar hatched from its egg in May. After several weeks of eating, it formed a chrysalis, and by early July, a butterfly emerged." }
     ];
     const C1_structure = F("Structure", "RI.9-10.5", "business",
         { it: C1_STRUCT_TEXTS },
@@ -2720,7 +3095,15 @@
         {claim:"Every startup that raises a lot of funding will eventually succeed.", flaw:"It ignores that funding alone does not guarantee good management or market fit."},
         {claim:"Traditional media is always more accurate than social media.", flaw:"It assumes the source type, rather than the specific reporting, determines accuracy."},
         {claim:"A country's happiness can be measured by its economic output alone.", flaw:"It excludes health, relationships, and other factors known to affect wellbeing."},
-        {claim:"Any diet that works for one person will work equally well for everyone.", flaw:"It ignores individual differences in metabolism, health, and lifestyle."}
+        {claim:"Any diet that works for one person will work equally well for everyone.", flaw:"It ignores individual differences in metabolism, health, and lifestyle."},
+        { claim: "Because a few students cheated on the exam, the entire class must be untrustworthy.", flaw: "It generalizes from the actions of a few individuals to an entire group." },
+        { claim: "Either the city builds a new stadium or its economy will collapse.", flaw: "It presents only two options when many other outcomes are possible." },
+        { claim: "Electric cars have no environmental impact of any kind.", flaw: "It ignores the environmental costs of manufacturing batteries and generating electricity." },
+        { claim: "Since the new laptop is the most expensive model, it must be the best one available.", flaw: "It assumes that a higher price guarantees higher quality." },
+        { claim: "If students are allowed to redo one assignment, they will soon stop studying for anything at all.", flaw: "It predicts an extreme chain of consequences without evidence that each step will follow." },
+        { claim: "My neighbor smoked for decades and lived to ninety, so smoking cannot be harmful.", flaw: "It relies on a single personal example while ignoring large-scale evidence." },
+        { claim: "Banning cars from downtown will instantly solve the city's air pollution problem.", flaw: "It ignores other sources of pollution, such as industry and home heating." },
+        { claim: "One small study of twenty people found that a vitamin shortened colds, so the vitamin will shorten colds for everyone.", flaw: "It draws a sweeping conclusion from a single small study." }
     ];
     const C2_eval = F("Evaluate", "RI.11-12.8", "science",
         { it: C2_EVAL_ITEMS },
@@ -2749,7 +3132,15 @@
         {text:"The merger increased efficiency, but several longtime employees left within the first year.", point:"Organizational gains can come with a human cost."},
         {text:"The vaccine dramatically reduced severe illness, though mild breakthrough cases still occurred.", point:"Strong protection does not always mean complete prevention."},
         {text:"The bridge shortened commute times significantly, yet nearby residents complained about increased noise.", point:"An improvement for some can be a burden for others."},
-        {text:"The new curriculum raised test scores, although several teachers felt it left less room for creativity.", point:"A measurable gain can come at the cost of something harder to measure."}
+        {text:"The new curriculum raised test scores, although several teachers felt it left less room for creativity.", point:"A measurable gain can come at the cost of something harder to measure."},
+        { text: "The online homework portal made submitting assignments easier, but students without reliable internet at home found it harder to turn work in on time.", point: "The same tool can widen gaps for those without access to it." },
+        { text: "The dam provides clean electricity to thousands of homes, though it also blocked the river routes that salmon once used to reach their spawning grounds.", point: "A source of clean energy can still carry environmental costs." },
+        { text: "The four-day school week saved the district money, yet many working parents struggled to find childcare on the fifth day.", point: "Savings for an institution can shift burdens onto families." },
+        { text: "Tourism revived the village's economy, although rising rents pushed some longtime residents out of their homes.", point: "Economic growth can displace members of the community it revives." },
+        { text: "The documentary raised public awareness of ocean pollution, even as some scientists noted that it oversimplified complex research.", point: "A work can inform the public while still sacrificing some accuracy." },
+        { text: "The pesticide sharply increased crop yields, but it was later found to harm the bees that pollinate those same crops.", point: "A short-term gain can undermine the conditions it depends on." },
+        { text: "Self-checkout lanes shortened waiting times, although some older shoppers found the machines confusing to use.", point: "Convenience for many users can create obstacles for others." },
+        { text: "The new museum is admired for its bold architecture, yet visitors often complain that its galleries are hard to navigate.", point: "Artistic ambition and practical usability can pull in different directions." }
     ];
     const C2_nuance = F("Nuance", "RI.11-12.2", "city",
         { it: C2_NUANCE_ITEMS },
@@ -3938,16 +4329,28 @@
     );
     // Hot Text Sentence — B1
     const B1_HT_MAIN_TOPICS = [
-        { topic: "Bees help plants grow by carrying pollen.", detail1: "They visit many flowers each day.", detail2: "Honey is a sweet food bees make.", extra: "Many people keep bees in boxes.", icon: "bee" },
+        { topic: "Bees help plants grow by carrying pollen.", detail1: "Bees visit many flowers each day.", detail2: "Honey is a sweet food bees make.", extra: "Many people keep bees in boxes.", icon: "bee" },
         { topic: "Recycling keeps trash out of landfills.", detail1: "Paper and plastic can be used again.", detail2: "Glass bottles can be melted and reshaped.", extra: "Some towns have special recycling trucks.", icon: "tree" },
-        { topic: "Exercise makes the heart stronger.", detail1: "It also improves mood and energy.", detail2: "Muscles grow when we use them often.", extra: "Sports teams practice after school.", icon: "person" },
+        { topic: "Exercise makes the heart stronger.", detail1: "Exercise also improves mood and energy.", detail2: "Muscles grow when we use them often.", extra: "Sports teams practice after school.", icon: "person" },
         { topic: "Sleep helps the brain remember lessons.", detail1: "Kids who sleep well do better in school.", detail2: "Dreams can feel strange and exciting.", extra: "Bedtime stories are popular with families.", icon: "moon" },
         { topic: "Volcanoes form when melted rock rises from deep inside the Earth.", detail1: "Some volcanoes erupt quietly, releasing slow-moving lava.", detail2: "Other volcanoes explode suddenly with ash and smoke.", extra: "Scientists study volcanoes to predict eruptions.", icon: "mountain" },
         { topic: "Libraries give everyone free access to books and information.", detail1: "You can borrow books for a few weeks at a time.", detail2: "Many libraries also have computers and free Wi-Fi.", extra: "Librarians can help you find just the right book.", icon: "book" },
         { topic: "Spiders use silk to catch insects for food.", detail1: "A web can take less than an hour to build.", detail2: "Sticky threads trap insects that fly or crawl into them.", extra: "Some spiders spin a new web every single day.", icon: "spider" },
         { topic: "The water cycle moves water between the sky, land, and sea.", detail1: "Water evaporates into the air as it warms.", detail2: "Clouds form when that water vapor cools and gathers.", extra: "Rain and snow return the water back to the ground.", icon: "cloud" },
-        { topic: "Migrating birds travel long distances to find food and warmth.", detail1: "Some birds fly thousands of miles every year.", detail2: "They often follow the same path their whole lives.", extra: "Bird watchers track migrations using leg bands.", icon: "bird" },
-        { topic: "The printing press changed how quickly ideas could spread.", detail1: "Before it, every book had to be copied by hand.", detail2: "Printed books could be made faster and cheaper.", extra: "More people learned to read once books were common.", icon: "book" }
+        { topic: "Migrating birds travel long distances to find food and warmth.", detail1: "Some birds fly thousands of miles every year.", detail2: "Migrating birds often follow the same path their whole lives.", extra: "Bird watchers track migrations using leg bands.", icon: "bird" },
+        { topic: "The printing press changed how quickly ideas could spread.", detail1: "Before it, every book had to be copied by hand.", detail2: "Printed books could be made faster and cheaper.", extra: "More people learned to read once books were common.", icon: "book" },
+        { topic: "Earthworms help keep soil healthy.", detail1: "Earthworm tunnels let air and water reach plant roots.", detail2: "Earthworms turn dead leaves into rich soil.", extra: "Earthworm waste adds food for plants to the ground.", icon: "flower" },
+        { topic: "Penguins are birds that are built for swimming.", detail1: "A penguin's wings work like flippers in the water.", detail2: "Penguins' smooth bodies glide easily through the waves.", extra: "Some can hold their breath for many minutes.", icon: "penguin" },
+        { topic: "Teeth need daily care to stay healthy.", detail1: "Brushing twice a day removes food and germs.", detail2: "Flossing cleans between the teeth.", extra: "Dentists check teeth for problems.", icon: "person" },
+        { topic: "Magnets pull on objects made of certain metals.", detail1: "A magnet can pick up paper clips and nails.", detail2: "A magnet cannot pick up wood or plastic.", extra: "Some magnets are strong enough to lift a car.", icon: "star" },
+        { topic: "Desert plants and animals are able to live with very little water.", detail1: "Cactuses store water in their thick stems.", detail2: "Many desert animals rest underground during the hot day.", extra: "Some lizards get the water they need from their food.", icon: "sun" },
+        { topic: "Octopuses are among the smartest animals in the sea.", detail1: "Octopuses can open jars to reach food inside.", detail2: "Octopuses can remember how to solve puzzles.", extra: "Some even carry shells to use as shelters.", icon: "fish" },
+        { topic: "Wind turbines turn moving air into electricity.", detail1: "A wind turbine's huge blades spin when the wind blows.", detail2: "The spinning powers a machine called a generator.", extra: "Wind farms often have many turbines in a row.", icon: "wind" },
+        { topic: "Frogs go through big changes as they grow.", detail1: "Frogs start as tadpoles with tails and gills.", detail2: "Later, they grow legs and lungs.", extra: "Adult frogs can hop out of the water onto land.", icon: "frog" },
+        { topic: "Maps have special parts that help people read them.", detail1: "A map key explains what each symbol means.", detail2: "A compass rose shows north, south, east, and west.", extra: "A scale shows how far apart places are.", icon: "star" },
+        { topic: "Beavers change the land around them.", detail1: "Beavers cut down trees with their strong teeth.", detail2: "Beavers build dams that turn streams into ponds.", extra: "Those new ponds become homes for fish and birds.", icon: "tree" },
+        { topic: "Hurricanes are powerful storms that form over warm oceans.", detail1: "Hurricane winds can blow faster than 74 miles per hour.", detail2: "Hurricanes often bring heavy rain and high waves.", extra: "Weather experts track them with satellites.", icon: "storm" },
+        { topic: "Dogs help people in many different jobs.", detail1: "Guide dogs lead people who are blind.", detail2: "Farm dogs help herd sheep.", extra: "Rescue dogs sniff out people who are lost.", icon: "dog" }
     ];
     const B1_ht_main = F("MainIdea", "RI.4.2", "nature",
         { tp: B1_HT_MAIN_TOPICS },
@@ -3983,7 +4386,16 @@
         { word: "delighted", def: "very pleased and happy", ev: ["opening the surprise gift", "hearing the good news"] },
         { word: "furious", def: "extremely angry", ev: ["losing the game unfairly", "seeing the tower knocked down on purpose"] },
         { word: "terrified", def: "extremely scared", ev: ["hearing a loud crash at night", "seeing a snake on the path"] },
-        { word: "curious", def: "eager to learn something", ev: ["finding a strange map", "seeing a bright light in the woods"] }
+        { word: "curious", def: "eager to learn something", ev: ["finding a strange map", "seeing a bright light in the woods"] },
+        { word: "joyful", def: "very happy", ev: ["winning the class spelling bee", "seeing the holiday parade"] },
+        { word: "grateful", def: "thankful", ev: ["getting help with the heavy bags", "receiving a kind note from a friend"] },
+        { word: "nervous", def: "worried about what will happen", ev: ["hearing about the spelling test", "waiting to sing on stage"] },
+        { word: "lonely", def: "sad from being alone", ev: ["playing by the fence alone all recess", "moving to a new town"] },
+        { word: "puzzled", def: "confused", ev: ["reading the tricky riddle", "finding a note in a secret code"] },
+        { word: "relieved", def: "glad a worry is over", ev: ["finding the lost keys", "hearing the storm had passed"] },
+        { word: "embarrassed", def: "feeling silly in front of others", ev: ["slipping in the lunch line", "forgetting the words to the song on stage"] },
+        { word: "gloomy", def: "sad and down", ev: ["seeing rain on the day of the picnic", "losing the big game"] },
+        { word: "cheerful", def: "happy and bright", ev: ["singing songs with friends", "playing in the sunshine all morning"] }
     ];
     const A2_HT_WORD_EVENTS = A2_HT_WORD_PAIRS.flatMap(w => w.ev.map(ev => ({ ...w, ev })));
     const A2_ht_word = F("Vocabulary", "L.2.4", "feelings",
@@ -4019,7 +4431,19 @@
         { claim: "Students should learn a second language starting in elementary school.", s1: "Children learn new languages more easily at a young age.", s2: "Some schools already teach computer coding.", s3: "Finding enough language teachers can be difficult.", s4: "Spanish and French are common choices.", icon: "book" },
         { claim: "Communities should build more public swimming pools.", s1: "Pools give kids a safe place to learn to swim and stay active.", s2: "Some neighborhoods already have splash pads.", s3: "Pools require ongoing maintenance and staffing.", s4: "Many pools are open only in summer.", icon: "sun" },
         { claim: "Schools should start a community garden program.", s1: "Gardening teaches students where food comes from and encourages healthy eating.", s2: "Some schools already have vending machines.", s3: "Gardens need regular watering and care during school breaks.", s4: "Farmers markets are becoming more popular in many towns.", icon: "tree" },
-        { claim: "Local governments should offer free public Wi-Fi downtown.", s1: "Free Wi-Fi helps small businesses and students without home internet.", s2: "Some cafes already offer free Wi-Fi to customers.", s3: "Setting up citywide Wi-Fi can be expensive to maintain.", s4: "Many people rely on mobile data instead of Wi-Fi.", icon: "book" }
+        { claim: "Local governments should offer free public Wi-Fi downtown.", s1: "Free Wi-Fi helps small businesses and students without home internet.", s2: "Some cafes already offer free Wi-Fi to customers.", s3: "Setting up citywide Wi-Fi can be expensive to maintain.", s4: "Many people rely on mobile data instead of Wi-Fi.", icon: "book" },
+        { claim: "Students should wear helmets when riding scooters.", s1: "Helmets greatly reduce the risk of serious head injuries in falls.", s2: "Scooters come in many colors and sizes.", s3: "Some students find helmets uncomfortable to wear.", s4: "Many students ride scooters to school in the spring.", icon: "bicycle" },
+        { claim: "Towns should add more crosswalks near schools.", s1: "Marked crosswalks help drivers see where children will be crossing.", s2: "Most schools have a main entrance that faces the street.", s3: "Painting new crosswalks costs money every few years.", s4: "Some students are driven to school by family members.", icon: "car" },
+        { claim: "Every classroom should have a class pet.", s1: "Caring for a pet teaches students responsibility.", s2: "Some students are allergic to animal fur.", s3: "Fish and hamsters are popular classroom animals.", s4: "Pets need someone to care for them over school vacations.", icon: "fish" },
+        { claim: "Schools should teach students how to cook.", s1: "Cooking classes teach students to prepare healthy meals for themselves.", s2: "School kitchens are often busy during lunch.", s3: "Many families eat dinner together on weekends.", s4: "Cooking equipment and ingredients cost money.", icon: "house" },
+        { claim: "Beaches should ban single-use plastic bags.", s1: "Plastic bags often blow into the ocean, where they can harm sea turtles and other animals.", s2: "Some shoppers forget to bring reusable bags.", s3: "Many beaches are crowded on summer weekends.", s4: "Paper bags can tear when they get wet.", icon: "ocean" },
+        { claim: "Students should take a short stretching break during class.", s1: "Short stretching breaks help students feel more alert and focused.", s2: "Class periods at many schools last about fifty minutes.", s3: "Some teachers worry that breaks take time away from lessons.", s4: "Yoga has been practiced for thousands of years.", icon: "person" },
+        { claim: "Cities should plant gardens on rooftops.", s1: "Rooftop gardens help keep buildings cooler in summer.", s2: "Some rooftops are not strong enough to hold heavy soil.", s3: "Many tall buildings have elevators.", s4: "Tomatoes grow well in sunny spots.", icon: "tree" },
+        { claim: "Schools should offer a coding club.", s1: "Coding teaches students to solve problems step by step.", s2: "Many computers need regular updates.", s3: "Some students already spend a lot of time on screens.", s4: "Most clubs meet after school.", icon: "star" },
+        { claim: "Families should spend one evening a week without screens.", s1: "Screen-free evenings give families more time to talk and play together.", s2: "Some favorite shows air on weeknights.", s3: "Televisions have become much thinner over the years.", s4: "Board games come in many different types.", icon: "house" },
+        { claim: "Communities should protect their wetlands.", s1: "Wetlands soak up floodwater and help protect nearby homes.", s2: "Building roads through wetlands can be difficult.", s3: "Frogs and herons are often seen near water.", s4: "Some people think wetlands smell unpleasant.", icon: "bird" },
+        { claim: "Schools should have a longer lunch period.", s1: "Longer lunches give students enough time to finish their meals.", s2: "Many cafeterias serve pizza on Fridays.", s3: "A longer lunch would make the school day end later.", s4: "Some students bring lunch from home.", icon: "sun" },
+        { claim: "Towns should build more public drinking fountains.", s1: "Free drinking fountains make it easy for people to stay hydrated outdoors.", s2: "Fountains need to be cleaned and repaired regularly.", s3: "Some people carry their own water bottles.", s4: "Many old fountains are made of stone or metal.", icon: "sun" }
     ];
     const B2_evidence = F("Evidence", "RI.6.1", "environment",
         { tp: B2_EVIDENCE_TOPICS },
@@ -4060,7 +4484,23 @@
         { facts: ["Metal expands when heated.", "A year on Earth is about 365 days."], opinions: ["Cold weather feels nicer than hot weather.", "Winter is the best season."], icon: "sun" },
         { facts: ["Fish breathe using gills.", "The Pacific is the largest ocean."], opinions: ["Ocean animals are more interesting than land animals.", "Swimming is the best exercise."], icon: "fish" },
         { facts: ["Butterflies start life as caterpillars.", "Spiders are not insects."], opinions: ["Butterflies are prettier than moths.", "Bugs make bad classroom pets."], icon: "butterfly" },
-        { facts: ["The heart pumps blood through the body.", "Humans breathe oxygen."], opinions: ["Running is more fun than swimming.", "Breakfast is the best meal of the day."], icon: "person" }
+        { facts: ["The heart pumps blood through the body.", "Humans breathe oxygen."], opinions: ["Running is more fun than swimming.", "Breakfast is the best meal of the day."], icon: "person" },
+        { facts: ["The Moon travels around the Earth.", "Sound can travel through water."], opinions: ["Stargazing is the most relaxing hobby.", "The night sky is prettier than a sunset."], icon: "moon" },
+        { facts: ["Whales are mammals.", "An octopus has eight arms."], opinions: ["Whales are the most amazing animals in the ocean.", "Aquariums are the best place for a field trip."], icon: "fish" },
+        { facts: ["Water boils at 100 degrees Celsius at sea level.", "Ice floats in water."], opinions: ["Hot cocoa tastes better than tea.", "Snow days are the best days of winter."], icon: "snow" },
+        { facts: ["Bees help pollinate flowers.", "Most plants have roots."], opinions: ["Sunflowers are the prettiest flowers.", "Gardening is more fun than playing video games."], icon: "flower" },
+        { facts: ["Bats are the only mammals that can truly fly.", "Owls hunt mostly at night."], opinions: ["Owls are the coolest birds.", "Nighttime animals are more interesting than daytime animals."], icon: "owl" },
+        { facts: ["The Nile is one of the longest rivers in the world.", "Africa is a continent."], opinions: ["Rivers are more beautiful than lakes.", "Traveling by boat is the most fun way to travel."], icon: "ocean" },
+        { facts: ["A spider spins silk to make its web.", "Ants live in groups called colonies."], opinions: ["Ants are the most interesting insects.", "Spider webs are beautiful."], icon: "spider" },
+        { facts: ["The Sun is a star.", "Earth has one moon."], opinions: ["Summer nights are the best time to look at stars.", "Learning about space is more exciting than learning about oceans."], icon: "star" },
+        { facts: ["Plants give off oxygen.", "Some trees can live for hundreds of years."], opinions: ["Oak trees are the most beautiful trees.", "Colorful leaves make fall the best season."], icon: "tree" },
+        { facts: ["A square has four equal sides.", "There are 60 minutes in an hour."], opinions: ["Fractions are the hardest part of math.", "Puzzles are the most fun way to learn."], icon: "star" },
+        { facts: ["Frogs start life as tadpoles.", "Snakes have no legs."], opinions: ["Frogs make the best classroom pets.", "Snakes are more interesting than lizards."], icon: "frog" },
+        { facts: ["Lightning is a giant spark of electricity.", "Thunder is the sound caused by lightning."], opinions: ["Thunderstorms are exciting to watch.", "Rainy days are better than sunny days."], icon: "storm" },
+        { facts: ["Penguins cannot fly.", "Antarctica is covered with ice."], opinions: ["Penguins are the cutest birds.", "Cold places are more fun to visit than hot places."], icon: "penguin" },
+        { facts: ["The heart is a muscle.", "Exercise makes muscles stronger."], opinions: ["Basketball is the most fun sport.", "Mornings are the best time to exercise."], icon: "person" },
+        { facts: ["Honeybees live in hives.", "Butterflies taste with their feet."], opinions: ["Honey is the tastiest topping for toast.", "Butterflies are the prettiest insects."], icon: "butterfly" },
+        { facts: ["Mount Everest is in Asia.", "Most of Earth's surface is covered by water."], opinions: ["Mountains are more beautiful than beaches.", "Hiking is the best way to spend a weekend."], icon: "mountain" }
     ];
     const B1_dd_fact = F("FactOpinion", "Fact/Opinion (supplemental)", "science",
         { set: B1_FACT_OPINION_SETS },
@@ -4091,28 +4531,42 @@
     // Drag Drop Match — B2
     const B2_dd_match = F("Detail", "RL.6.1", "adventure",
         {
-            name1: NAMES, name2: NAMES, name3: NAMES,
-            act1: ["discovered the hidden cave", "found an old map", "warned the group about the storm"],
-            act2: ["built a shelter from branches", "shared the last of the food", "kept a careful watch at night"]
+            // One adventure per bundle: three distinct actions + a closing line.
+            b: [
+                { set: "The friends were stranded by a storm on a camping trip.", acts: ["found a dry cave for shelter", "built a fire to stay warm", "kept watch through the night"], end: "By morning, the rescue team had found everyone safe." },
+                { set: "The class explored an old lighthouse on the rocky coast.", acts: ["climbed the spiral stairs to the lamp room", "found a logbook from 1890", "sketched the view of the harbor"], end: "Everyone agreed it was the best field trip of the year." },
+                { set: "The team entered the science fair with a homemade weather station.", acts: ["measured the wind speed each morning", "recorded the rainfall in a notebook", "built the display board"], end: "The judges praised how carefully the team had worked together." },
+                { set: "A group of hikers got lost on a foggy mountain trail.", acts: ["read the compass to find north", "spotted a trail marker through the fog", "shared water with the others"], end: "Together they made it back to the ranger station before dark." },
+                { set: "The neighbors held a cleanup day at the river.", acts: ["pulled old tires out of the water", "sorted the cans for recycling", "planted flowers along the bank"], end: "By sunset, the riverbank looked brand new." },
+                { set: "Three friends set out to solve the mystery of the missing library book.", acts: ["checked the returns cart", "interviewed the librarian", "found the book behind a radiator"], end: "The book was back on its shelf by lunchtime." },
+                { set: "The crew sailed a small boat across the lake in the summer race.", acts: ["steered around the rocky point", "raised the sail when the wind picked up", "bailed water out of the boat"], end: "They crossed the finish line in second place." },
+                { set: "The scouts built a raft to cross a slow, shallow river.", acts: ["tied the logs together with rope", "carved a paddle from a flat board", "tested the raft in the shallows"], end: "The raft carried all three of them to the far bank." },
+                { set: "The students put on a play for the whole school.", acts: ["painted the castle backdrop", "sewed the costumes", "ran the stage lights"], end: "The audience cheered at the final bow." },
+                { set: "The explorers searched an old desert ruin for a lost statue.", acts: ["brushed sand off a carved doorway", "figured out the symbols on the wall", "lowered a lantern into a dark pit"], end: "At the bottom of the pit, the statue gleamed in the lantern light." },
+                { set: "The friends worked together to rescue a kitten stuck in a tall tree.", acts: ["borrowed a ladder from a neighbor", "held the ladder steady", "coaxed the kitten down with treats"], end: "Soon the kitten was purring safely on the ground." },
+                { set: "The family spent a snowy weekend at a mountain cabin.", acts: ["shoveled a path to the door", "chopped wood for the stove", "built a snow fort in the yard"], end: "That night, everyone warmed up with hot soup." },
+                { set: "The team raised money for the animal shelter.", acts: ["baked cookies for the sale", "designed the posters", "counted the money at the end of the day"], end: "They raised enough to buy food for the shelter for a whole month." },
+                { set: "A group of divers explored a coral reef.", acts: ["photographed a sea turtle", "counted the kinds of fish", "picked up trash from the sand"], end: "They shared what they found with the local aquarium." },
+                { set: "The campers went on a night hike to see the stars.", acts: ["carried the telescope", "found the Big Dipper first", "led the way with a flashlight"], end: "Everyone lay back in the grass to watch for shooting stars." },
+                { set: "The club built a robot for the regional contest.", acts: ["wrote the robot's code", "attached the wheels and motors", "practiced driving it through the course"], end: "The robot finished the course faster than any other team's." }
+            ]
         },
         v => {
-            // ensure distinct names
-            let n1 = v.name1, n2 = v.name2, n3 = v.name3;
-            if (n2 === n1) n2 = NAMES[(NAMES.indexOf(n1)+1)%NAMES.length];
-            if (n3 === n1 || n3 === n2) n3 = NAMES[(NAMES.indexOf(n1)+2)%NAMES.length];
+            // three DISTINCT names, drawn fresh each time
+            const [n1, n2, n3] = shuffleArr(NAMES.slice()).slice(0, 3);
             const items = [
                 { id: 'p1', text: n1 },
                 { id: 'p2', text: n2 },
                 { id: 'p3', text: n3 }
             ];
-            const targets = [
-                { id: 't1', text: v.act1 },
-                { id: 't2', text: v.act2 },
-                { id: 't3', text: "stayed behind to guard the camp" }
-            ];
+            const targets = shuffleArr([
+                { id: 't1', text: v.b.acts[0] },
+                { id: 't2', text: v.b.acts[1] },
+                { id: 't3', text: v.b.acts[2] }
+            ]);
             return {
                 interaction: "drag_drop_match",
-                passage: `${n1} ${v.act1}. ${n2} ${v.act2}. ${n3} stayed behind to guard the camp. Together they kept the group safe.`,
+                passage: `${v.b.set} ${n1} ${v.b.acts[0]}. ${n2} ${v.b.acts[1]}. ${n3} ${v.b.acts[2]}. ${v.b.end}`,
                 question: `Match each character to what they did.`,
                 ddItems: items,
                 targets: targets,
@@ -4156,19 +4610,39 @@
     // Click & Pop purpose — B2
     const B2_clickpop = F("Purpose", "RI.6.6", "environment",
         {
-            action: ["recycle plastic bottles", "plant a tree", "turn off unused lights", "use a reusable bag"],
-            purpose: ["persuade", "inform", "entertain", "describe"]
+            it: [
+                { text: "You should recycle plastic bottles because it helps protect the environment for future generations. Everyone can make a difference starting today.", purpose: "persuade", icon: 'tree' },
+                { text: "You should plant a tree because it helps protect the environment for future generations. Everyone can make a difference starting today.", purpose: "persuade", icon: 'tree' },
+                { text: "You should turn off unused lights because it helps protect the environment for future generations. Everyone can make a difference starting today.", purpose: "persuade", icon: 'tree' },
+                { text: "You should use a reusable bag because it helps protect the environment for future generations. Everyone can make a difference starting today.", purpose: "persuade", icon: 'tree' },
+                { text: "Every student should join this month's reading challenge. It is fun, it builds strong reading skills, and it earns you a spot at the class celebration. Sign up today!", purpose: "persuade", icon: 'book' },
+                { text: "Our town needs a new skate park. Please come to the town meeting on Tuesday and tell the council why it matters to you.", purpose: "persuade", icon: 'house' },
+                { text: "Don't throw away clothes that no longer fit. Donate them instead, so they can keep someone warm this winter.", purpose: "persuade", icon: 'house' },
+                { text: "If you care about wild birds, put up a feeder this winter. A little seed can help birds survive the coldest months.", purpose: "persuade", icon: 'bird' },
+                { text: "Choose the stairs over the elevator whenever you can. Your heart and legs will thank you.", purpose: "persuade", icon: 'person' },
+                { text: "Vote for a longer recess in the student council poll. More time outside means happier, more focused students.", purpose: "persuade", icon: 'ball' },
+                { text: "The Nile River flows north through northeastern Africa. It empties into the Mediterranean Sea.", purpose: "inform", icon: 'ocean' },
+                { text: "Penguins are birds that cannot fly. Their wings work like flippers, helping them swim quickly through cold water.", purpose: "inform", icon: 'bird' },
+                { text: "The bones of the skeleton support the body. They also protect organs such as the heart and lungs.", purpose: "inform", icon: 'person' },
+                { text: "Plants make their own food through photosynthesis. They use sunlight, water, and carbon dioxide to make sugar and oxygen.", purpose: "inform", icon: 'tree' },
+                { text: "Making a can from recycled aluminum uses far less energy than making one from raw ore. That is why aluminum is one of the most commonly recycled metals.", purpose: "inform", icon: 'tree' },
+                { text: "Glaciers are huge, slow-moving masses of ice. They form when snow builds up and presses down over many years.", purpose: "inform", icon: 'mountain' },
+                { text: "Honeybees share the location of flowers by performing a special movement called the waggle dance.", purpose: "inform", icon: 'bee' },
+                { text: "A compass needle points north because it lines up with Earth's magnetic field.", purpose: "inform", icon: 'star' },
+                { text: "Thunder is the sound made when lightning heats the air around it so quickly that the air expands with a boom.", purpose: "inform", icon: 'sun' },
+                { text: "Caterpillars change into butterflies inside a hard case called a chrysalis. This process is called metamorphosis.", purpose: "inform", icon: 'butterfly' }
+            ]
         },
         v => ({
             interaction: "click_pop",
-            passage: `You should ${v.action} because it helps protect the environment for future generations. Everyone can make a difference starting today.`,
+            passage: v.it.text,
             question: `The author's main purpose is to ______.`,
             questionStem: `The author's main purpose is to ______.`,
             options: shuffleArr(["persuade", "inform", "entertain", "describe"]),
-            answerKey: { type: "single", correct: ["persuade"] },
-            answer: "persuade",
-            hint: `Notice the call to action ("You should…").`,
-            icon: 'tree'
+            answerKey: { type: "single", correct: [v.it.purpose] },
+            answer: v.it.purpose,
+            hint: v.it.purpose === 'persuade' ? `Notice the call to action: the author wants the reader to do something.` : `Notice that the author explains facts without asking the reader to do anything.`,
+            icon: v.it.icon
         })
     );
     // Hot Text Multi — C1
@@ -4180,7 +4654,15 @@
         { claim: "Companies should offer employees a four-day work week.", s1: "Studies show shorter weeks can maintain or improve productivity.", s2: "Employees report better work-life balance and lower burnout.", s3: "Some industries have already experimented with flexible hours.", s4: "Coordinating schedules across departments can be difficult.", icon: "person" },
         { claim: "Universities should make some large lecture courses optional to attend in person.", s1: "Recorded lectures let students revisit difficult material at their own pace.", s2: "Flexible attendance can help students balancing jobs or family responsibilities.", s3: "Some professors already post lecture slides online.", s4: "In-person discussion can be harder to replicate remotely.", icon: "book" },
         { claim: "Local governments should fund more public art installations.", s1: "Public art can make neighborhoods feel more welcoming and distinctive.", s2: "Studies suggest public art can boost foot traffic for nearby businesses.", s3: "Some cities already host annual art festivals.", s4: "Funding for public art often competes with other budget priorities.", icon: "star" },
-        { claim: "Airports should limit the number of flights during early morning hours.", s1: "Reducing early flights can lower noise complaints from nearby residents.", s2: "Fewer early departures may ease pressure on overnight staff schedules.", s3: "Some airports already restrict flights on select runways.", s4: "Airlines may resist changes that affect their scheduling flexibility.", icon: "star" }
+        { claim: "Airports should limit the number of flights during early morning hours.", s1: "Reducing early flights can lower noise complaints from nearby residents.", s2: "Fewer early departures may ease pressure on overnight staff schedules.", s3: "Some airports already restrict flights on select runways.", s4: "Airlines may resist changes that affect their scheduling flexibility.", icon: "star" },
+        { claim: "Schools should offer free breakfast to all students.", s1: "Students who eat breakfast tend to concentrate better in morning classes.", s2: "Offering it to everyone removes the embarrassment some students feel about needing help.", s3: "Popular breakfast foods vary widely from country to country.", s4: "Serving extra meals would require more cafeteria staff early in the day.", icon: "book" },
+        { claim: "Communities should offer free adult reading classes.", s1: "Adults who read well can more easily complete job applications and official forms.", s2: "Parents who read confidently can better help their children with schoolwork.", s3: "The alphabet used for English has twenty-six letters.", s4: "Finding volunteer tutors for evening classes can be difficult.", icon: "book" },
+        { claim: "Students should be allowed to choose some of their own books for class.", s1: "Students who choose their own books often read more pages overall.", s2: "Choice lets students explore topics that match their interests.", s3: "Libraries usually shelve fiction alphabetically by the author's last name.", s4: "Teachers may find it harder to lead whole-class discussions.", icon: "book" },
+        { claim: "Neighborhoods should organize regular litter clean-up days.", s1: "Clean streets and parks make neighborhoods more pleasant places to live.", s2: "Removing litter keeps plastic from washing into rivers and harming wildlife.", s3: "Different cities collect trash on different days of the week.", s4: "Volunteers can be hard to recruit on busy weekends.", icon: "tree" },
+        { claim: "Cities should keep public libraries open later in the evening.", s1: "Many working adults cannot visit during daytime hours.", s2: "Students need quiet places to study after sports and clubs end.", s3: "Some libraries also lend tools and musical instruments.", s4: "Longer hours would raise staffing costs.", icon: "book" },
+        { claim: "Elementary schools should add more recess time.", s1: "Active play helps young children release energy and focus better afterward.", s2: "Recess gives children chances to practice sharing and solving conflicts.", s3: "Playground equipment is made in many different colors.", s4: "More recess could shorten the time available for other lessons.", icon: "star" },
+        { claim: "Cities should install more public water fountains.", s1: "Easy access to water helps people stay hydrated on hot days.", s2: "Refilling bottles reduces the number of single-use plastic bottles thrown away.", s3: "Many historic fountains in European cities were built as decorative sculptures.", s4: "Fountains need regular cleaning and maintenance.", icon: "person" },
+        { claim: "Schools should teach students how to evaluate online sources.", s1: "Students regularly encounter false or misleading information online.", s2: "Checking a source's author and evidence helps students avoid repeating errors.", s3: "The first websites appeared in the early 1990s.", s4: "Teachers would need training to cover the topic well.", icon: "book" }
     ];
     const C1_ht_multi = F("Argument", "RI.9-10.2", "business",
         { tp: C1_HT_MULTI_TOPICS },
@@ -4212,10 +4694,22 @@
     );
     // Multiple Select vocab/infer — B1
     const B1_MS_INFER_SETS = [
-        { animal: "arctic foxes", trait: "grow white fur in winter", reason: "blend in with snow", icon: "fox" },
+        { animal: "arctic foxes", trait: "grow white fur in winter", reason: "blend in with snow", bad: "Arctic foxes grow dark fur in winter", icon: "fox" },
         { animal: "chameleons", trait: "change skin color", reason: "hide from predators", icon: "frog" },
         { animal: "camels", trait: "store fat in their humps", reason: "survive without water for days", icon: "mountain" },
-        { animal: "penguins", trait: "have a thick layer of blubber", reason: "stay warm in freezing water", icon: "penguin" }
+        { animal: "penguins", trait: "have a thick layer of blubber", reason: "stay warm in freezing water", icon: "penguin" },
+        { animal: "giraffes", trait: "have very long necks", reason: "reach leaves high in the trees", bad: "Giraffes have very short necks", icon: "tree" },
+        { animal: "ducks", trait: "have webbed feet", reason: "paddle through the water", bad: "Webbed feet make it harder for ducks to swim", icon: "duck" },
+        { animal: "owls", trait: "have very large eyes", reason: "see well in the dark", bad: "Owls have trouble seeing in the dark", icon: "owl" },
+        { animal: "porcupines", trait: "are covered in sharp quills", reason: "keep predators away", bad: "Porcupines have soft fur with no quills", icon: "tree" },
+        { animal: "polar bears", trait: "have thick fur and a layer of fat", reason: "stay warm in the icy Arctic", bad: "Polar bears have thin fur that lets the cold in", icon: "bear" },
+        { animal: "hummingbirds", trait: "have long, thin beaks", reason: "sip nectar from deep inside flowers", bad: "Hummingbirds have short, wide beaks", icon: "bird" },
+        { animal: "beavers", trait: "have strong front teeth", reason: "chew through tree trunks", bad: "Beavers have weak teeth that cannot cut wood", icon: "tree" },
+        { animal: "bats", trait: "use echoes to find their way", reason: "catch insects in the dark", bad: "Bats need bright light to find insects", icon: "moon" },
+        { animal: "sea turtles", trait: "have flat, paddle-shaped flippers", reason: "swim long distances in the ocean", bad: "Sea turtles have flippers that are no help in water", icon: "turtle" },
+        { animal: "cheetahs", trait: "have long legs and a bendy spine", reason: "run fast enough to catch prey", bad: "Cheetahs are slow runners", icon: "sun" },
+        { animal: "squirrels", trait: "bury nuts in the fall", reason: "have food to eat in winter", bad: "Squirrels eat all their nuts right away in the fall", icon: "squirrel" },
+        { animal: "geckos", trait: "have toe pads covered in tiny hairs", reason: "climb up smooth walls", bad: "Geckos slide right off smooth walls", icon: "frog" }
     ];
     const B1_ms_infer = F("Detail", "RI.4.1", "ocean",
         {
@@ -4229,7 +4723,7 @@
                 `${cap(v.it.animal)} ${v.it.trait}`,
                 `The adaptation helps them ${v.it.reason}`,
                 // Distractors the passage contradicts (not just unmentioned facts).
-                `${cap(v.it.animal)} ${v.it.trait} only in summer`,
+                v.it.bad || `${cap(v.it.animal)} ${v.it.trait} only in summer`,
                 `The adaptation makes them easier for predators to find`
             ]),
             answerKey: {
@@ -4281,8 +4775,10 @@
             };
         }
     );
-    const A2_FACT_POOL = ["Dogs have four legs.","Fish live in water.","The sun is a star.","Ice is frozen water.","Birds have feathers.","A week has seven days."];
-    const A2_OPINION_POOL = ["Dogs are the best pets.","Swimming is more fun than running.","Summer is better than spring.","Cats are cuter than dogs.","Video games are better than books.","Pizza is the tastiest food."];
+    const A2_FACT_POOL = ["Dogs have four legs.","Fish live in water.","The sun is a star.","Ice is frozen water.","Birds have feathers.","A week has seven days.",
+        "Cows give milk.","A spider has eight legs.","Plants need water to grow.","The moon goes around the Earth.","Bees make honey.","A year has twelve months.","Snow is made of ice.","Frogs hatch from eggs."];
+    const A2_OPINION_POOL = ["Dogs are the best pets.","Swimming is more fun than running.","Summer is better than spring.","Cats are cuter than dogs.","Video games are better than books.","Pizza is the tastiest food.",
+        "Rainy days are the most fun.","Apples taste better than bananas.","Drawing is the best thing to do at recess.","Winter is the prettiest season.","Frogs are the funniest animals.","Soccer is more fun than tag.","Blue is the nicest color.","Bedtime stories are the best part of the day."];
     const A2_dd_cat = F("FactOpinion", "Fact/Opinion (supplemental)", "nature",
         { f1: A2_FACT_POOL, o1: A2_OPINION_POOL },
         v => {
@@ -4307,7 +4803,17 @@
     const A2_EVIDENCE_PAIRS = [
         { cond: "was rainy", act: "grabbed an umbrella" },
         { cond: "was very windy", act: "held onto a hat" },
-        { cond: "was very cold", act: "put on a warm coat" }
+        { cond: "was very cold", act: "put on a warm coat" },
+        { cond: "was rainy", act: "put on rain boots" },
+        { cond: "was rainy", act: "tucked the homework into a plastic bag" },
+        { cond: "was snowy", act: "grabbed a sled" },
+        { cond: "was snowy", act: "put on snow boots" },
+        { cond: "was very cold", act: "wore thick mittens" },
+        { cond: "was very cold", act: "wore a thick scarf" },
+        { cond: "was very windy", act: "zipped up a jacket" },
+        { cond: "was stormy", act: "closed all the windows" },
+        { cond: "was foggy", act: "put on a bright jacket so drivers could see" },
+        { cond: "was very hot", act: "filled a big water bottle" }
     ];
     const A2_evidence = F("Evidence", "RL.2.1", "weather",
         { name: NAMES, ev: A2_EVIDENCE_PAIRS },
@@ -4341,7 +4847,20 @@
         { word: "cautious", def: "careful to avoid danger", ctx: "On the icy, slippery path, {n} was cautious and tested each step before moving." },
         { word: "confident", def: "sure of oneself", ctx: "{n} felt confident on the big stage and spoke loudly without any notes." },
         { word: "stubborn", def: "refusing to change one's mind", ctx: "{n} was stubborn and refused to change the plan, even though the tired, hungry team disagreed." },
-        { word: "anxious", def: "feeling worried", ctx: "Before the difficult test, {n} felt anxious and kept tapping a pencil on the desk." }
+        { word: "anxious", def: "feeling worried", ctx: "Before the difficult test, {n} felt anxious and kept tapping a pencil on the desk." },
+        { word: "enormous", def: "extremely large", ctx: "The enormous whale was longer than the boat {n} was riding in." },
+        { word: "fragile", def: "easily broken", ctx: "{n} carried the fragile eggs home slowly so none of them would crack." },
+        { word: "generous", def: "happy to share", ctx: "{n} was generous and gave half of the orange slices to the whole team." },
+        { word: "drowsy", def: "sleepy", ctx: "After the big lunch, {n} felt drowsy and rested on the soft couch." },
+        { word: "timid", def: "shy and easily frightened", ctx: "The timid kitten hid under the porch every time {n} came near." },
+        { word: "damp", def: "slightly wet", ctx: "{n} hung the damp towel in the sun after swimming." },
+        { word: "rapid", def: "very fast", ctx: "The rapid stream carried {n}'s paper boat away in seconds." },
+        { word: "ancient", def: "very old", ctx: "{n} visited an ancient castle that was built nearly a thousand years ago." },
+        { word: "astonished", def: "very surprised", ctx: "{n} was astonished when a deer walked right up to the kitchen window." },
+        { word: "scarce", def: "hard to find", ctx: "Food was scarce in the snowy woods, so {n} filled the bird feeder every morning." },
+        { word: "sturdy", def: "strong and solid", ctx: "{n} built a sturdy tree house that did not shake in the wind." },
+        { word: "reluctant", def: "not wanting to do something", ctx: "{n} was reluctant to leave the party and asked for five more minutes." },
+        { word: "curious", def: "wanting to learn more", ctx: "{n} was curious about the strange rock and looked at it under a magnifying glass." }
     ];
     const B1_ht_word2 = F("Vocabulary", "L.4.4", "adventure",
         { name: NAMES, pr: B1_HT_WORD2_PAIRS },
@@ -4361,7 +4880,10 @@
         }
     );
     const B1_clickpop = F("Purpose", "RI.4.8", "environment",
-        { action: ["recycle paper","plant flowers","save water","turn off lights when you leave a room","reduce plastic use","compost food scraps","walk instead of driving short distances","plant a tree","use reusable shopping bags","pick up litter in your neighborhood"] },
+        { action: ["recycle paper","plant flowers","save water","turn off lights when you leave a room","reduce plastic use","compost food scraps","walk instead of driving short distances","plant a tree","use reusable shopping bags","pick up litter in your neighborhood",
+            "carry a reusable water bottle","fix broken things instead of throwing them away","take shorter showers","unplug chargers when you are not using them",
+            "give old clothes and toys to others","ride a bike to school when it is safe","use both sides of your paper","turn off the water while you brush your teeth",
+            "grow some of your own vegetables","keep doors closed so heat stays inside","share books and toys instead of buying new ones","fill up the dishwasher before running it"] },
         v => ({
             interaction: "click_pop",
             passage: `You should ${v.action} because it helps the planet. Small actions add up.`,
@@ -4383,7 +4905,19 @@
         { claim: "Public transportation reduces traffic.", e1: "Buses and trains carry many passengers at once.", e2: "Fewer cars on the road means less congestion.", other: "Some cities have very old subway systems.", icon: "car" },
         { claim: "Music education helps students.", e1: "Learning an instrument can improve focus and discipline.", e2: "Music classes often boost students' confidence.", other: "Some schools hold spring concerts.", icon: "book" },
         { claim: "Volunteering strengthens communities.", e1: "Volunteers provide services that towns cannot always afford to pay for.", e2: "It connects neighbors who might not otherwise meet.", other: "Some volunteer events happen on weekends.", icon: "house" },
-        { claim: "Sleep is important for students.", e1: "Well-rested students concentrate better in class.", e2: "Sleep helps the brain store what was learned that day.", other: "Some students have late sports practices.", icon: "moon" }
+        { claim: "Sleep is important for students.", e1: "Well-rested students concentrate better in class.", e2: "Sleep helps the brain store what was learned that day.", other: "Some students have late sports practices.", icon: "moon" },
+        { claim: "Field trips help students learn.", e1: "Field trips let students see what they studied in real life.", e2: "Hands-on experiences help students remember lessons longer.", other: "Most field trips require a permission slip.", icon: "car" },
+        { claim: "Learning to swim is an important skill.", e1: "Swimming lessons help prevent drowning.", e2: "Swimming is exercise that strengthens the heart and muscles.", other: "Many pools have a deep end and a shallow end.", icon: "sun" },
+        { claim: "Board games have benefits for kids.", e1: "Many board games build planning and strategy skills.", e2: "Playing games with others teaches patience and taking turns.", other: "Some board games come with a sand timer.", icon: "star" },
+        { claim: "Reading aloud to young children helps them.", e1: "Hearing stories builds young children's vocabulary.", e2: "Reading together helps children connect sounds with letters.", other: "Picture books come in many sizes.", icon: "book" },
+        { claim: "Pets can improve people's health.", e1: "Walking a dog gives owners regular exercise.", e2: "Petting an animal can help people feel calmer.", other: "Some pets live in tanks or cages.", icon: "cat" },
+        { claim: "Bees are important to farming.", e1: "Bees pollinate many fruit and vegetable crops.", e2: "Without pollinators, many crops would produce much less food.", other: "Some bees live alone instead of in hives.", icon: "bee" },
+        { claim: "Museums help people learn.", e1: "Museums let visitors see real objects from history and science.", e2: "Many museums offer hands-on exhibits and guided tours.", other: "Some museums charge an entrance fee.", icon: "house" },
+        { claim: "Teamwork makes projects stronger.", e1: "Team members can share ideas and catch each other's mistakes.", e2: "Dividing tasks helps a group finish big jobs faster.", other: "Some projects are due on Fridays.", icon: "person" },
+        { claim: "Drinking water is good for your body.", e1: "Water helps control body temperature.", e2: "The body needs water to carry nutrients to its cells.", other: "Some water bottles are made of metal.", icon: "person" },
+        { claim: "Walking to school has benefits.", e1: "Walking gives students daily exercise.", e2: "Fewer car trips mean less air pollution near schools.", other: "Some students live far from their school.", icon: "person" },
+        { claim: "Outdoor play is good for children.", e1: "Running and climbing build strong muscles and bones.", e2: "Playing outdoors with others helps children learn to share and cooperate.", other: "Some playgrounds have sandboxes.", icon: "ball" },
+        { claim: "Solar panels help the environment.", e1: "Solar panels make electricity without burning fuel.", e2: "Using solar power reduces air pollution from power plants.", other: "Solar panels are often placed on rooftops.", icon: "sun" }
     ];
     const B2_ht_multi2 = F("Evidence", "RI.6.1", "city",
         { tp: B2_HT_MULTI2_TOPICS },
@@ -4438,7 +4972,15 @@
         { claim: 'Cities should plant more street trees.', evidence: 'Trees lower summer temperatures and clean the air.', counter: 'Tree roots can damage sidewalks and pipes.', conclusion: 'Careful placement can capture the benefits with less damage.', icon: 'tree' },
         { claim: 'Workplaces should offer four-day work weeks.', evidence: 'Shorter weeks have maintained productivity in several trials.', counter: 'Some industries need staff available five days a week.', conclusion: 'A flexible policy could work for many, though not all, jobs.', icon: 'person' },
         { claim: 'Museums should offer free admission.', evidence: 'Free entry increases visits from lower-income families.', counter: 'Ticket sales currently fund a large part of operations.', conclusion: 'Alternative funding could make free admission sustainable.', icon: 'house' },
-        { claim: 'Towns should build more skate parks.', evidence: 'Skate parks give teens a free, supervised place to gather.', counter: 'Building and maintaining a park costs money upfront.', conclusion: 'The long-term community benefit can outweigh the initial cost.', icon: 'star' }
+        { claim: 'Towns should build more skate parks.', evidence: 'Skate parks give teens a free, supervised place to gather.', counter: 'Building and maintaining a park costs money upfront.', conclusion: 'The long-term community benefit can outweigh the initial cost.', icon: 'star' },
+        { claim: "Schools should start composting programs.", evidence: "Food scraps from lunch make up a large share of school waste.", counter: "Compost bins require regular turning and monitoring.", conclusion: "Student volunteers can manage the work with a simple schedule.", icon: "tree" },
+        { claim: "Cities should add more public benches.", evidence: "Benches let older adults rest while walking to shops.", counter: "Benches require upkeep and occasional repairs.", conclusion: "A modest maintenance budget can keep them useful for years.", icon: "person" },
+        { claim: "High schools should teach cooking skills.", evidence: "Students who can cook are more likely to prepare healthy meals.", counter: "Kitchen classrooms are costly to equip.", conclusion: "Sharing a community kitchen could lower the cost.", icon: "house" },
+        { claim: "High schools should require community service.", evidence: "Volunteering connects students with people outside their usual circles.", counter: "Some students already work jobs after school.", conclusion: "Flexible hour requirements can make service possible for everyone.", icon: "star" },
+        { claim: "Cities should expand bus service on weekends.", evidence: "Many people work on Saturdays and Sundays.", counter: "Weekend buses often carry fewer riders.", conclusion: "Smaller buses could serve weekend routes at a lower cost.", icon: "star" },
+        { claim: "Libraries should lend tools as well as books.", evidence: "Many residents need a drill or ladder only a few times a year.", counter: "Borrowed tools can be damaged or lost.", conclusion: "Simple deposit rules can protect the collection.", icon: "house" },
+        { claim: "Towns should protect local wetlands.", evidence: "Wetlands absorb floodwater during heavy storms.", counter: "Developers want the land for new housing.", conclusion: "Building on nearby higher ground can meet both needs.", icon: "tree" },
+        { claim: "Students should keep a daily reading log.", evidence: "Tracking reading helps students notice their own progress.", counter: "Some students find logs tedious and stop filling them in.", conclusion: "Short, simple logs can keep the benefit without the burden.", icon: "book" }
     ];
     const C1_dd_match2 = F("Argument", "RI.9-10.2", "science",
         { s: C1_ARG_MATCH_SETS },
@@ -4470,7 +5012,15 @@
         { text: `The old clock groaned with every tick, tired of counting the hours. His confidence was a balloon, easily popped by one bad review. "Just what this day needed," she sighed, watching the printer jam again.` },
         { text: `The wind argued with the shutters all night long. Her anger was a pot left too long on the heat. "How wonderful," he muttered, finding the last parking spot taken.` },
         { text: `The old radio coughed static before finding its voice. Hope was a small candle flickering in the dark room. "Exactly what I was hoping for," she said, staring at the flat bicycle tire.` },
-        { text: `The morning fog crept quietly over the sleeping town. Regret sat heavy in his chest like an old stone. "Couldn't have planned it better," he said, watching the bus pull away without him.` }
+        { text: `The morning fog crept quietly over the sleeping town. Regret sat heavy in his chest like an old stone. "Couldn't have planned it better," he said, watching the bus pull away without him.` },
+        { text: "The rain drummed its fingers on the roof all afternoon. The picnic basket sat packed by the door. \"Perfect picnic weather,\" Dad said, staring at the puddles in the yard." },
+        { text: "The old car wheezed and complained all the way up the steep hill. The family was already an hour behind schedule. \"This trip is going so smoothly,\" Mom said as the engine light blinked on." },
+        { text: "Dry leaves chased one another across the empty parking lot. The team had lost every game that season. \"Another brilliant performance,\" the coach muttered after a ten-to-nothing loss." },
+        { text: "The printer groaned, then swallowed the last sheet of paper. The report was due in five minutes. \"Wonderful, my favorite machine,\" the student sighed." },
+        { text: "The refrigerator hummed a lonely tune in the dark kitchen. The cake had slid off the counter and landed face down on the floor. \"Well, that looks delicious,\" the baker said flatly." },
+        { text: "The stubborn door refused to open no matter how hard anyone pushed. The movers had already carried the couch up four flights of stairs. \"What a relaxing way to spend a Saturday,\" one mover groaned." },
+        { text: "The sun peeked shyly over the hills as the hike began. By noon, the group had run out of water and taken a wrong turn. \"Best shortcut ever,\" the guide said, frowning at the map." },
+        { text: "The wind howled its complaints against the cabin windows. The campers had forgotten to pack any matches. \"Great planning, everyone,\" one camper said, holding up an unlit lantern." }
     ];
     const C1_ms2 = F("Rhetoric", "RL.9-10.4", "art",
         { p: C1_MS2_PASSAGES },
@@ -4851,7 +5401,46 @@
           main: "what plants need to grow", narrow: "what soil is", icon: "flower" },
         { topic: "the moon", text: "The moon moves around the Earth. The moon does not make its own light. It shines because the sun lights it up.",
           q: "Why does the moon shine?", a: "The sun lights it up.", wrong: ["It makes its own light.", "It is on fire.", "The stars paint it."],
-          main: "how the moon moves and shines", narrow: "the size of the Earth", icon: "star" }
+          main: "how the moon moves and shines", narrow: "the size of the Earth", icon: "star" },
+        { topic: "frogs", text: "A frog starts life as an egg in the water. The egg hatches into a tadpole. The tadpole grows legs and becomes a frog.",
+          q: "What hatches from a frog egg?", a: "a tadpole", wrong: ["a fish", "a bird", "a snail"],
+          main: "how a frog grows", narrow: "where frog eggs are laid", icon: "frog" },
+        { topic: "squirrels", text: "Squirrels gather nuts in the fall. They bury the nuts in the ground. In winter, they dig the nuts up to eat.",
+          q: "When do squirrels dig up the nuts?", a: "in winter", wrong: ["in summer", "at night", "in spring"],
+          main: "how squirrels save food for winter", narrow: "how squirrels dig", icon: "squirrel" },
+        { topic: "spiders", text: "Spiders spin webs out of silk. The web is sticky. Bugs get stuck in the web, and the spider eats them.",
+          q: "Why do bugs get stuck in a web?", a: "The web is sticky.", wrong: ["The web is wet.", "The web is hot.", "The web is very big."],
+          main: "how spiders catch food", narrow: "what silk is", icon: "spider" },
+        { topic: "the sun", text: "The sun is a star. It is very big and very hot. The sun gives Earth light and heat.",
+          q: "What does the sun give Earth?", a: "light and heat", wrong: ["rain and snow", "wind and clouds", "food and water"],
+          main: "what the sun is and what it does", narrow: "how hot the sun is", icon: "sun" },
+        { topic: "turtles", text: "A turtle has a hard shell. The shell helps keep the turtle safe. Many turtles can pull their heads inside the shell to hide.",
+          q: "How do many turtles hide?", a: "They pull their heads inside the shell.", wrong: ["They dig deep holes.", "They climb up trees.", "They change color."],
+          main: "how a turtle's shell keeps it safe", narrow: "how hard the shell is", icon: "turtle" },
+        { topic: "bats", text: "Bats sleep during the day. They hang upside down to rest. At night, they fly out to find food.",
+          q: "How do bats rest?", a: "They hang upside down.", wrong: ["They lie on the ground.", "They sit in nests.", "They float in water."],
+          main: "how bats rest and find food", narrow: "what time bats wake up", icon: "moon" },
+        { topic: "clouds", text: "Clouds are made of tiny drops of water. When the drops get big and heavy, they fall. That is how we get rain.",
+          q: "What are clouds made of?", a: "tiny drops of water", wrong: ["cotton", "smoke", "sand"],
+          main: "how rain forms", narrow: "how heavy the drops are", icon: "cloud" },
+        { topic: "teeth", text: "Kids have baby teeth first. Around age six, baby teeth start to fall out. Bigger grown-up teeth grow in their place.",
+          q: "What grows in after baby teeth fall out?", a: "grown-up teeth", wrong: ["more baby teeth", "nothing at all", "tiny bones"],
+          main: "how kids' teeth change", narrow: "the age when teeth fall out", icon: "person" },
+        { topic: "apple trees", text: "An apple tree grows from a small seed. The tree grows flowers in the spring. Later, the flowers turn into apples.",
+          q: "What turns into apples?", a: "the flowers", wrong: ["the leaves", "the roots", "the bark"],
+          main: "how an apple tree makes apples", narrow: "how small the seed is", icon: "apple" },
+        { topic: "ducks", text: "Ducks have webbed feet. Their feet work like paddles in the water. Ducks also have oily feathers that keep them dry.",
+          q: "What keeps a duck dry?", a: "its oily feathers", wrong: ["its webbed feet", "its short legs", "its flat bill"],
+          main: "how ducks are made for the water", narrow: "what a duck's feet look like", icon: "duck" },
+        { topic: "polar bears", text: "Polar bears live where it is icy and cold. Thick fur and fat keep them warm. They are strong swimmers, too.",
+          q: "What keeps polar bears warm?", a: "thick fur and fat", wrong: ["warm caves", "hot sunshine", "their long claws"],
+          main: "how polar bears live in the cold", narrow: "how well polar bears swim", icon: "bear" },
+        { topic: "the heart", text: "Your heart is a muscle. It pumps blood all through your body. When you run, your heart beats faster.",
+          q: "What does the heart pump?", a: "blood", wrong: ["air", "food", "water"],
+          main: "what the heart does", narrow: "how fast you can run", icon: "person" },
+        { topic: "ants", text: "Ants live together in big groups called colonies. They work as a team to find food. Some ants can carry things much heavier than they are.",
+          q: "What are big groups of ants called?", a: "colonies", wrong: ["herds", "flocks", "schools"],
+          main: "how ants live and work together", narrow: "how heavy things are", icon: "ant" }
     ];
     const A2_info_fact = F("Detail", "RI.2.1", "science",
         { it: A2_FACTS },
