@@ -1488,7 +1488,7 @@
         if (r.avg_accuracy != null && r.avg_accuracy < 0.5)
             out.push({ text: `Average accuracy is ${Math.round(r.avg_accuracy * 100)}%.`, mode: weakMode });
         if (weak && weak.pct < 0.6)
-            out.push({ text: `Struggling with ${weak.type} (${Math.round(weak.pct * 100)}% correct).`, mode: weakMode });
+            out.push({ text: `Struggling with ${skillTypeLabel(weak.type)} (${Math.round(weak.pct * 100)}% correct).`, mode: weakMode });
         return out;
     }
     function renderClassStudents() {
@@ -1516,7 +1516,7 @@
                 <span>${r.latest_rit ?? '—'}${delta != null ? `<br><small style="color:${delta >= 0 ? '#16a34a' : '#dc2626'};">${delta >= 0 ? '+' : ''}${delta}</small>` : ''}</span>
                 <span>${r.avg_accuracy != null ? Math.round(r.avg_accuracy * 100) + '%' : '—'}</span>
                 <span>${fmtDate(r.last_active)}</span>
-                <span>${weak ? `${escapeHtml(weak[0])} <small>(${Math.round(weak[1] * 100)}%)</small>` : '—'}</span>
+                <span>${weak ? `${escapeHtml(skillTypeLabel(weak[0]))} <small>(${Math.round(weak[1] * 100)}%)</small>` : '—'}</span>
             </div>`;
         }).join('');
         box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">Suggestions</div>${flagHtml}
@@ -2270,6 +2270,9 @@
         return drawFrame(chosen, levelKey);
     }
     // Skill-focus filters for the practice quizzes (Vocabulary / Informational / Literary).
+    // Readable name for an internal question type ("MainIdea" -> "Main Idea").
+    const SKILL_TYPE_LABELS = { MainIdea: 'Main Idea', CauseEffect: 'Cause & Effect', FactOpinion: 'Fact & Opinion', CommandTerm: 'Command Terms' };
+    function skillTypeLabel(t) { return SKILL_TYPE_LABELS[t] || String(t || '').replace(/([a-z])([A-Z])/g, '$1 $2'); }
     // Fine-grained skill groups (question `type` -> student-facing skill). Every
     // type belongs to exactly one group; levels without a group's types borrow
     // from the nearest level that has them (nearestSkillLevel).
@@ -4102,7 +4105,7 @@
         // restore plain passage text first for non-hot-text
         if (!t.startsWith('hot_text') && t !== 'evidence_selection') {
             document.getElementById('passage').className = 'passage-text';
-            const wordInfoOn = localStorage.getItem('wordinfo_enabled') === '1';
+            const wordInfoOn = wordHelpActive(q); // was missing the Simulation-mode check
             document.getElementById('passage').innerHTML = wordInfoOn ? highlightKnownWords(q.passage) : escapeHtml(q.passage).replace(/\n/g, '<br>');
         }
         if (t === 'multiple_choice') renderMultipleChoice(q, grid);
@@ -4613,6 +4616,11 @@
 
     function submitAnswer(response, correct) {
         // unified entry from all renderers
+        // One answer per question: a double tap during the 1-second feedback
+        // toast used to record the answer twice and silently skip the next
+        // question. Unlocked when the next question renders (loadQ).
+        if (state.answerLocked) return;
+        state.answerLocked = true;
         const t = document.getElementById('toast'); t.style.display = 'block';
         const modeNow = document.getElementById('mode-select').value;
         const bandBefore = state.activeQ ? state.activeQ.band : null;
@@ -5614,7 +5622,104 @@
         ambiguous:  { pos:"adjective", t:{es:"ambiguo",fr:"ambigu",zh:"模糊的",ja:"曖昧な",ko:"모호한",ru:"двусмысленный",ar:"غامض",vi:"mơ hồ",th:"กำกวม",km:"មិនច្បាស់លាស់",mn:"тодорхойгүй"} },
         pragmatic:  { pos:"adjective", t:{es:"pragmático",fr:"pragmatique",zh:"务实的",ja:"実用的な",ko:"실용적인",ru:"прагматичный",ar:"عملي",vi:"thực dụng",th:"เน้นความเป็นจริง",km:"ជាក់ស្តែង",mn:"практик"} },
         ubiquitous: { pos:"adjective", t:{es:"omnipresente",fr:"omniprésent",zh:"无处不在的",ja:"至る所にある",ko:"어디에나 있는",ru:"вездесущий",ar:"منتشر في كل مكان",vi:"có mặt khắp nơi",th:"มีอยู่ทุกหนทุกแห่ง",km:"មានគ្រប់ទីកន្លែង",mn:"хаа сайгүй байдаг"} },
-        cogent:     { pos:"adjective", t:{es:"convincente",fr:"convaincant",zh:"令人信服的",ja:"説得力のある",ko:"설득력 있는",ru:"убедительный",ar:"مقنع",vi:"thuyết phục",th:"น่าเชื่อถือ",km:"មានហេតុផលច្បាស់លាស់",mn:"үнэмшилтэй"} }
+        cogent:     { pos:"adjective", t:{es:"convincente",fr:"convaincant",zh:"令人信服的",ja:"説得力のある",ko:"설득력 있는",ru:"убедительный",ar:"مقنع",vi:"thuyết phục",th:"น่าเชื่อถือ",km:"មានហេតុផលច្បាស់លាស់",mn:"үнэмшилтэй"} },
+        huge:         { pos:"adjective", t:{es:"enorme",fr:"énorme",zh:"巨大的",ja:"巨大な",ko:"거대한",ru:"огромный",ar:"ضخم",vi:"to lớn",th:"ใหญ่มาก",km:"ធំណាស់",mn:"асар том"} },
+        tiny:         { pos:"adjective", t:{es:"diminuto",fr:"minuscule",zh:"极小的",ja:"とても小さい",ko:"아주 작은",ru:"крошечный",ar:"صغير جدا",vi:"tí hon",th:"เล็กมาก",km:"តូចណាស់",mn:"өчүүхэн"} },
+        soggy:        { pos:"adjective", t:{es:"empapado",fr:"détrempé",zh:"湿透的",ja:"びしょびしょの",ko:"흠뻑 젖은",ru:"промокший",ar:"مبلل تماما",vi:"sũng nước",th:"เปียกแฉะ",km:"ទទឹកជោក",mn:"норсон"} },
+        gentle:       { pos:"adjective", t:{es:"suave",fr:"doux",zh:"温柔的",ja:"優しい",ko:"부드러운",ru:"нежный",ar:"لطيف",vi:"dịu dàng",th:"อ่อนโยน",km:"ស្លូតបូត",mn:"зөөлөн"} },
+        grumpy:       { pos:"adjective", t:{es:"gruñón",fr:"grincheux",zh:"脾气坏的",ja:"不機嫌な",ko:"심술궂은",ru:"ворчливый",ar:"متذمر",vi:"cáu kỉnh",th:"ขี้หงุดหงิด",km:"ឆាប់ខឹង",mn:"ааш муутай"} },
+        silly:        { pos:"adjective", t:{es:"tonto",fr:"ridicule",zh:"傻傻的",ja:"ばかげた",ko:"우스꽝스러운",ru:"глупый",ar:"سخيف",vi:"ngớ ngẩn",th:"ไร้สาระ",km:"ល្ងីល្ងើ",mn:"тэнэг"} },
+        shiny:        { pos:"adjective", t:{es:"brillante",fr:"brillant",zh:"闪亮的",ja:"ぴかぴかの",ko:"반짝이는",ru:"блестящий",ar:"لامع",vi:"sáng bóng",th:"เป็นเงางาม",km:"ភ្លឺរលោង",mn:"гялалзсан"} },
+        chilly:       { pos:"adjective", t:{es:"frío",fr:"frais",zh:"冷飕飕的",ja:"肌寒い",ko:"쌀쌀한",ru:"прохладный",ar:"بارد قليلا",vi:"se lạnh",th:"หนาวเย็น",km:"ត្រជាក់",mn:"сэрүүн"} },
+        gloomy:       { pos:"adjective", t:{es:"sombrío",fr:"sombre",zh:"阴沉的",ja:"陰気な",ko:"우울한",ru:"мрачный",ar:"كئيب",vi:"u ám",th:"มืดมน",km:"អាប់អួរ",mn:"гунигтай"} },
+        proud:        { pos:"adjective", t:{es:"orgulloso",fr:"fier",zh:"自豪的",ja:"誇らしい",ko:"자랑스러운",ru:"гордый",ar:"فخور",vi:"tự hào",th:"ภูมิใจ",km:"មោទនភាព",mn:"бахархсан"} },
+        lonely:       { pos:"adjective", t:{es:"solo",fr:"seul",zh:"孤独的",ja:"寂しい",ko:"외로운",ru:"одинокий",ar:"وحيد",vi:"cô đơn",th:"เหงา",km:"ឯកា",mn:"ганцаардсан"} },
+        embarrassed:  { pos:"adjective", t:{es:"avergonzado",fr:"gêné",zh:"尴尬的",ja:"恥ずかしい",ko:"당황한",ru:"смущённый",ar:"محرج",vi:"xấu hổ",th:"อาย",km:"ខ្មាស់អៀន",mn:"ичсэн"} },
+        relieved:     { pos:"adjective", t:{es:"aliviado",fr:"soulagé",zh:"松了一口气的",ja:"ほっとした",ko:"안도한",ru:"с облегчением",ar:"مرتاح",vi:"nhẹ nhõm",th:"โล่งใจ",km:"ធូរចិត្ត",mn:"санаа амарсан"} },
+        puzzled:      { pos:"adjective", t:{es:"desconcertado",fr:"perplexe",zh:"困惑的",ja:"当惑した",ko:"어리둥절한",ru:"озадаченный",ar:"حائر",vi:"bối rối",th:"งุนงง",km:"ងឿងឆ្ងល់",mn:"гайхширсан"} },
+        cheerful:     { pos:"adjective", t:{es:"alegre",fr:"gai",zh:"开朗的",ja:"陽気な",ko:"쾌활한",ru:"весёлый",ar:"مبتهج",vi:"vui tươi",th:"ร่าเริง",km:"ស្រស់ស្រាយ",mn:"хөгжилтэй"} },
+        bored:        { pos:"adjective", t:{es:"aburrido",fr:"qui s'ennuie",zh:"无聊的",ja:"退屈した",ko:"지루한",ru:"скучающий",ar:"يشعر بالملل",vi:"chán",th:"เบื่อ",km:"ធុញទ្រាន់",mn:"уйдсан"} },
+        jealous:      { pos:"adjective", t:{es:"celoso",fr:"jaloux",zh:"嫉妒的",ja:"嫉妬した",ko:"질투하는",ru:"завистливый",ar:"غيور",vi:"ghen tị",th:"อิจฉา",km:"ច្រណែន",mn:"атаархсан"} },
+        brave:        { pos:"adjective", t:{es:"valiente",fr:"courageux",zh:"勇敢的",ja:"勇敢な",ko:"용감한",ru:"храбрый",ar:"شجاع",vi:"dũng cảm",th:"กล้าหาญ",km:"ក្លាហាន",mn:"зоригтой"} },
+        clumsy:       { pos:"adjective", t:{es:"torpe",fr:"maladroit",zh:"笨拙的",ja:"不器用な",ko:"서투른",ru:"неуклюжий",ar:"أخرق",vi:"vụng về",th:"ซุ่มซ่าม",km:"ឆ្គាំឆ្គង",mn:"болхи"} },
+        graceful:     { pos:"adjective", t:{es:"elegante",fr:"gracieux",zh:"优雅的",ja:"優雅な",ko:"우아한",ru:"грациозный",ar:"رشيق",vi:"duyên dáng",th:"สง่างาม",km:"ទន់ភ្លន់",mn:"уян налархай"} },
+        reluctant:    { pos:"adjective", t:{es:"reacio",fr:"réticent",zh:"不情愿的",ja:"気が進まない",ko:"마지못해 하는",ru:"неохотный",ar:"غير راغب",vi:"miễn cưỡng",th:"ไม่เต็มใจ",km:"មិនសូវចង់",mn:"дурамжхан"} },
+        frigid:       { pos:"adjective", t:{es:"helado",fr:"glacial",zh:"极冷的",ja:"極寒の",ko:"몹시 추운",ru:"ледяной",ar:"شديد البرودة",vi:"lạnh giá",th:"หนาวจัด",km:"ត្រជាក់ខ្លាំង",mn:"маш хүйтэн"} },
+        vacant:       { pos:"adjective", t:{es:"desocupado",fr:"inoccupé",zh:"空着的",ja:"空いている",ko:"비어 있는",ru:"незанятый",ar:"شاغر",vi:"bỏ trống",th:"ว่างเปล่า",km:"ទំនេរ",mn:"хоосон"} },
+        drowsy:       { pos:"adjective", t:{es:"somnoliento",fr:"somnolent",zh:"昏昏欲睡的",ja:"眠い",ko:"졸린",ru:"сонный",ar:"نعسان",vi:"buồn ngủ",th:"ง่วงนอน",km:"ងងុយគេង",mn:"нойрмог"} },
+        abundant:     { pos:"adjective", t:{es:"abundante",fr:"abondant",zh:"丰富的",ja:"豊富な",ko:"풍부한",ru:"обильный",ar:"وفير",vi:"dồi dào",th:"อุดมสมบูรณ์",km:"សម្បូរ",mn:"элбэг"} },
+        timid:        { pos:"adjective", t:{es:"tímido",fr:"timide",zh:"胆小的",ja:"臆病な",ko:"소심한",ru:"робкий",ar:"خجول",vi:"nhút nhát",th:"ขี้อาย",km:"អៀនខ្មាស",mn:"ичимтгий"} },
+        hesitated:    { pos:"verb (past tense)", t:{es:"dudó",fr:"a hésité",zh:"犹豫了",ja:"ためらった",ko:"망설였다",ru:"колебался",ar:"تردد",vi:"đã do dự",th:"ลังเล",km:"បានស្ទាក់ស្ទើរ",mn:"тээнэгэлзсэн"} },
+        scarce:       { pos:"adjective", t:{es:"escaso",fr:"rare",zh:"稀缺的",ja:"乏しい",ko:"부족한",ru:"скудный",ar:"نادر",vi:"khan hiếm",th:"ขาดแคลน",km:"ខ្វះខាត",mn:"ховор"} },
+        persuade:     { pos:"verb", t:{es:"convencer",fr:"persuader",zh:"说服",ja:"説得する",ko:"설득하다",ru:"убедить",ar:"يقنع",vi:"thuyết phục",th:"โน้มน้าว",km:"បញ្ចុះបញ្ចូល",mn:"ятгах"} },
+        miniature:    { pos:"adjective", t:{es:"en miniatura",fr:"miniature",zh:"微型的",ja:"ミニチュアの",ko:"소형의",ru:"миниатюрный",ar:"مصغر",vi:"thu nhỏ",th:"จิ๋ว",km:"ខ្នាតតូច",mn:"бяцхан"} },
+        cooperate:    { pos:"verb", t:{es:"cooperar",fr:"coopérer",zh:"合作",ja:"協力する",ko:"협력하다",ru:"сотрудничать",ar:"يتعاون",vi:"hợp tác",th:"ร่วมมือ",km:"សហការ",mn:"хамтран ажиллах"} },
+        astonished:   { pos:"adjective", t:{es:"asombrado",fr:"stupéfait",zh:"惊讶的",ja:"驚いた",ko:"깜짝 놀란",ru:"изумлённый",ar:"مندهش",vi:"kinh ngạc",th:"ประหลาดใจ",km:"ភ្ញាក់ផ្អើល",mn:"гайхсан"} },
+        fierce:       { pos:"adjective", t:{es:"feroz",fr:"féroce",zh:"凶猛的",ja:"獰猛な",ko:"사나운",ru:"свирепый",ar:"شرس",vi:"hung dữ",th:"ดุร้าย",km:"សាហាវ",mn:"догшин"} },
+        rapid:        { pos:"adjective", t:{es:"rápido",fr:"rapide",zh:"快速的",ja:"速い",ko:"빠른",ru:"быстрый",ar:"سريع",vi:"nhanh chóng",th:"รวดเร็ว",km:"លឿន",mn:"хурдан"} },
+        damp:         { pos:"adjective", t:{es:"húmedo",fr:"humide",zh:"潮湿的",ja:"湿った",ko:"축축한",ru:"сырой",ar:"رطب",vi:"ẩm ướt",th:"ชื้น",km:"សើម",mn:"чийгтэй"} },
+        precious:     { pos:"adjective", t:{es:"preciado",fr:"précieux",zh:"珍贵的",ja:"大切な",ko:"소중한",ru:"драгоценный",ar:"ثمين",vi:"quý giá",th:"ล้ำค่า",km:"មានតម្លៃ",mn:"нандин"} },
+        irritated:    { pos:"adjective", t:{es:"irritado",fr:"agacé",zh:"恼火的",ja:"いらいらした",ko:"짜증난",ru:"раздражённый",ar:"منزعج",vi:"bực mình",th:"หงุดหงิด",km:"មួម៉ៅ",mn:"бухимдсан"} },
+        sturdy:       { pos:"adjective", t:{es:"resistente",fr:"solide",zh:"结实的",ja:"頑丈な",ko:"튼튼한",ru:"прочный",ar:"متين",vi:"chắc chắn",th:"แข็งแรง",km:"រឹងមាំ",mn:"бат бөх"} },
+        demolish:     { pos:"verb", t:{es:"demoler",fr:"démolir",zh:"拆除",ja:"取り壊す",ko:"철거하다",ru:"снести",ar:"يهدم",vi:"phá dỡ",th:"รื้อถอน",km:"វាយកម្ទេច",mn:"нураах"} },
+        observe:      { pos:"verb", t:{es:"observar",fr:"observer",zh:"观察",ja:"観察する",ko:"관찰하다",ru:"наблюдать",ar:"يراقب",vi:"quan sát",th:"สังเกต",km:"សង្កេត",mn:"ажиглах"} },
+        arrogant:     { pos:"adjective", t:{es:"arrogante",fr:"arrogant",zh:"傲慢的",ja:"傲慢な",ko:"거만한",ru:"высокомерный",ar:"متغطرس",vi:"kiêu ngạo",th:"หยิ่งยโส",km:"ក្អេងក្អាង",mn:"бардам"} },
+        resourceful:  { pos:"adjective", t:{es:"ingenioso",fr:"débrouillard",zh:"足智多谋的",ja:"機転の利く",ko:"수완 좋은",ru:"находчивый",ar:"واسع الحيلة",vi:"tháo vát",th:"มีไหวพริบ",km:"ប៉ិនប្រសប់",mn:"авхаалжтай"} },
+        diligent:     { pos:"adjective", t:{es:"diligente",fr:"appliqué",zh:"勤奋的",ja:"勤勉な",ko:"부지런한",ru:"прилежный",ar:"مجتهد",vi:"siêng năng",th:"ขยัน",km:"ឧស្សាហ៍",mn:"хичээнгүй"} },
+        impulsive:    { pos:"adjective", t:{es:"impulsivo",fr:"impulsif",zh:"冲动的",ja:"衝動的な",ko:"충동적인",ru:"импульсивный",ar:"متهور",vi:"bốc đồng",th:"หุนหันพลันแล่น",km:"ធ្វើដោយមិនគិត",mn:"яаруу"} },
+        gullible:     { pos:"adjective", t:{es:"crédulo",fr:"crédule",zh:"容易上当的",ja:"だまされやすい",ko:"잘 속는",ru:"доверчивый",ar:"ساذج",vi:"cả tin",th:"หลงเชื่อง่าย",km:"ងាយជឿ",mn:"итгэмтгий"} },
+        compassionate:{ pos:"adjective", t:{es:"compasivo",fr:"compatissant",zh:"有同情心的",ja:"情け深い",ko:"동정심 많은",ru:"сострадательный",ar:"رحيم",vi:"nhân ái",th:"มีเมตตา",km:"មានចិត្តមេត្តា",mn:"энэрэнгүй"} },
+        indifferent:  { pos:"adjective", t:{es:"indiferente",fr:"indifférent",zh:"冷漠的",ja:"無関心な",ko:"무관심한",ru:"равнодушный",ar:"غير مبال",vi:"thờ ơ",th:"เฉยเมย",km:"ព្រងើយកន្តើយ",mn:"хайхрамжгүй"} },
+        frugal:       { pos:"adjective", t:{es:"ahorrativo",fr:"économe",zh:"节俭的",ja:"倹約的な",ko:"검소한",ru:"бережливый",ar:"مقتصد",vi:"tiết kiệm",th:"ประหยัด",km:"សន្សំសំចៃ",mn:"хэмнэлттэй"} },
+        eloquent:     { pos:"adjective", t:{es:"elocuente",fr:"éloquent",zh:"口才好的",ja:"雄弁な",ko:"유창한",ru:"красноречивый",ar:"فصيح",vi:"có tài hùng biện",th:"มีวาทศิลป์",km:"ពូកែនិយាយ",mn:"уран яриатай"} },
+        hesitant:     { pos:"adjective", t:{es:"vacilante",fr:"hésitant",zh:"犹豫的",ja:"ためらいがちな",ko:"주저하는",ru:"нерешительный",ar:"متردد",vi:"do dự",th:"ลังเล",km:"ស្ទាក់ស្ទើរ",mn:"шийдэмгий бус"} },
+        optimistic:   { pos:"adjective", t:{es:"optimista",fr:"optimiste",zh:"乐观的",ja:"楽観的な",ko:"낙관적인",ru:"оптимистичный",ar:"متفائل",vi:"lạc quan",th:"มองโลกในแง่ดี",km:"សុទិដ្ឋិនិយម",mn:"өөдрөг"} },
+        pessimistic:  { pos:"adjective", t:{es:"pesimista",fr:"pessimiste",zh:"悲观的",ja:"悲観的な",ko:"비관적인",ru:"пессимистичный",ar:"متشائم",vi:"bi quan",th:"มองโลกในแง่ร้าย",km:"ទុទិដ្ឋិនិយម",mn:"гутранги"} },
+        considerate:  { pos:"adjective", t:{es:"considerado",fr:"attentionné",zh:"体贴的",ja:"思いやりのある",ko:"사려 깊은",ru:"заботливый",ar:"مراع للآخرين",vi:"chu đáo",th:"เอาใจใส่ผู้อื่น",km:"យកចិត្តទុកដាក់អ្នកដទៃ",mn:"бусдыг боддог"} },
+        reliable:     { pos:"adjective", t:{es:"confiable",fr:"fiable",zh:"可靠的",ja:"信頼できる",ko:"믿을 수 있는",ru:"надёжный",ar:"موثوق",vi:"đáng tin cậy",th:"เชื่อถือได้",km:"អាចទុកចិត្តបាន",mn:"найдвартай"} },
+        versatile:    { pos:"adjective", t:{es:"versátil",fr:"polyvalent",zh:"多才多艺的",ja:"多才な",ko:"다재다능한",ru:"разносторонний",ar:"متعدد المواهب",vi:"đa tài",th:"มีความสามารถหลากหลาย",km:"ចេះច្រើនមុខ",mn:"олон талын чадвартай"} },
+        tenuous:      { pos:"adjective", t:{es:"endeble",fr:"ténu",zh:"薄弱的",ja:"薄弱な",ko:"빈약한",ru:"шаткий",ar:"ضعيف",vi:"yếu ớt",th:"ไม่มั่นคง",km:"ទន់ខ្សោយ",mn:"сул"} },
+        ephemeral:    { pos:"adjective", t:{es:"efímero",fr:"éphémère",zh:"短暂的",ja:"はかない",ko:"덧없는",ru:"мимолётный",ar:"زائل",vi:"phù du",th:"อยู่ได้ไม่นาน",km:"មិនស្ថិតស្ថេរ",mn:"түр зуурын"} },
+        candid:       { pos:"adjective", t:{es:"franco",fr:"franc",zh:"坦率的",ja:"率直な",ko:"솔직한",ru:"откровенный",ar:"صريح",vi:"thẳng thắn",th:"ตรงไปตรงมา",km:"ស្មោះត្រង់",mn:"илэн далангүй"} },
+        arduous:      { pos:"adjective", t:{es:"arduo",fr:"ardu",zh:"艰巨的",ja:"骨の折れる",ko:"몹시 힘든",ru:"изнурительный",ar:"شاق",vi:"gian khổ",th:"ยากลำบาก",km:"លំបាក",mn:"хүнд хэцүү"} },
+        austere:      { pos:"adjective", t:{es:"austero",fr:"austère",zh:"朴素的",ja:"質素な",ko:"간소한",ru:"аскетичный",ar:"متقشف",vi:"đơn sơ",th:"เรียบง่าย",km:"សាមញ្ញ",mn:"энгийн"} },
+        prudent:      { pos:"adjective", t:{es:"prudente",fr:"sage",zh:"明智的",ja:"賢明な",ko:"신중한",ru:"благоразумный",ar:"حكيم",vi:"khôn ngoan",th:"รอบคอบ",km:"មានការពិចារណា",mn:"ухаалаг"} },
+        benevolent:   { pos:"adjective", t:{es:"benévolo",fr:"bienveillant",zh:"仁慈的",ja:"慈悲深い",ko:"자비로운",ru:"доброжелательный",ar:"خيّر",vi:"nhân từ",th:"ใจดีมีเมตตา",km:"សប្បុរស",mn:"нинжин сэтгэлтэй"} },
+        lethargic:    { pos:"adjective", t:{es:"aletargado",fr:"léthargique",zh:"无精打采的",ja:"無気力な",ko:"무기력한",ru:"вялый",ar:"خامل",vi:"uể oải",th:"เซื่องซึม",km:"ល្ហិតល្ហៃ",mn:"сульдсан"} },
+        gregarious:   { pos:"adjective", t:{es:"sociable",fr:"sociable",zh:"爱交际的",ja:"社交的な",ko:"사교적인",ru:"общительный",ar:"اجتماعي",vi:"thích giao du",th:"ชอบเข้าสังคม",km:"រួសរាយរាក់ទាក់",mn:"нийтэч"} },
+        tentative:    { pos:"adjective", t:{es:"provisional",fr:"provisoire",zh:"暂定的",ja:"仮の",ko:"잠정적인",ru:"предварительный",ar:"مبدئي",vi:"tạm thời",th:"ยังไม่แน่นอน",km:"បណ្តោះអាសន្ន",mn:"урьдчилсан"} },
+        vigilant:     { pos:"adjective", t:{es:"alerta",fr:"vigilant",zh:"警惕的",ja:"用心深い",ko:"경계하는",ru:"бдительный",ar:"يقظ",vi:"cảnh giác",th:"เฝ้าระวัง",km:"ប្រុងស្មារតី",mn:"сэрэмжтэй"} },
+        obstinate:    { pos:"adjective", t:{es:"obstinado",fr:"obstiné",zh:"顽固的",ja:"強情な",ko:"완고한",ru:"упёртый",ar:"معاند",vi:"cứng đầu",th:"หัวดื้อ",km:"ចចេស",mn:"гөжүүд"} },
+        alleviate:    { pos:"verb", t:{es:"aliviar",fr:"soulager",zh:"减轻",ja:"和らげる",ko:"완화하다",ru:"облегчить",ar:"يخفف",vi:"làm giảm bớt",th:"บรรเทา",km:"បន្ធូរបន្ថយ",mn:"хөнгөвчлөх"} },
+        conspicuous:  { pos:"adjective", t:{es:"llamativo",fr:"voyant",zh:"显眼的",ja:"目立つ",ko:"눈에 띄는",ru:"заметный",ar:"لافت للنظر",vi:"dễ thấy",th:"เด่นชัด",km:"លេចធ្លោ",mn:"илт харагдах"} },
+        deteriorate:  { pos:"verb", t:{es:"deteriorarse",fr:"se détériorer",zh:"恶化",ja:"劣化する",ko:"나빠지다",ru:"разрушаться",ar:"يتدهور",vi:"xuống cấp",th:"เสื่อมสภาพ",km:"ទ្រុឌទ្រោម",mn:"муудах"} },
+        impartial:    { pos:"adjective", t:{es:"imparcial",fr:"impartial",zh:"公正的",ja:"公平な",ko:"공정한",ru:"беспристрастный",ar:"محايد",vi:"công bằng",th:"เป็นกลาง",km:"មិនលំអៀង",mn:"шударга"} },
+        plausible:    { pos:"adjective", t:{es:"verosímil",fr:"plausible",zh:"说得通的",ja:"もっともらしい",ko:"그럴듯한",ru:"правдоподобный",ar:"معقول",vi:"hợp lý",th:"ฟังขึ้น",km:"អាចជឿបាន",mn:"итгэмээр"} },
+        ominous:      { pos:"adjective", t:{es:"siniestro",fr:"menaçant",zh:"不祥的",ja:"不吉な",ko:"불길한",ru:"зловещий",ar:"مشؤوم",vi:"điềm gở",th:"เป็นลางร้าย",km:"ជាប្រផ្នូលអាក្រក់",mn:"муу ёрын"} },
+        esoteric:     { pos:"adjective", t:{es:"esotérico",fr:"ésotérique",zh:"深奥的",ja:"難解な",ko:"난해한",ru:"узкоспециальный",ar:"متخصص جدا",vi:"cao siêu",th:"เข้าใจได้เฉพาะกลุ่ม",km:"ពិបាកយល់",mn:"ойлгоход бэрх"} },
+        vindicate:    { pos:"verb", t:{es:"exonerar",fr:"disculper",zh:"证明清白",ja:"潔白を証明する",ko:"결백을 입증하다",ru:"оправдать",ar:"يبرّئ",vi:"minh oan",th:"พิสูจน์ความบริสุทธิ์",km:"បង្ហាញភាពស្លូតត្រង់",mn:"цагаатгах"} },
+        capricious:   { pos:"adjective", t:{es:"caprichoso",fr:"capricieux",zh:"反复无常的",ja:"気まぐれな",ko:"변덕스러운",ru:"капризный",ar:"متقلب",vi:"thất thường",th:"เปลี่ยนใจง่าย",km:"ប្រែប្រួលមិនទៀង",mn:"тогтворгүй"} },
+        ostentatious: { pos:"adjective", t:{es:"ostentoso",fr:"tape-à-l'œil",zh:"炫耀的",ja:"これ見よがしの",ko:"과시하는",ru:"показной",ar:"مبهرج",vi:"phô trương",th:"โอ้อวด",km:"អួតអាង",mn:"гайхуулсан"} },
+        equivocal:    { pos:"adjective", t:{es:"equívoco",fr:"équivoque",zh:"模棱两可的",ja:"どちらともとれる",ko:"애매한",ru:"неоднозначный",ar:"ملتبس",vi:"nước đôi",th:"คลุมเครือ",km:"មានន័យពីរ",mn:"хоёрдмол утгатай"} },
+        parsimonious: { pos:"adjective", t:{es:"tacaño",fr:"avare",zh:"吝啬的",ja:"けちな",ko:"인색한",ru:"скупой",ar:"بخيل",vi:"keo kiệt",th:"ขี้เหนียว",km:"កំណាញ់",mn:"харамч"} },
+        sagacious:    { pos:"adjective", t:{es:"sagaz",fr:"sagace",zh:"睿智的",ja:"聡明な",ko:"현명한",ru:"проницательный",ar:"ثاقب الفكر",vi:"sáng suốt",th:"เฉลียวฉลาด",km:"ឆ្លាតវៃ",mn:"мэргэн ухаантай"} },
+        vitriolic:    { pos:"adjective", t:{es:"mordaz",fr:"virulent",zh:"尖刻的",ja:"辛辣な",ko:"신랄한",ru:"язвительный",ar:"لاذع",vi:"cay độc",th:"ถากถางรุนแรง",km:"ចាក់ដោតជូរចត់",mn:"хорон"} },
+        pernicious:   { pos:"adjective", t:{es:"pernicioso",fr:"pernicieux",zh:"有害的",ja:"有害な",ko:"해로운",ru:"пагубный",ar:"ضار",vi:"có hại",th:"เป็นภัย",km:"បង្កគ្រោះថ្នាក់",mn:"хортой"} },
+        laconic:      { pos:"adjective", t:{es:"lacónico",fr:"laconique",zh:"言简意赅的",ja:"口数の少ない",ko:"말수가 적은",ru:"немногословный",ar:"مقتضب",vi:"ngắn gọn",th:"พูดน้อย",km:"និយាយតិច",mn:"цөөн үгтэй"} },
+        magnanimous:  { pos:"adjective", t:{es:"magnánimo",fr:"magnanime",zh:"宽宏大量的",ja:"寛大な",ko:"아량 있는",ru:"великодушный",ar:"شهم",vi:"cao thượng",th:"มีน้ำใจให้อภัย",km:"ចិត្តទូលាយ",mn:"өршөөнгүй"} },
+        recalcitrant: { pos:"adjective", t:{es:"recalcitrante",fr:"récalcitrant",zh:"不听话的",ja:"反抗的な",ko:"반항하는",ru:"непокорный",ar:"متمرد",vi:"ngoan cố",th:"ดื้อดึง",km:"មិនស្ដាប់បង្គាប់",mn:"дуулгаваргүй"} },
+        sycophantic:  { pos:"adjective", t:{es:"adulador",fr:"flagorneur",zh:"谄媚的",ja:"へつらう",ko:"아첨하는",ru:"льстивый",ar:"متملق",vi:"xu nịnh",th:"ประจบสอพลอ",km:"បញ្ចើចបញ្ចើ",mn:"зусарч"} },
+        perfunctory:  { pos:"adjective", t:{es:"superficial",fr:"de pure forme",zh:"敷衍的",ja:"おざなりの",ko:"형식적인",ru:"формальный",ar:"شكلي",vi:"qua loa",th:"ขอไปที",km:"ធ្វើតែចប់ៗ",mn:"хайнга"} },
+        loquacious:   { pos:"adjective", t:{es:"parlanchín",fr:"bavard",zh:"话多的",ja:"おしゃべりな",ko:"수다스러운",ru:"болтливый",ar:"ثرثار",vi:"nói nhiều",th:"ช่างพูด",km:"និយាយច្រើន",mn:"яриа ихтэй"} },
+        intransigent: { pos:"adjective", t:{es:"intransigente",fr:"intransigeant",zh:"不妥协的",ja:"妥協しない",ko:"비타협적인",ru:"непримиримый",ar:"متصلب",vi:"không khoan nhượng",th:"ไม่ยอมอ่อนข้อ",km:"មិនព្រមសម្រុះសម្រួល",mn:"буулт хийдэггүй"} },
+        ebullient:    { pos:"adjective", t:{es:"exuberante",fr:"exubérant",zh:"热情洋溢的",ja:"元気いっぱいの",ko:"열정이 넘치는",ru:"восторженный",ar:"مفعم بالحيوية",vi:"sôi nổi",th:"มีชีวิตชีวา",km:"រស់រវើក",mn:"сэргэлэн цовоо"} },
+        fastidious:   { pos:"adjective", t:{es:"quisquilloso",fr:"pointilleux",zh:"挑剔的",ja:"細かいことにうるさい",ko:"까다로운",ru:"привередливый",ar:"صعب الإرضاء",vi:"khó tính",th:"จู้จี้",km:"ល្អិតល្អន់",mn:"шилэгч"} },
+        didactic:     { pos:"adjective", t:{es:"didáctico",fr:"didactique",zh:"说教的",ja:"教訓的な",ko:"교훈적인",ru:"поучительный",ar:"تعليمي",vi:"mang tính giáo huấn",th:"มุ่งสั่งสอน",km:"មានបំណងអប់រំ",mn:"сургамжтай"} },
+        reticent:     { pos:"adjective", t:{es:"reservado",fr:"réservé",zh:"沉默寡言的",ja:"無口な",ko:"과묵한",ru:"сдержанный",ar:"متحفظ",vi:"kín đáo",th:"เงียบขรึม",km:"ស្ងៀមស្ងាត់",mn:"дуу цөөтэй"} },
+        pugnacious:   { pos:"adjective", t:{es:"belicoso",fr:"querelleur",zh:"好斗的",ja:"けんか好きな",ko:"싸우기 좋아하는",ru:"драчливый",ar:"مشاكس",vi:"hiếu chiến",th:"ชอบหาเรื่อง",km:"ចូលចិត្តឈ្លោះ",mn:"хэрүүлч"} },
+        quixotic:     { pos:"adjective", t:{es:"quijotesco",fr:"chimérique",zh:"不切实际的",ja:"空想的な",ko:"비현실적인",ru:"донкихотский",ar:"خيالي",vi:"viển vông",th:"เพ้อฝัน",km:"មិនប្រាកដនិយម",mn:"хийсвэр"} },
+        obfuscate:    { pos:"verb", t:{es:"ofuscar",fr:"obscurcir",zh:"使模糊",ja:"ぼかす",ko:"얼버무리다",ru:"запутывать",ar:"يطمس",vi:"làm cho khó hiểu",th:"ทำให้คลุมเครือ",km:"ធ្វើឲ្យស្រពេចស្រពិល",mn:"ойлгомжгүй болгох"} },
+        ameliorate:   { pos:"verb", t:{es:"mejorar",fr:"améliorer",zh:"改善",ja:"改善する",ko:"개선하다",ru:"улучшить",ar:"يحسّن",vi:"cải thiện",th:"ทำให้ดีขึ้น",km:"ធ្វើឲ្យប្រសើរឡើង",mn:"сайжруулах"} }
     };
     function refreshWordInfoUI() {
         const enabled = localStorage.getItem('wordinfo_enabled') === '1';
@@ -5736,10 +5841,14 @@
             hideWordInfoTooltip();
         }
     });
+    // Word tap/hover help is a Training Mode aid: always off in Simulation
+    // Mode (regardless of the Settings toggle), and off on vocabulary
+    // questions, where a translation of the tested word gives the answer away.
+    function wordHelpActive(q) {
+        return localStorage.getItem('wordinfo_enabled') === '1' && !isSimulationMode() && !(q && q.type === 'Vocabulary');
+    }
     function renderPassageAndQuestionText(q) {
-        // Word tap/hover help is a Training Mode aid — always off in
-        // Simulation Mode, regardless of the Settings toggle.
-        const wordInfoOn = localStorage.getItem('wordinfo_enabled') === '1' && !isSimulationMode();
+        const wordInfoOn = wordHelpActive(q);
         const passageEl = document.getElementById('passage');
         const qTextEl = document.getElementById('q-text');
         if (wordInfoOn) {
@@ -7757,6 +7866,7 @@
     }
 
     function loadQ() {
+        state.answerLocked = false;
         if (state.current >= state.limit) { finish(); return; }
         state.pageTime = 0;
         maybeShowSignInNudge();
@@ -8702,7 +8812,7 @@
             const mode = closestSkillPracticeMode(weak.type, weak.ccss);
             const done = week.some(e => e.mode === mode);
             rows.push(`<div style="display:flex; justify-content:space-between; gap:8px; align-items:center; margin-top:6px; flex-wrap:wrap;">
-                <span>${done ? '✅' : '🎯'} <b>Skill mission:</b> finish ${/^[AEIOU]/i.test(modeOptionLabel(mode)) ? 'an' : 'a'} ${escapeHtml(modeOptionLabel(mode))} practice this week <small style="color:#64748b;">(your weakest skill: ${escapeHtml(weak.type)})</small></span>
+                <span>${done ? '✅' : '🎯'} <b>Skill mission:</b> finish ${/^[AEIOU]/i.test(modeOptionLabel(mode)) ? 'an' : 'a'} ${escapeHtml(modeOptionLabel(mode))} practice this week <small style="color:#64748b;">(your weakest skill: ${escapeHtml(skillTypeLabel(weak.type))})</small></span>
                 ${done ? '<b>1/1</b>' : `<button class="cd-btn" onclick="startAssignedPractice('${mode}')">Start →</button>`}</div>`);
         }
         box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🗓 Missions</div>` + rows.join('');
@@ -8747,7 +8857,7 @@
             <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:#92400e; margin-bottom:4px;">📅 What should I do today?</div>
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div>
-                    <div style="font-weight:900; font-size:14px;">📖 ${escapeHtml(weakest.type)} practice — 10 minutes</div>
+                    <div style="font-weight:900; font-size:14px;">📖 ${escapeHtml(skillTypeLabel(weakest.type))} practice — 10 minutes</div>
                     <div style="font-size:11px; color:#78350f; margin-top:2px;">Why: this is currently your biggest opportunity for improvement (${Math.round(weakest.acc*100)}% accuracy across ${weakest.total} questions).</div>
                 </div>
                 <button onclick="startRecommendedPractice('${mode}')" style="background:var(--primary-grad); color:white; border:none; padding:10px 18px; border-radius:10px; font-weight:900; cursor:pointer; white-space:nowrap;">START</button>
@@ -8791,7 +8901,7 @@
                 const stars = Math.max(1, Math.min(5, Math.round(acc * 5)));
                 const starStr = '★'.repeat(stars) + '☆'.repeat(5 - stars);
                 return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:6px 10px; background:#f8fafc; border-radius:8px;">
-                    <span>${escapeHtml(t)}</span>
+                    <span>${escapeHtml(skillTypeLabel(t))}</span>
                     <span style="color:#f59e0b; letter-spacing:1px;">${starStr}</span>
                 </div>`;
             }).join('');
