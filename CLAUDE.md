@@ -52,7 +52,7 @@ Raw: 22,576 main bank + 88 Bloom's = 22,664. Passage-set templates: 9 (A1 and C2
 - **Overall product: ~90%** (the remaining ~10% is mostly real-account testing of MAP Connect D/E and school-launch setup such as SMTP)
 
 ## What's built (don't rebuild)
-Simulation/Training mode split, adaptive RIT/Lexile/CEFR engine, skill-group practice modes (`SKILL_GROUP_OF`: details / mainidea / inference / craft / evidence + vocab / infotext / littext), daily + weekly skill missions (derived from an activity log: cloud rows incl. practice, or local `xag_activity_v1`), 4-tier plans (free/pro/educator/connect) with server-enforced caps (2 classes/educator, 40 students/class), one-time `trial_20` mode, cloud+local gamification (XP/levels/ranks/badges/certificates/weekly mission/smart recommendation — all derived live from history, nothing stored as counters), async leaderboards, enhanced results screen (strengths/next-target/recommended practice), MAP Connect v1 (host + join + realtime board + heartbeat + pause/resume/end), question progress track, skill-mode nearest-level fallback (`nearestSkillLevel`).
+Simulation/Training mode split, one-answer-per-question lock (`state.answerLocked`, prevents double-tap skips), adaptive RIT/Lexile/CEFR engine, skill-group practice modes (`SKILL_GROUP_OF`: details / mainidea / inference / craft / evidence + vocab / infotext / littext), daily + weekly skill missions (derived from an activity log: cloud rows incl. practice, or local `xag_activity_v1`), 4-tier plans (free/pro/educator/connect) with server-enforced caps (2 classes/educator, 40 students/class), one-time `trial_20` mode, cloud+local gamification (XP/levels/ranks/badges/certificates/weekly mission/smart recommendation — all derived live from history, nothing stored as counters), async leaderboards, enhanced results screen (strengths/next-target/recommended practice), MAP Connect v1 (host + join + realtime board + heartbeat + pause/resume/end), question progress track, skill-mode nearest-level fallback (`nearestSkillLevel`).
 
 ## What's next (pick up here, in order)
 1. **Real two-device test (user)** — covers D *and* E. Teacher (`plan='connect'`, one exists) + student on another device/email:
@@ -65,6 +65,12 @@ Simulation/Training mode split, adaptive RIT/Lexile/CEFR engine, skill-group pra
 5. Deferred: curated offline image art bank (decision: no live image-gen API).
 
 Done 2026-09-27 (for history): PRs #1–#3 merged; migrations `map_connect_faster_disconnect`, `map_teacher_controls`, `map_class_analytics_ccss`, `map_revoke_anon_function_execute` applied via `apply_migration`; content-depth items from the audit; E built.
+
+## Languages (status 2026-09-27)
+- **Questions stay English** (it's an English reading assessment).
+- **Report translation:** 11 languages (es, fr, zh, ja, ko, ru, ar, vi, th, km, mn) via the report language selector.
+- **Word help (`WORD_INFO`):** tap a known word → translation in the chosen language. 123 words, covering all 159 vocabulary target words across the banks (machine-assisted; native-speaker review recommended, especially km/mn/ar for C2 words). **Never shown in Simulation mode or on Vocabulary questions** (`wordHelpActive(q)`), since translating the tested word gives the answer away.
+- **App interface (buttons, menus) is English-only.** Full UI localization is not built.
 
 ## Decisions already made (don't re-litigate)
 - No live image-generation API. Illustrations are procedural SVG; a real "art bank" would need a defined photo-need list first and is its own project — deferred, not scheduled.
