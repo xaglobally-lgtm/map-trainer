@@ -1,3 +1,4 @@
+-- APPLIED 2026-09-27 via apply_migration (map_connect_faster_disconnect), after PR #2 deployed.
 -- MAP Connect: faster disconnect detection (45s -> 20s silence threshold).
 -- APPLY ONLY AFTER the client with LIVE_HEARTBEAT_MS = 10000 is deployed —
 -- older clients heartbeat every 20s and would flicker "disconnected".

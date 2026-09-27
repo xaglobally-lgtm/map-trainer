@@ -2237,16 +2237,16 @@
 
     // ===================== C1 =====================
     const C1_VOCAB = [
-        { word: "tenuous", def: "weak, flimsy, or easily broken", wrong: ["very strong and secure", "extremely colorful", "very fast-moving"], ctx: "{n}'s argument was tenuous; a single blurry photo was the only evidence, and it fell apart at the first hard question." },
-        { word: "ephemeral", def: "lasting for a very short time", wrong: ["lasting forever", "extremely heavy", "very expensive"], ctx: "The rainbow was ephemeral, fading from the sky before {n} could even grab a camera." },
-        { word: "ambiguous", def: "open to more than one interpretation; unclear", wrong: ["perfectly clear and obvious", "very loud", "extremely old"], ctx: "The novel's ending was ambiguous; {n} and a friend argued for an hour about whether the hero had survived." },
-        { word: "meticulous", def: "showing great attention to detail", wrong: ["careless and sloppy", "very impatient", "extremely shy"], ctx: "{n} was meticulous, labeling every sample and checking each measurement three times." },
-        { word: "pragmatic", def: "dealing with things sensibly and realistically", wrong: ["overly emotional and dramatic", "very mysterious", "extremely lazy"], ctx: "Rather than waiting for a perfect solution, {n} took a pragmatic approach and fixed the leak with the tools on hand." },
-        { word: "resilient", def: "able to recover quickly from difficulties", wrong: ["easily broken or defeated", "very talkative", "extremely forgetful"], ctx: "{n} was resilient; after losing the first two matches, {n} kept training and won the final." },
-        { word: "candid", def: "truthful and straightforward; frank", wrong: ["secretive and dishonest", "very nervous", "extremely quiet"], ctx: "{n} was candid with the coach: 'I skipped practice because I was scared of failing.'" },
-        { word: "arduous", def: "involving great effort; difficult and tiring", wrong: ["very easy and relaxing", "extremely short", "very exciting"], ctx: "After the arduous nine-hour climb, {n} could barely lift the heavy pack." },
-        { word: "austere", def: "plain, simple, and without luxury", wrong: ["extremely luxurious and decorated", "very colorful", "extremely loud"], ctx: "{n}'s room was austere: a bare mattress, one wooden chair, and nothing on the walls." },
-        { word: "prudent", def: "acting with care and good judgment", wrong: ["acting recklessly and carelessly", "very forgetful", "extremely dramatic"], ctx: "{n} made a prudent choice and saved half of every paycheck in case of an emergency." }
+        { word: "tenuous", def: "weak, flimsy, or easily broken", wrong: ["strong and well supported", "long and detailed", "angry and emotional"], ctx: "{n}'s argument was tenuous; a single blurry photo was the only evidence, and it fell apart at the first hard question." },
+        { word: "ephemeral", def: "lasting for a very short time", wrong: ["lasting forever", "brightly colored", "easy to see"], ctx: "The rainbow was ephemeral, fading from the sky before {n} could even grab a camera." },
+        { word: "ambiguous", def: "open to more than one interpretation; unclear", wrong: ["perfectly clear and obvious", "completely false", "surprisingly exciting"], ctx: "The novel's ending was ambiguous; {n} and a friend argued for an hour about whether the hero had survived." },
+        { word: "meticulous", def: "showing great attention to detail", wrong: ["careless and sloppy", "quick and rushed", "bored and distracted"], ctx: "{n} was meticulous, labeling every sample and checking each measurement three times." },
+        { word: "pragmatic", def: "dealing with things sensibly and realistically", wrong: ["idealistic and unrealistic", "overly emotional", "slow and hesitant"], ctx: "Rather than waiting for a perfect solution, {n} took a pragmatic approach and fixed the leak with the tools on hand." },
+        { word: "resilient", def: "able to recover quickly from difficulties", wrong: ["easily defeated", "angry and bitter", "simply lucky"], ctx: "{n} was resilient; after losing the first two matches, {n} kept training and won the final." },
+        { word: "candid", def: "truthful and straightforward; frank", wrong: ["secretive and evasive", "polite but vague", "rude and mocking"], ctx: "{n} was candid with the coach: 'I skipped practice because I was scared of failing.'" },
+        { word: "arduous", def: "involving great effort; difficult and tiring", wrong: ["easy and relaxing", "short and quick", "dull and boring"], ctx: "After the arduous nine-hour climb, {n} could barely lift the heavy pack." },
+        { word: "austere", def: "plain, simple, and without luxury", wrong: ["luxurious and decorated", "messy and cluttered", "bright and cheerful"], ctx: "{n}'s room was austere: a bare mattress, one wooden chair, and nothing on the walls." },
+        { word: "prudent", def: "acting with care and good judgment", wrong: ["reckless and careless", "generous and kind", "lucky and fortunate"], ctx: "{n} made a prudent choice and saved half of every paycheck in case of an emergency." }
     ];
     const C1_vocab = F("Vocabulary", "L.9-10.4", "mountain",
         { name: NAMES, w: C1_VOCAB },
@@ -2260,7 +2260,7 @@
         })
     );
     const C1_DEVICES = [
-        { text: "The old house groaned and creaked, as if it were an old man complaining about his aching bones.", device: "personification", effect: "It gives the house human-like qualities to create a sense of age and weariness." },
+        { text: "The old house groaned and creaked, complaining about its aching bones.", device: "personification", effect: "It gives the house human-like qualities to create a sense of age and weariness." },
         { text: "Her heart was a block of ice when she heard the news, cold and unmoving.", device: "metaphor", effect: "It compares her emotional state to ice to emphasize how numb and unfeeling she felt." },
         { text: "The firefighter calmly stated, \"Oh great, another wonderful fire to put out,\" as flames roared behind him.", device: "irony", effect: "It highlights the contrast between his sarcastic words and the dangerous situation." },
         { text: "The wind whispered secrets through the trees as the leaves danced in the moonlight.", device: "personification", effect: "It brings the natural scene to life by giving the wind and leaves human actions." },
@@ -2269,13 +2269,23 @@
         { text: "The stars winked knowingly from their perch in the night sky.", device: "personification", effect: "It gives the stars a playful, human-like awareness." },
         { text: "Time is a thief that steals our youth without a sound.", device: "metaphor", effect: "It compares time to a thief to show how it takes away youth unnoticed." }
     ];
+    const DEVICE_EFFECTS = {
+        personification: "It gives a non-human thing human qualities to bring it to life.",
+        metaphor: "It directly calls one thing another to highlight a shared quality.",
+        simile: "It compares two things using \"like\" or \"as\" to create a clear image.",
+        irony: "It says the opposite of what is meant to expose a contrast.",
+        hyperbole: "It exaggerates on purpose to emphasize a feeling or quality.",
+        satire: "It uses mock praise and exaggeration to ridicule someone's behavior.",
+        allusion: "It refers to a well-known story or figure to add meaning."
+    };
+    const deviceOption = d => `${cap(d)} — ${DEVICE_EFFECTS[d]}`;
     const C1_rhetorical = F("Rhetoric", "RL.9-10.4", "space",
         { it: C1_DEVICES, frame: ["Read the following sentence:", "Consider this description:", "Look at this line from a story:"] },
         v => ({
             passage: `${v.frame} "${v.it.text.replace(/"([^"]*)"/g, '\u2018$1\u2019')}"`,
             question: `Which literary device does the author use, and what effect does it create?`,
-            answer: `${cap(v.it.device)} — ${v.it.effect}`,
-            options: [`${cap(v.it.device)} — ${v.it.effect}`, ...sampleExcl(C1_DEVICES.map(x => `${cap(x.device)} — ${x.effect}`), 3, `${cap(v.it.device)} — ${v.it.effect}`)],
+            answer: deviceOption(v.it.device),
+            options: shuffleArr(["personification", "metaphor", "simile", "irony"].map(deviceOption)),
             hint: `Think about what is being compared, or what contrast is being drawn.`,
             icon: 'book'
         })
@@ -2297,29 +2307,31 @@
         { claim: "Renewable energy should replace fossil fuels as quickly as possible.", support: ["It reduces harmful emissions that contribute to climate change.", "Renewable sources like solar and wind are becoming more affordable.", "It decreases dependence on limited natural resources."] }
     ];
     const C1_mainidea = F("Argument", "RI.9-10.2", "business",
-        { it: C1_ARGS },
+        { it: C1_ARGS, last: [false, true] },
         v => ({
-            passage: `${v.it.claim} ${v.it.support.join(' ')}`,
+            // Claim sometimes opens, sometimes closes the paragraph.
+            passage: v.last ? `${v.it.support.join(' ')} ${v.it.claim}` : `${v.it.claim} ${v.it.support.join(' ')}`,
             question: `What is the central claim, or main argument, of this passage?`,
             answer: v.it.claim,
-            options: [v.it.claim, ...sampleExcl(C1_ARGS.map(x => x.claim), 3, v.it.claim)],
-            hint: `The first sentence usually states the writer's main argument.`,
+            // Two too-narrow supporting details + one other claim.
+            options: shuffleArr([v.it.claim, ...v.it.support.slice(0, 2), sampleExcl(C1_ARGS.map(x => x.claim), 1, v.it.claim)[0]]),
+            hint: `Ask which sentence the others are there to support.`,
             icon: 'book'
         })
     );
 
     // ===================== C2 =====================
     const C2_VOCAB = [
-        { word: "ubiquitous", def: "present or found everywhere", wrong: ["found in only one place", "extremely rare and hidden", "very old-fashioned"], ctx: "Smartphones have become ubiquitous; on the crowded train, {n} could not spot a single person without one." },
-        { word: "esoteric", def: "understood by only a small, specialized group", wrong: ["understood by absolutely everyone", "very loud and public", "extremely simple"], ctx: "The lecture was so esoteric that only the three specialists in the room, including {n}, could follow it." },
-        { word: "cogent", def: "clear, logical, and convincing", wrong: ["confusing and illogical", "extremely emotional", "very brief"], ctx: "{n}'s cogent argument, built on clear data and sound logic, convinced even the most doubtful board members." },
-        { word: "vindicate", def: "to clear someone of blame or suspicion", wrong: ["to accuse someone of wrongdoing", "to ignore a situation completely", "to celebrate a victory loudly"], ctx: "The new security footage would vindicate {n}, proving that {n} had been across town when the window was broken." },
-        { word: "capricious", def: "given to sudden, unpredictable changes", wrong: ["highly consistent and predictable", "extremely slow to act", "very cautious and careful"], ctx: "The capricious manager changed the schedule three times in one morning without explanation, so {n} could never plan ahead." },
-        { word: "ostentatious", def: "designed to impress; showy", wrong: ["deliberately plain and modest", "completely invisible", "very quiet and reserved"], ctx: "{n} arrived in an ostentatious gold car covered in lights, clearly hoping everyone would notice." },
-        { word: "equivocal", def: "open to two or more interpretations; ambiguous", wrong: ["completely clear and certain", "extremely detailed", "very short"], ctx: "Asked whether {n} supported the plan, {n} gave an equivocal answer that could be read as either yes or no." },
-        { word: "parsimonious", def: "extremely unwilling to spend money; stingy", wrong: ["extremely generous with money", "very wasteful", "completely indifferent to money"], ctx: "The parsimonious landlord refused to fix the heater, telling {n} that blankets were cheaper." },
-        { word: "sagacious", def: "having keen judgment; wise", wrong: ["lacking judgment; foolish", "extremely young", "very forgetful"], ctx: "Everyone sought {n}'s sagacious advice, because {n}'s judgments about the market had proved wise for decades." },
-        { word: "vitriolic", def: "filled with bitter criticism or malice", wrong: ["filled with warmth and kindness", "completely neutral in tone", "very calm and soothing"], ctx: "{n}'s vitriolic review called the chef 'a menace to food itself' and mocked every single dish." }
+        { word: "ubiquitous", def: "present or found everywhere", wrong: ["found in only one place", "expensive and rare", "newly invented"], ctx: "Smartphones have become ubiquitous; on the crowded train, {n} could not spot a single person without one." },
+        { word: "esoteric", def: "understood by only a small, specialized group", wrong: ["understood by nearly everyone", "boring and repetitive", "loud and dramatic"], ctx: "The lecture was so esoteric that only the three specialists in the room, including {n}, could follow it." },
+        { word: "cogent", def: "clear, logical, and convincing", wrong: ["confusing and illogical", "long-winded and slow", "emotional but weak"], ctx: "{n}'s cogent argument, built on clear data and sound logic, convinced even the most doubtful board members." },
+        { word: "vindicate", def: "to clear someone of blame or suspicion", wrong: ["to accuse someone of wrongdoing", "to punish someone harshly", "to question someone closely"], ctx: "The new security footage would vindicate {n}, proving that {n} had been across town when the window was broken." },
+        { word: "capricious", def: "given to sudden, unpredictable changes", wrong: ["consistent and predictable", "strict but fair", "slow to decide"], ctx: "The capricious manager changed the schedule three times in one morning without explanation, so {n} could never plan ahead." },
+        { word: "ostentatious", def: "designed to impress; showy", wrong: ["plain and modest", "cheap and broken", "quiet and hidden"], ctx: "{n} arrived in an ostentatious gold car covered in lights, clearly hoping everyone would notice." },
+        { word: "equivocal", def: "open to two or more interpretations; ambiguous", wrong: ["clear and certain", "rude and dismissive", "long and detailed"], ctx: "Asked whether {n} supported the plan, {n} gave an equivocal answer that could be read as either yes or no." },
+        { word: "parsimonious", def: "extremely unwilling to spend money; stingy", wrong: ["generous with money", "careless with money", "honest about money"], ctx: "The parsimonious landlord refused to fix the heater, telling {n} that blankets were cheaper." },
+        { word: "sagacious", def: "having keen judgment; wise", wrong: ["lacking judgment; foolish", "refusing to change; stubborn", "talking a great deal"], ctx: "Everyone sought {n}'s sagacious advice, because {n}'s judgments about the market had proved wise for decades." },
+        { word: "vitriolic", def: "filled with bitter criticism or malice", wrong: ["warm and kind", "neutral and balanced", "shy and hesitant"], ctx: "{n}'s vitriolic review called the chef 'a menace to food itself' and mocked every single dish." }
     ];
     const C2_vocab = F("Vocabulary", "L.11-12.4", "science",
         { name: NAMES, w: C2_VOCAB },
@@ -2335,10 +2347,10 @@
     const C2_DEVICES = [
         { text: "The critic's review was so scathing that one might have thought the novel had personally wronged her.", device: "hyperbole", effect: "It exaggerates the critic's harshness to emphasize just how negative the review was." },
         { text: "\"What a marvelous plan,\" he remarked dryly, watching the entire scheme collapse before his eyes.", device: "irony", effect: "It shows the contrast between his sarcastic praise and the plan's obvious failure." },
-        { text: "The senator, a self-proclaimed champion of thrift, arrived at the summit in a fleet of private jets.", device: "satire", effect: "It mocks the senator's hypocrisy by contrasting his claimed values with his lavish behavior." },
+        { text: "In a bold act of thrift, the senator saved taxpayers money by flying to the budget summit in only three private jets instead of four.", device: "satire", effect: "It mocks the senator's hypocrisy by contrasting his claimed values with his lavish behavior." },
         { text: "Like Icarus flying too close to the sun, the young executive's ambition ultimately led to his downfall.", device: "allusion", effect: "It references the Greek myth to suggest that overreaching ambition leads to ruin." },
         { text: "The company's new \"eco-friendly\" factory released more pollution than any other in the state.", device: "irony", effect: "It highlights the contradiction between the factory's label and its actual environmental impact." },
-        { text: "The politician promised transparency while his office windows remained permanently shuttered.", device: "satire", effect: "It criticizes the politician's lack of honesty by pointing out the literal and figurative lack of openness." },
+        { text: "Our fearless mayor, having solved traffic by renaming every jam a \"mobility festival,\" now turns his genius to potholes.", device: "satire", effect: "It criticizes the politician's lack of honesty by pointing out the literal and figurative lack of openness." },
         { text: "Her ambition was her Achilles' heel, ultimately the cause of her spectacular failure.", device: "allusion", effect: "It references the myth of Achilles to suggest a single fatal weakness led to her downfall." },
         { text: "He apologized a thousand times for arriving a single minute late.", device: "hyperbole", effect: "It exaggerates the number of apologies to emphasize how anxious he was about being late." }
     ];
@@ -2347,8 +2359,8 @@
         v => ({
             passage: `${v.frame} "${v.it.text.replace(/"([^"]*)"/g, '\u2018$1\u2019')}"`,
             question: `Which literary device is most evident in this passage, and what effect does it create?`,
-            answer: `${cap(v.it.device)} — ${v.it.effect}`,
-            options: [`${cap(v.it.device)} — ${v.it.effect}`, ...sampleExcl(C2_DEVICES.map(x => `${cap(x.device)} — ${x.effect}`), 3, `${cap(v.it.device)} — ${v.it.effect}`)],
+            answer: deviceOption(v.it.device),
+            options: shuffleArr(["hyperbole", "irony", "satire", "allusion"].map(deviceOption)),
             hint: `Consider whether the literal meaning matches the intended meaning.`,
             icon: 'book'
         })
@@ -2368,13 +2380,15 @@
         { claim: "The gig economy, while offering flexibility, often shifts significant financial risk onto individual workers.", support: ["Workers frequently lack access to employer-provided benefits like healthcare.", "Income can be unpredictable, complicating long-term financial planning.", "Legal protections for gig workers often lag behind those for traditional employees."] }
     ];
     const C2_synthesis = F("Synthesis", "RI.11-12.2", "city",
-        { it: C2_THESES },
+        { it: C2_THESES, last: [false, true] },
         v => ({
-            passage: `${v.it.claim} ${v.it.support.join(' ')}`,
+            // Claim sometimes opens, sometimes closes the paragraph.
+            passage: v.last ? `${v.it.support.join(' ')} ${v.it.claim}` : `${v.it.claim} ${v.it.support.join(' ')}`,
             question: `Which of the following best captures the central thesis of this passage?`,
             answer: v.it.claim,
-            options: [v.it.claim, ...sampleExcl(C2_THESES.map(x => x.claim), 3, v.it.claim)],
-            hint: `The opening clause typically frames the writer's central position.`,
+            // Two too-narrow supporting details + one other claim.
+            options: shuffleArr([v.it.claim, ...v.it.support.slice(0, 2), sampleExcl(C2_THESES.map(x => x.claim), 1, v.it.claim)[0]]),
+            hint: `Find the position the other sentences exist to support.`,
             icon: 'book'
         })
     );
@@ -2634,18 +2648,24 @@
         {text:"The crowd roared as the underdog scored the winning goal in the final second.", tone:"exhilarated"},
         {text:"He stared at the rejection letter for a long time, then carefully folded it and put it away.", tone:"disappointed"},
         {text:"The children burst into the room laughing, still wearing their muddy soccer uniforms.", tone:"joyful"},
-        {text:"He rolled his eyes at the third excuse that week and simply closed the door without a word.", tone:"bitter"},
+        {text:"\"Congratulations,\" he said without smiling, \"on the promotion I trained you for.\"", tone:"bitter"},
         {text:"The comedian's timing was so absurd that even the sound technician couldn't stop laughing.", tone:"humorous"},
-        {text:"She watched the moving truck pull away, then sat on the porch steps until the streetlights came on.", tone:"nostalgic"},
+        {text:"She found her old team jersey in a box and smiled, remembering Saturday mornings on the field.", tone:"nostalgic"},
         {text:"Every step through the abandoned hospital echoed strangely, and the flickering lights made the shadows seem to move.", tone:"eerie"}
     ];
+    const C1_NEAR_TONES = {
+        triumphant: ['exhilarated', 'joyful'], exhilarated: ['triumphant', 'joyful'], joyful: ['triumphant', 'exhilarated'],
+        somber: ['disappointed', 'resigned', 'nostalgic'], disappointed: ['resigned', 'somber', 'bitter'],
+        resigned: ['disappointed', 'somber'], nostalgic: ['somber'], bitter: ['disappointed']
+    };
     const C1_tone = F("Tone", "RL.9-10.4", "art",
         { it: C1_TONE_ITEMS },
         v => ({
             passage: v.it.text,
             question: `What is the overall tone of this passage?`,
             answer: v.it.tone,
-            options: [v.it.tone, ...sampleExcl(["triumphant","somber","resigned","exhilarated","humorous","bitter","disappointed","joyful","nostalgic","eerie"], 3, v.it.tone)],
+            options: [v.it.tone, ...sampleExcl(["triumphant","somber","resigned","exhilarated","humorous","bitter","disappointed","joyful","nostalgic","eerie"]
+                .filter(t => !(C1_NEAR_TONES[v.it.tone] || []).includes(t)), 3, v.it.tone)],
             hint: `Consider the emotional atmosphere created by the details.`,
             icon: 'book'
         })
@@ -2662,14 +2682,31 @@
         {claim:"Volunteering builds stronger communities.", support:"Volunteers provide services that towns often cannot otherwise afford."},
         {claim:"Public transportation reduces traffic congestion.", support:"Buses and trains move many passengers using far fewer vehicles."}
     ];
+    const C1_STRUCTURES = ["Claim followed by supporting evidence", "Cause and effect", "Problem and solution", "Compare and contrast", "Chronological order"];
+    const C1_STRUCT_TEXTS = [
+        ...C1_STRUCT_ITEMS.map(it => ({ structure: C1_STRUCTURES[0],
+            text: `${it.claim} Research shows that ${it.support.charAt(0).toLowerCase() + it.support.slice(1)} Many organizations are taking note of these findings.` })),
+        { structure: "Cause and effect", text: "Heavy rain fell for three days straight. As a result, the river rose over its banks. Because the streets flooded, schools closed and families moved to higher ground." },
+        { structure: "Cause and effect", text: "When the factory closed, hundreds of workers lost their jobs. Consequently, local shops lost customers, and several were forced to shut down within a year." },
+        { structure: "Cause and effect", text: "The new highway cut the drive downtown in half. Because commuting became easier, more families moved to the suburbs, and housing prices there climbed." },
+        { structure: "Problem and solution", text: "Students kept arriving late because the only bus came too early. To fix this, the district added a second, later route, and late arrivals dropped by half." },
+        { structure: "Problem and solution", text: "The town's recycling bins overflowed every week. The council responded by switching to larger bins and adding a second weekly pickup." },
+        { structure: "Problem and solution", text: "The library's computers were always full after school. Staff introduced an online sign-up system, so students could reserve a time instead of waiting." },
+        { structure: "Compare and contrast", text: "Both e-books and printed books let readers enjoy the same stories. However, e-books can hold thousands of titles on one device, while printed books need no battery." },
+        { structure: "Compare and contrast", text: "Frogs and toads both start life as tadpoles. Unlike frogs, which have smooth, moist skin, toads have dry, bumpy skin and spend more time on land." },
+        { structure: "Compare and contrast", text: "Solar and wind power both produce electricity without burning fuel. Solar panels work only in daylight, whereas wind turbines can run day or night when the wind blows." },
+        { structure: "Chronological order", text: "In 1903, the Wright brothers flew the first powered airplane for twelve seconds. Twenty-four years later, Charles Lindbergh crossed the Atlantic alone. By 1969, astronauts had landed on the Moon." },
+        { structure: "Chronological order", text: "The bridge's design was approved in 2015. Construction began the following spring, and the last section was lowered into place in 2019. The bridge opened to traffic in early 2020." },
+        { structure: "Chronological order", text: "The seed sprouted in early April. By June, the plant stood knee-high, and in August it finally produced its first ripe tomatoes." }
+    ];
     const C1_structure = F("Structure", "RI.9-10.5", "business",
-        { it: C1_STRUCT_ITEMS },
+        { it: C1_STRUCT_TEXTS },
         v => ({
-            passage: `${v.it.claim} Research shows that ${v.it.support.charAt(0).toLowerCase() + v.it.support.slice(1)} Many organizations are taking note of these findings.`,
+            passage: v.it.text,
             question: `How is this passage organized?`,
-            answer: "Claim followed by supporting evidence",
-            options: ["Claim followed by supporting evidence", "A chronological sequence of events", "A problem followed by multiple unrelated solutions", "A detailed description of a setting"],
-            hint: `Identify the main statement and what comes after it.`,
+            answer: v.it.structure,
+            options: shuffleArr([v.it.structure, ...sampleExcl(C1_STRUCTURES, 3, v.it.structure)]),
+            hint: `Look at the signal words (because, as a result, however, first, then, to fix this).`,
             icon: 'book'
         })
     );
@@ -2691,10 +2728,13 @@
             passage: `A commentator argued: "${v.it.claim}" Critics immediately pointed out a weakness in the reasoning.`,
             question: `Which of the following best identifies a flaw in the claim?`,
             answer: v.it.flaw,
-            options: [v.it.flaw, ...sampleExcl(C2_EVAL_ITEMS.map(x=>x.flaw).concat([
-                "It provides too many specific examples.",
-                "It relies only on personal anecdotes."
-            ]), 3, v.it.flaw)],
+            // Generic reasoning flaws that do not apply to any item.
+            options: shuffleArr([v.it.flaw, ...sampleExcl([
+                "It attacks critics personally instead of answering their reasoning.",
+                "It assumes that because one event followed another, the first caused it.",
+                "It argues the claim is true simply because it is popular.",
+                "It uses the claim itself as its own proof."
+            ], 3)]),
             hint: `Look for an overstatement or missing nuance in the claim.`,
             icon: 'book'
         })
@@ -4404,7 +4444,7 @@
         { s: C1_ARG_MATCH_SETS },
         v => ({
             interaction: "drag_drop_match",
-            passage: `Claim: ${v.s.claim} Evidence: ${v.s.evidence} Counterpoint: ${v.s.counter} Conclusion: ${v.s.conclusion}`,
+            passage: `${v.s.claim} ${v.s.evidence} ${v.s.counter} ${v.s.conclusion}`,
             question: `Match each label to the correct statement.`,
             ddItems: [
                 {id:'c', text:'Claim'}, {id:'e', text:'Evidence'}, {id:'k', text:'Counterpoint'}
@@ -4718,9 +4758,127 @@
     }
 
     // ===================== LEVEL REGISTRY =====================
+
+    // ===================== A1/A2 INFORMATIONAL (nonfiction) =====================
+    // Added after the 2026-09-27 audit: once stories were relabelled RL, the
+    // Informational mode had no A1 items and very few A2 items. Facts here are
+    // true; each bundle keeps its question, answer and distractors together.
+    const A1_HOMES = [
+        { animal: "bird", home: "in a nest", text: "A bird lives in a nest. The nest is up in a tree. The bird lays eggs in the nest.", icon: "bird" },
+        { animal: "bee", home: "in a hive", text: "A bee lives in a hive. Many bees live there together. They make honey in the hive.", icon: "bee" },
+        { animal: "fish", home: "in water", text: "A fish lives in water. It swims with its fins. A fish can not live on land.", icon: "fish" },
+        { animal: "rabbit", home: "in a hole in the ground", text: "A rabbit lives in a hole in the ground. The hole keeps it safe. It comes out to eat grass.", icon: "rabbit" },
+        { animal: "spider", home: "on a web", text: "A spider lives on a web. It makes the web with silk. Bugs get stuck on the web.", icon: "bee" },
+        { animal: "ant", home: "in an ant hill", text: "An ant lives in an ant hill. Lots of ants live there. They dig tunnels in the dirt.", icon: "ant" },
+        { animal: "frog", home: "near a pond", text: "A frog lives near a pond. It can swim and hop. It sits on lily pads in the sun.", icon: "frog" },
+        { animal: "bear", home: "in a cave", text: "A bear sleeps in a cave in winter. The cave keeps it warm and dry. It wakes up in spring.", icon: "bear" }
+    ];
+    const A1_info_home = F("Detail", "RI.1.1", "animal",
+        { it: A1_HOMES },
+        v => ({
+            passage: v.it.text,
+            question: `Where does ${/^[aeiou]/.test(v.it.animal) ? 'an' : 'a'} ${v.it.animal} live?`,
+            answer: v.it.home,
+            options: shuffleArr([v.it.home, ...sampleExcl(A1_HOMES.map(h => h.home), 3, v.it.home)]),
+            hint: `Look at the first sentence.`,
+            icon: v.it.icon,
+            scene: { subject: v.it.icon, color: null, mood: null, location: null, count: 1 }
+        })
+    );
+    const A1_TOPICS = [
+        { topic: "cows", text: "Cows live on farms. Cows eat grass. Cows give us milk.", narrow: ["grass", "milk"] },
+        { topic: "the sun", text: "The sun is a star. The sun gives us light. The sun keeps us warm.", narrow: ["light", "a star"] },
+        { topic: "apples", text: "Apples grow on trees. Apples can be red, green, or yellow. Apples are good to eat.", narrow: ["trees", "the color green"] },
+        { topic: "fire trucks", text: "Fire trucks are big and red. They carry water and hoses. They help put out fires.", narrow: ["water", "hoses"] },
+        { topic: "rain", text: "Rain falls from clouds. Rain helps plants grow. After rain, you may see puddles.", narrow: ["clouds", "puddles"] },
+        { topic: "teeth", text: "You use your teeth to eat. Brush your teeth two times a day. Too much candy can hurt your teeth.", narrow: ["candy", "brushes"] },
+        { topic: "dogs", text: "Dogs can be good pets. Dogs like to run and play. Dogs need food, water, and walks.", narrow: ["walks", "water"] }
+    ];
+    const A1_info_main = F("MainIdea", "RI.1.2", "nature",
+        { it: A1_TOPICS },
+        v => ({
+            passage: v.it.text,
+            question: `What is this text mostly about?`,
+            answer: v.it.topic,
+            // Two details from the same text (too narrow) + one other topic.
+            options: shuffleArr([v.it.topic, ...v.it.narrow, sampleExcl(A1_TOPICS.map(t => t.topic), 1, v.it.topic)[0]]),
+            hint: `What does every sentence talk about?`,
+            icon: 'book'
+        })
+    );
+    const A1_HOWTO = [
+        { task: "plant a seed", steps: ["dig a small hole", "put the seed in the hole", "give it some water"] },
+        { task: "wash your hands", steps: ["turn on the water", "rub your hands with soap", "dry them with a towel"] },
+        { task: "make a sandwich", steps: ["get two slices of bread", "add the jam", "put the slices together"] },
+        { task: "brush your teeth", steps: ["put paste on the brush", "brush all your teeth", "rinse with water"] },
+        { task: "feed a fish", steps: ["open the lid", "drop in a little food", "close the lid"] }
+    ];
+    const A1_info_howto = F("Sequence", "RI.1.3", "school",
+        { it: A1_HOWTO, which: [0, 1, 2] },
+        v => {
+            const word = ["first", "next", "last"][v.which];
+            return {
+                passage: `How to ${v.it.task}: First, ${v.it.steps[0]}. Next, ${v.it.steps[1]}. Last, ${v.it.steps[2]}.`,
+                question: `What do you do ${word}?`,
+                answer: cap(v.it.steps[v.which]),
+                options: shuffleArr([...v.it.steps.map(cap), "Go to sleep"]),
+                hint: `Find the word "${cap(word)}" in the text.`,
+                icon: 'book'
+            };
+        }
+    );
+    const A2_FACTS = [
+        { topic: "penguins", text: "Penguins are birds, but they cannot fly. They use their wings to swim. Penguins live in places where it is very cold.",
+          q: "How do penguins use their wings?", a: "to swim", wrong: ["to fly high", "to dig holes", "to build nests"],
+          main: "how penguins live and move", narrow: "how cold it is where they live", icon: "penguin" },
+        { topic: "camels", text: "Camels live in the hot desert. They can go many days without drinking water. The hump on a camel's back stores fat.",
+          q: "What does a camel's hump store?", a: "fat", wrong: ["water", "sand", "milk"],
+          main: "how camels live in the desert", narrow: "how hot the sand is", icon: "mountain" },
+        { topic: "owls", text: "Owls hunt at night. Their big eyes help them see in the dark. During the day, owls sleep.",
+          q: "When do owls hunt?", a: "at night", wrong: ["in the morning", "at lunchtime", "only in winter"],
+          main: "how owls hunt and sleep", narrow: "the size of an owl's eyes", icon: "bird" },
+        { topic: "butterflies", text: "A butterfly starts life as a tiny egg. The egg hatches into a caterpillar. Later, the caterpillar turns into a butterfly.",
+          q: "What comes out of the egg?", a: "a caterpillar", wrong: ["a butterfly", "a bird", "a flower"],
+          main: "how a butterfly grows", narrow: "how small the egg is", icon: "bee" },
+        { topic: "honeybees", text: "Honeybees drink nectar from flowers. They carry it back to their hive. Inside the hive, they turn it into honey.",
+          q: "Where do bees make honey?", a: "in the hive", wrong: ["on the flower", "in a pond", "under a rock"],
+          main: "how bees make honey", narrow: "what flowers look like", icon: "bee" },
+        { topic: "elephants", text: "Elephants are the biggest animals on land. They use their long trunks to drink water. They also use their trunks to pick up food.",
+          q: "What do elephants use their trunks for?", a: "to drink and pick up food", wrong: ["to see far away", "to hear sounds", "to sleep"],
+          main: "how elephants use their trunks", narrow: "how big elephants are", icon: "person" },
+        { topic: "plants", text: "Plants need sun and water to grow. Their roots take in water from the soil. Their leaves take in sunlight.",
+          q: "What do a plant's roots do?", a: "take in water", wrong: ["take in sunlight", "make the flowers", "catch bugs"],
+          main: "what plants need to grow", narrow: "what soil is", icon: "flower" },
+        { topic: "the moon", text: "The moon moves around the Earth. The moon does not make its own light. It shines because the sun lights it up.",
+          q: "Why does the moon shine?", a: "The sun lights it up.", wrong: ["It makes its own light.", "It is on fire.", "The stars paint it."],
+          main: "how the moon moves and shines", narrow: "the size of the Earth", icon: "star" }
+    ];
+    const A2_info_fact = F("Detail", "RI.2.1", "science",
+        { it: A2_FACTS },
+        v => ({
+            passage: v.it.text,
+            question: v.it.q,
+            answer: v.it.a,
+            options: shuffleArr([v.it.a, ...v.it.wrong]),
+            hint: `Find the sentence that answers the question.`,
+            icon: v.it.icon
+        })
+    );
+    const A2_info_main = F("MainIdea", "RI.2.2", "science",
+        { it: A2_FACTS },
+        v => ({
+            passage: v.it.text,
+            question: `What is this text mostly about?`,
+            answer: v.it.main,
+            options: shuffleArr([v.it.main, v.it.narrow, ...sampleExcl(A2_FACTS.map(f => f.main), 2, v.it.main)]),
+            hint: `Pick the answer that fits ALL the sentences, not just one.`,
+            icon: v.it.icon
+        })
+    );
+
     const FRAMES = {
-        A1: [A1_color, A1_place, A1_seq, A1_feel, A1_who, A1_ms, A1_ht_sent, ...(A1_VOCAB.length ? [A1_vocab] : [])],
-        A2: [A2_number, A2_cause, A2_vocab, A2_time, A2_compare, A2_ms_details, A2_ht_word, A2_dd_cat, A2_evidence, A2_lit],
+        A1: [A1_color, A1_place, A1_seq, A1_feel, A1_who, A1_ms, A1_ht_sent, ...(A1_VOCAB.length ? [A1_vocab] : []), A1_info_home, A1_info_main, A1_info_howto],
+        A2: [A2_number, A2_cause, A2_vocab, A2_time, A2_compare, A2_ms_details, A2_ht_word, A2_dd_cat, A2_evidence, A2_lit, A2_info_fact, A2_info_main],
         B1: [B1_inference, B1_mainidea, B1_vocab, B1_cause2, B1_seq2, B1_ht_main, B1_dd_fact, B1_ms_infer, B1_ht_word2, B1_clickpop, B1_lit],
         B2: [B2_persuade, B2_inform, B2_entertain, B2_describe, B2_tone, B2_vocab, B2_compare, B2_infer2, B2_evidence, B2_dd_match, B2_clickpop, B2_ht_multi2],
         C1: [C1_vocab, C1_rhetorical, C1_mainidea, C1_tone, C1_structure, C1_ht_multi, C1_dd_match2, C1_ms2],
@@ -5414,10 +5572,10 @@
                 const name = pickRand(NAMES, rng);
                 const animal = pickRand(['cat','dog','rabbit','bird','fox'], rng);
                 const color = pickRand(COLORS, rng);
-                const place = pickRand(['park','garden','yard','porch'], rng);
+                const place = pickRand(['in the park','in the garden','in the yard','on the porch'], rng);
                 const feel = pickRand(['happy','tired','excited','calm'], rng);
                 const sents = [
-                    { id:'s0', text: `${name} saw ${/^[aeiou]/.test(color) ? 'an' : 'a'} ${color} ${animal} in the ${place}.` },
+                    { id:'s0', text: `${name} saw ${/^[aeiou]/.test(color) ? 'an' : 'a'} ${color} ${animal} ${place}.` },
                     { id:'s1', text: `The ${animal} sat under a tree.` },
                     { id:'s2', text: `The ${animal} looked ${feel}.` },
                     { id:'s3', text: `${name} gave the ${animal} some water.` },
@@ -5455,7 +5613,7 @@
                             hint:`Look at the final sentence.`
                         },
                         {
-                            type:'Detail', ccss:'RI.1.1', interaction:'multiple_select',
+                            type:'Detail', ccss:'RL.1.1', interaction:'multiple_select',
                             question: `Which TWO things are true about the ${animal}?`,
                             options: shuffleArr([
                                 `It is ${color}`,
@@ -5466,6 +5624,203 @@
                             answerKey:{type:'multiple', correct:[`It is ${color}`, `It looked ${feel}`]},
                             answer: `It is ${color}`,
                             hint:`Choose only details from the passage.`
+                        }
+                    ]
+                };
+            }
+        },
+        // --- A1 informational: where animals live ---
+        {
+            bands: ['A1'],
+            topic: 'animal',
+            build(rng) {
+                const picks = shuffleArr(A1_HOMES, rng).slice(0, 3);
+                const sents = picks.map((h, i) => ({ id: 's' + i, text: `${/^[aeiou]/.test(h.animal) ? 'An' : 'A'} ${h.animal} lives ${h.home}.` }));
+                sents.push({ id: 's3', text: 'Every animal needs a safe home.' });
+                const passage = sents.map(x => x.text).join(' ');
+                const q = picks[0], r = picks[1];
+                return {
+                    title: 'Where Animals Live',
+                    passage, sentences: sents, topic: 'animal',
+                    scene: { subject: q.icon, color: null, mood: null, location: null, count: 1 },
+                    items: [
+                        {
+                            type:'Detail', ccss:'RI.1.1', interaction:'multiple_choice',
+                            question: `Where does ${/^[aeiou]/.test(q.animal) ? 'an' : 'a'} ${q.animal} live?`,
+                            options: shuffleArr([q.home, ...sampleExcl(A1_HOMES.map(h => h.home), 3, q.home)], rng),
+                            answerKey:{type:'single', correct:[q.home]}, answer: q.home,
+                            hint:`Find the sentence about the ${q.animal}.`
+                        },
+                        {
+                            type:'MainIdea', ccss:'RI.1.2', interaction:'multiple_choice',
+                            question: `What is this text mostly about?`,
+                            options: shuffleArr(['where animals live', 'what animals eat', 'how to draw a house', 'the weather'], rng),
+                            answerKey:{type:'single', correct:['where animals live']}, answer:'where animals live',
+                            hint:`What do all the sentences talk about?`
+                        },
+                        {
+                            type:'Detail', ccss:'RI.1.1', interaction:'hot_text_sentence',
+                            question: `Click the sentence that tells where the ${r.animal} lives.`,
+                            answerKey:{type:'single', correct:['s1']}, answer:'s1', options:[],
+                            hint:`Look for the word "${r.animal}".`
+                        }
+                    ]
+                };
+            }
+        },
+        // --- A1 story with a problem and a solution ---
+        {
+            bands: ['A1'],
+            topic: 'school',
+            build(rng) {
+                const name = pickRand(NAMES, rng);
+                const lost = pickRand([
+                    { thing: 'red mitten', where: 'under the slide' },
+                    { thing: 'blue hat', where: 'behind the bench' },
+                    { thing: 'toy car', where: 'in the sand box' },
+                    { thing: 'green ball', where: 'by the big tree' }
+                ], rng);
+                const helper = pickRand(['a friend', 'the teacher', 'a big kid', 'Grandpa'], rng);
+                const sents = [
+                    { id:'s0', text: `${name} lost a ${lost.thing} at the park.` },
+                    { id:'s1', text: `${name} felt sad.` },
+                    { id:'s2', text: `${cap(helper)} helped look for it.` },
+                    { id:'s3', text: `They found the ${lost.thing} ${lost.where}.` },
+                    { id:'s4', text: `${name} smiled and said thank you.` }
+                ];
+                const passage = sents.map(x => x.text).join(' ');
+                return {
+                    title: `The Lost ${lost.thing.split(' ').map(cap).join(' ')}`,
+                    passage, sentences: sents, topic: 'school',
+                    items: [
+                        {
+                            type:'Detail', ccss:'RL.1.1', interaction:'multiple_choice',
+                            question: `What did ${name} lose?`,
+                            options: shuffleArr([`a ${lost.thing}`, 'a book', 'a shoe', 'a kite'], rng),
+                            answerKey:{type:'single', correct:[`a ${lost.thing}`]}, answer:`a ${lost.thing}`,
+                            hint:`Look at the first sentence.`
+                        },
+                        {
+                            type:'Character', ccss:'RL.1.3', interaction:'multiple_choice',
+                            question: `How did ${name} feel at the end?`,
+                            options: shuffleArr(['happy', 'sad', 'angry', 'scared'], rng),
+                            answerKey:{type:'single', correct:['happy']}, answer:'happy',
+                            hint:`${name} felt sad at first. What changed?`
+                        },
+                        {
+                            type:'Detail', ccss:'RL.1.1', interaction:'hot_text_sentence',
+                            question: `Click the sentence that tells where they found it.`,
+                            answerKey:{type:'single', correct:['s3']}, answer:'s3', options:[],
+                            hint:`Look for the word "found".`
+                        },
+                        {
+                            type:'Sequence', ccss:'RL.1.3', interaction:'multiple_choice',
+                            question: `What happened right after ${name} felt sad?`,
+                            options: shuffleArr([`${cap(helper)} helped look.`, `${name} said thank you.`, `${name} lost it.`, `${name} went to sleep.`], rng),
+                            answerKey:{type:'single', correct:[`${cap(helper)} helped look.`]}, answer:`${cap(helper)} helped look.`,
+                            hint:`Find the sentence after "${name} felt sad."`
+                        }
+                    ]
+                };
+            }
+        },
+        // --- C2 literary: irony and ambiguity ---
+        {
+            bands: ['C2'],
+            topic: 'city',
+            build(rng) {
+                const v = pickRand([
+                    { title: 'The Inheritance', heir: 'Margaret',
+                      s: [
+                        'When her great-uncle died, Margaret learned she had inherited the family estate.',
+                        'For weeks she imagined the marble halls and portraits she remembered from childhood.',
+                        'The lawyer handed her a single brass key and a letter written in shaking ink.',
+                        '"The house," the letter read, "is yours, along with everything it owes."',
+                        'Margaret laughed at first; then she saw the stack of unpaid bills beneath the letter.'
+                      ],
+                      irony: 'The "gift" she dreamed of turns out to be a burden of debt.',
+                      keyLine: 's3' },
+                    { title: 'The Award', heir: 'Daniel',
+                      s: [
+                        'Daniel had spent ten years warning the town council that the old dam was failing.',
+                        'Each year they thanked him politely and moved on to the next item.',
+                        'After the spring flood swept away half of Main Street, the council gathered in a borrowed gym.',
+                        'They voted unanimously to give Daniel a plaque for "outstanding civic foresight."',
+                        'He accepted it, set it on a table still damp with river water, and walked out without a word.'
+                      ],
+                      irony: 'The council honors the warnings it spent ten years ignoring.',
+                      keyLine: 's3' }
+                ], rng);
+                const sents = v.s.map((t, i) => ({ id: 's' + i, text: t }));
+                const passage = sents.map(x => x.text).join(' ');
+                return {
+                    title: v.title,
+                    passage, sentences: sents, topic: 'city',
+                    items: [
+                        {
+                            type:'Rhetoric', ccss:'RL.11-12.6', interaction:'multiple_choice',
+                            question: `Which statement best describes the irony in this passage?`,
+                            options: shuffleArr([v.irony, 'The main character gets exactly what she or he expected.', 'The narrator openly mocks the main character.', 'The ending is a dream the character wakes up from.'], rng),
+                            answerKey:{type:'single', correct:[v.irony]}, answer: v.irony,
+                            hint:`Compare what the character expects with what actually happens.`
+                        },
+                        {
+                            type:'Evidence', ccss:'RL.11-12.1', interaction:'hot_text_sentence',
+                            question: `Click the sentence where the irony becomes clear.`,
+                            answerKey:{type:'single', correct:[v.keyLine]}, answer: v.keyLine, options:[],
+                            hint:`Look for the moment the situation turns against expectations.`
+                        },
+                        {
+                            type:'Structure', ccss:'RL.11-12.5', interaction:'multiple_choice',
+                            question: `Why does the author end on a silent action instead of a spoken reaction?`,
+                            options: shuffleArr(['It lets the reader infer the character\'s feelings.', 'It shows the character did not understand what happened.', 'It proves the other characters were right.', 'It sets up a sequel.'], rng),
+                            answerKey:{type:'single', correct:['It lets the reader infer the character\'s feelings.']}, answer:'It lets the reader infer the character\'s feelings.',
+                            hint:`What does the final gesture suggest without saying it?`
+                        }
+                    ]
+                };
+            }
+        },
+        // --- C2 paired viewpoints ---
+        {
+            bands: ['C2'],
+            topic: 'business',
+            build(rng) {
+                const v = pickRand([
+                    { title: 'Two Views: The Four-Day School Week',
+                      a: ['Supporters argue that a four-day week reduces burnout and saves districts money on buses and utilities.', 'In several rural districts, attendance rose after the change.'],
+                      b: ['Critics counter that longer school days exhaust younger students.', 'They also note that families must find, and pay for, care on the fifth day.'],
+                      unsupported: 'Families will always prefer the schedule that saves the district money.' },
+                    { title: 'Two Views: Banning Phones in Class',
+                      a: ['One principal reports that a phone ban cut classroom interruptions sharply within a month.', 'Teachers there say students now talk to one another more at lunch.'],
+                      b: ['A parents\' group responds that phones are a lifeline in emergencies.', 'They add that learning to manage distraction is itself a skill schools should teach.'],
+                      unsupported: 'Any rule that reduces interruptions must also raise test scores.' }
+                ], rng);
+                const sents = [...v.a, ...v.b].map((t, i) => ({ id: 's' + i, text: t }));
+                const passage = sents.map(x => x.text).join(' ');
+                return {
+                    title: v.title,
+                    passage, sentences: sents, topic: 'business',
+                    items: [
+                        {
+                            type:'Evidence', ccss:'RI.11-12.1', interaction:'hot_text_sentence',
+                            question: `Click the sentence that gives factual evidence for the first view.`,
+                            answerKey:{type:'single', correct:['s1']}, answer:'s1', options:[],
+                            hint:`Evidence reports something that happened, not just an opinion.`
+                        },
+                        {
+                            type:'Compare', ccss:'RI.11-12.9', interaction:'multiple_choice',
+                            question: `How does the second view respond to the first?`,
+                            options: shuffleArr(['It raises costs and harms the first view ignores.', 'It agrees completely and adds more benefits.', 'It questions whether the first view\'s facts are true.', 'It changes the subject to an unrelated issue.'], rng),
+                            answerKey:{type:'single', correct:['It raises costs and harms the first view ignores.']}, answer:'It raises costs and harms the first view ignores.',
+                            hint:`Does the second view deny the facts, or point to something else?`
+                        },
+                        {
+                            type:'Evaluate', ccss:'RI.11-12.8', interaction:'multiple_choice',
+                            question: `Which claim is NOT supported by either view?`,
+                            options: shuffleArr([v.unsupported, v.a[0].replace(/\.$/, ''), v.b[0].replace(/\.$/, ''), v.b[1].replace(/\.$/, '')], rng),
+                            answerKey:{type:'single', correct:[v.unsupported]}, answer: v.unsupported,
+                            hint:`Three choices restate the passage. Which one goes beyond it?`
                         }
                     ]
                 };
@@ -5833,6 +6188,12 @@
             ccss: it.ccss || 'RI.4.1',
             type: it.type || 'Reading'
         }, it));
+        // Sets serve several bands; label the standard at the serving band's
+        // grade (anchor standards .1-.10 exist at every grade).
+        const SET_GRADE = { A1: '1', A2: '2', B1: '4', B2: '6', C1: '9-10', C2: '11-12' };
+        items.forEach(q => {
+            if (/^(RL|RI|L)\.[\d-]+\./.test(q.ccss)) q.ccss = q.ccss.replace(/^(RL|RI|L)\.[\d-]+\./, `$1.${SET_GRADE[band]}.`);
+        });
         return items;
     }
 
