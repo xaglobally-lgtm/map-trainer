@@ -42,22 +42,27 @@ Raw: 22,576 main bank + 88 Bloom's = 22,664. Passage-set templates: 9 (A1 and C2
 - **Label rule:** skill modes filter on `type === 'Vocabulary'` and on `ccss` starting with `RI` (Informational) or `RL` (Literary). Label by the *text type* (story vs nonfiction), not the question type — a story tagged `RI` leaks into Informational mode.
 
 ## Progress (approximate — judgement estimates, not measured)
-- **Core app (content/modes/gamification/monetization): ~86%**. Remaining: F (double coherent variants), backlog.
+- **Core app (content/modes/gamification/monetization): ~93%**
+  - F done 2026-09-27 (PR #5): A2–C2 content roughly doubled (see content table).
+  - Skill-group practice modes + daily/skill missions (this PR).
+  - Remaining: Student Profile page, leaderboard types/seasons, real SMTP.
 - **MAP Connect: ~85%**
   - D — live session core: **~92%** (only the real two-device test remains).
-  - E — teacher control room: **~80%** built 2026-09-27 (per-student pause / +5 min / reset, class dashboard with analytics + intervention suggestions, assigned practice with completion tracking, student "Assigned by your teacher" card). UI verified in-browser with mocked data; **not yet exercised with real teacher + student accounts**.
-- **Overall product: ~82%**
+  - E — teacher control room: **~80%** (merged PR #4; UI verified with mocked data, not yet with real accounts).
+- **Overall product: ~88%**
 
 ## What's built (don't rebuild)
-Simulation/Training mode split, adaptive RIT/Lexile/CEFR engine, 4-tier plans (free/pro/educator/connect) with server-enforced caps (2 classes/educator, 40 students/class), one-time `trial_20` mode, cloud+local gamification (XP/levels/ranks/badges/certificates/weekly mission/smart recommendation — all derived live from history, nothing stored as counters), async leaderboards, enhanced results screen (strengths/next-target/recommended practice), MAP Connect v1 (host + join + realtime board + heartbeat + pause/resume/end), question progress track, skill-mode nearest-level fallback (`nearestSkillLevel`).
+Simulation/Training mode split, adaptive RIT/Lexile/CEFR engine, skill-group practice modes (`SKILL_GROUP_OF`: details / mainidea / inference / craft / evidence + vocab / infotext / littext), daily + weekly skill missions (derived from an activity log: cloud rows incl. practice, or local `xag_activity_v1`), 4-tier plans (free/pro/educator/connect) with server-enforced caps (2 classes/educator, 40 students/class), one-time `trial_20` mode, cloud+local gamification (XP/levels/ranks/badges/certificates/weekly mission/smart recommendation — all derived live from history, nothing stored as counters), async leaderboards, enhanced results screen (strengths/next-target/recommended practice), MAP Connect v1 (host + join + realtime board + heartbeat + pause/resume/end), question progress track, skill-mode nearest-level fallback (`nearestSkillLevel`).
 
 ## What's next (pick up here, in order)
-1. **Real two-device test (user)** — now covers D *and* E. Teacher (`plan='connect'`, one exists) + student on another device/email:
+1. **Real two-device test (user)** — covers D *and* E. Teacher (`plan='connect'`, one exists) + student on another device/email:
    - Live: join shows ≤1s; Start auto-starts student; answers update board; session Pause/Resume; per-student ⏸/▶, +5m (student sees notice, timer grows), ↺ reset (two clicks; student restarts at Q1); student reload rejoins; closed tab 🔴 ~1s; End.
    - Class dashboard (Account → class → 📊 Dashboard): student appears after joining the class; suggestions; assign practice → student sees "📌 Assigned by your teacher" → completes it → teacher sees x/y done.
    - While it runs, query `edu_group_participants` / `edu_assignments` to separate realtime problems from write/RLS problems.
-2. **F — double *coherent* variants** band by band by adding bundles; re-verify with the harness. Thinnest: C2 (5 frames), C1 vocab (1 frame), B2/C1/C2 vocab banks (8–10 words).
-3. Backlog: dedicated Student Profile page; more leaderboard types/seasons; daily/skill-specific missions; finer `SKILL_FILTERS` (e.g. Inference) so suggestions/“Practice this” can target a single skill; real SMTP (Resend) before school launch; curated offline image art bank.
+2. **Student Profile page** — one screen per student: RIT/Lexile trend, skill-group strengths (by `SKILL_GROUP_OF`), badges/certificates, recent sessions, assignments.
+3. **Leaderboard types/seasons** — e.g. monthly season (reset view by month, not data), most practice, most improved this month.
+4. **Real SMTP (user action)** — Supabase built-in email is rate-limited; set up Resend (or similar) SMTP in Supabase Auth settings before school launch. Needs the user's account/API key.
+5. Deferred: curated offline image art bank (decision: no live image-gen API).
 
 Done 2026-09-27 (for history): PRs #1–#3 merged; migrations `map_connect_faster_disconnect`, `map_teacher_controls`, `map_class_analytics_ccss`, `map_revoke_anon_function_execute` applied via `apply_migration`; content-depth items from the audit; E built.
 

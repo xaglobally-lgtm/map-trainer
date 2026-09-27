@@ -782,6 +782,7 @@
                 <input type="checkbox" id="remember-name-toggle" onchange="onRememberNameToggle()"> Remember me on this device
             </label>
 
+            <div id="missions-card" class="hidden" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:10px 14px; margin-bottom:12px; text-align:left; font-size:12px;"></div>
             <div id="player-card" class="hidden" style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:16px;"></div>
             <div id="assigned-practice" class="hidden" style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:12px 14px; margin-bottom:16px; text-align:left;"></div>
             <div id="smart-recommendation" class="hidden" style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px 14px; margin-bottom:16px;"></div>
@@ -823,6 +824,11 @@
                     <option value="infotext_40" data-cat="train">Informational Text Comprehension: 40 Questions</option>
                     <option value="littext_20" data-cat="train">Literary Text Comprehension: 20 Questions</option>
                     <option value="littext_40" data-cat="train">Literary Text Comprehension: 40 Questions</option>
+                    <option value="details_20" data-cat="train">Key Details &amp; Sequence: 20 Questions</option>
+                    <option value="mainidea_20" data-cat="train">Main Idea &amp; Central Claim: 20 Questions</option>
+                    <option value="inference_20" data-cat="train">Inference &amp; Character: 20 Questions</option>
+                    <option value="craft_20" data-cat="train">Author's Purpose &amp; Craft (Grades 3+): 20 Questions</option>
+                    <option value="evidence_20" data-cat="train">Evidence &amp; Reasoning: 20 Questions</option>
                 </optgroup>
                 <optgroup label="Command Terms Assessment (Bloom's Taxonomy, no report)" data-cat="train">
                     <option value="bloom_g12_15" data-cat="train">Grades 1–2: 15 Questions</option>
@@ -2160,10 +2166,26 @@
         return drawFrame(chosen, levelKey);
     }
     // Skill-focus filters for the practice quizzes (Vocabulary / Informational / Literary).
+    // Fine-grained skill groups (question `type` -> student-facing skill). Every
+    // type belongs to exactly one group; levels without a group's types borrow
+    // from the nearest level that has them (nearestSkillLevel).
+    const SKILL_GROUP_OF = {
+        Detail: 'details', Sequence: 'details', CauseEffect: 'details',
+        MainIdea: 'mainidea', Argument: 'mainidea', Synthesis: 'mainidea',
+        Inference: 'inference', Character: 'inference', Tone: 'inference', Nuance: 'inference',
+        Purpose: 'craft', Rhetoric: 'craft', Structure: 'craft',
+        Evidence: 'evidence', Evaluate: 'evidence', FactOpinion: 'evidence', Compare: 'evidence',
+        Vocabulary: 'vocab'
+    };
     const SKILL_FILTERS = {
         vocab: f => f.type === 'Vocabulary',
         infotext: f => f.ccss && f.ccss.startsWith('RI'),
-        littext: f => f.ccss && f.ccss.startsWith('RL')
+        littext: f => f.ccss && f.ccss.startsWith('RL'),
+        details: f => SKILL_GROUP_OF[f.type] === 'details',
+        mainidea: f => SKILL_GROUP_OF[f.type] === 'mainidea',
+        inference: f => SKILL_GROUP_OF[f.type] === 'inference',
+        craft: f => SKILL_GROUP_OF[f.type] === 'craft',
+        evidence: f => SKILL_GROUP_OF[f.type] === 'evidence'
     };
 
     // ===================== WORD BANKS =====================
@@ -7456,9 +7478,9 @@
             const parts = mv.split('_'); // bloom_g12_15
             return { kind: 'bloom', gradeKey: parts[1], limit: parseInt(parts[2], 10) };
         }
-        if (mv.startsWith('vocab_') || mv.startsWith('infotext_') || mv.startsWith('littext_')) {
-            const parts = mv.split('_');
-            return { kind: 'skill', skillKey: parts[0], limit: parseInt(parts[1], 10) };
+        const skillMatch = mv.match(/^([a-z]+)_(\d+)$/);
+        if (skillMatch && SKILL_FILTERS[skillMatch[1]]) {
+            return { kind: 'skill', skillKey: skillMatch[1], limit: parseInt(skillMatch[2], 10) };
         }
         if (mv.startsWith('cefr_')) {
             return { kind: 'cefr' };
@@ -7940,6 +7962,7 @@
                 });
             }
             if (typeof loadMyAssignments === 'function') setTimeout(loadMyAssignments, 1500);
+            if (!state.cancelled) recordFinishedSession(true);
             if (state.cancelled) {
                 showPracticeCancelledScreen(() => returnToSetup());
             } else {
@@ -7950,6 +7973,7 @@
 
         state.history.push(state.rit);
         localStorage.setItem('xag_h', JSON.stringify(state.history));
+        if (!state.cancelled) recordFinishedSession(false);
 
         if (!state.cancelled) {
             const name = document.getElementById('student-name').value || 'Guest';
@@ -7995,6 +8019,15 @@
                 showResultsScreen();
             });
         }
+    }
+    function recordFinishedSession(isPractice) {
+        const name = (document.getElementById('student-name') || {}).value || '';
+        logLocalActivity(name, {
+            date: Date.now(), mode: document.getElementById('mode-select').value,
+            questions: state.results.length, correct: state.results.filter(r => r.correct).length, practice: isPractice
+        });
+        // Give the cloud sync a moment, then refresh missions / player card.
+        if (typeof renderPlayerCard === 'function') setTimeout(renderPlayerCard, 1800);
     }
     function returnToSetup() {
         document.getElementById('view-results').classList.add('hidden');
@@ -8380,6 +8413,75 @@
         const completedThisWeek = hist.filter(h => h.date >= weekStart).length;
         return { completed: Math.min(completedThisWeek, WEEKLY_MISSION_TARGET), target: WEEKLY_MISSION_TARGET, done: completedThisWeek >= WEEKLY_MISSION_TARGET };
     }
+    // ===================== DAILY & SKILL MISSIONS =====================
+    // Like everything else in gamification, missions are derived from an
+    // activity history, never stored as counters. Unlike XP/badges they
+    // count Training (practice) sessions too. Signed-in: this week's cloud
+    // rows (practice is synced since 2026-09-27). Signed-out: a small local
+    // log of the last 14 days of finished sessions.
+    function logLocalActivity(name, entry) {
+        try {
+            const all = JSON.parse(localStorage.getItem('xag_activity_v1') || '{}');
+            const key = getPlayerKey(name);
+            const cutoff = Date.now() - 14 * 86400000;
+            all[key] = (all[key] || []).filter(e => e.date >= cutoff).concat([entry]);
+            localStorage.setItem('xag_activity_v1', JSON.stringify(all));
+        } catch (e) { /* storage full/blocked: missions just won't advance offline */ }
+    }
+    async function getWeekActivity(name) {
+        const weekStart = getStartOfWeekMs(Date.now());
+        if (typeof sb !== 'undefined' && sb && window.MAP_USER) {
+            const { data } = await sb.from('map_test_sessions')
+                .select('mode,correct_count,question_count,completed_at,practice_only')
+                .eq('user_id', window.MAP_USER.id).eq('cancelled', false)
+                .gte('completed_at', new Date(weekStart).toISOString());
+            return (data || []).map(r => ({ date: new Date(r.completed_at).getTime(), mode: r.mode,
+                questions: r.question_count || 0, correct: r.correct_count || 0, practice: !!r.practice_only }));
+        }
+        let all = {};
+        try { all = JSON.parse(localStorage.getItem('xag_activity_v1') || '{}'); } catch (e) {}
+        return (all[getPlayerKey(name)] || []).filter(e => e.date >= weekStart);
+    }
+    // One daily mission, rotating by calendar day so everyone gets the same one.
+    const DAILY_MISSIONS = [
+        { label: 'Answer 20 questions today', target: 20, count: t => t.reduce((a, e) => a + e.questions, 0) },
+        { label: 'Finish 1 Training session today', target: 1, count: t => t.filter(e => e.practice).length },
+        { label: 'Score 80% or better on a session today', target: 1, count: t => t.some(e => e.questions >= 5 && e.correct / e.questions >= 0.8) ? 1 : 0 },
+        { label: 'Finish 2 sessions of any kind today', target: 2, count: t => t.length }
+    ];
+    function todaysDailyMission() {
+        const d = new Date();
+        const dayNumber = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+        return DAILY_MISSIONS[dayNumber % DAILY_MISSIONS.length];
+    }
+    function modeOptionLabel(mode) {
+        const o = document.querySelector(`#mode-select option[value="${mode}"]`);
+        return o ? (o.dataset.baseLabel || o.textContent).replace(/^🔒 /, '').replace(/: \d+ Questions$/, '') : mode;
+    }
+    async function renderMissions(name, testHist) {
+        const box = document.getElementById('missions-card');
+        if (!box) return;
+        if (!name.trim() && !window.MAP_USER) { box.classList.add('hidden'); return; }
+        const week = await getWeekActivity(name);
+        const todayStart = new Date().setHours(0, 0, 0, 0);
+        const today = week.filter(e => e.date >= todayStart);
+        const daily = todaysDailyMission();
+        const dailyN = Math.min(daily.count(today), daily.target);
+        const rows = [`<div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">
+            <span>${dailyN >= daily.target ? '✅' : '☀️'} <b>Daily:</b> ${daily.label}</span>
+            <b style="white-space:nowrap;">${dailyN}/${daily.target}</b></div>`];
+        // Skill mission: finish one practice of your weakest skill this week.
+        const weak = testHist && testHist.length ? computeWeakestSkillFromHistory(testHist) : null;
+        if (weak) {
+            const mode = closestSkillPracticeMode(weak.type, weak.ccss);
+            const done = week.some(e => e.mode === mode);
+            rows.push(`<div style="display:flex; justify-content:space-between; gap:8px; align-items:center; margin-top:6px; flex-wrap:wrap;">
+                <span>${done ? '✅' : '🎯'} <b>Skill mission:</b> finish ${/^[AEIOU]/i.test(modeOptionLabel(mode)) ? 'an' : 'a'} ${escapeHtml(modeOptionLabel(mode))} practice this week <small style="color:#64748b;">(your weakest skill: ${escapeHtml(weak.type)})</small></span>
+                ${done ? '<b>1/1</b>' : `<button class="cd-btn" onclick="startAssignedPractice('${mode}')">Start →</button>`}</div>`);
+        }
+        box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🗓 Missions</div>` + rows.join('');
+        box.classList.remove('hidden');
+    }
     // Aggregates per-skill-type accuracy across the student's ENTIRE
     // history (not just the last test) to find their single biggest,
     // statistically meaningful opportunity for improvement — needs at
@@ -8435,16 +8537,13 @@
         });
         return byType;
     }
-    // Maps a skill type to whichever existing Training Mode skill-practice
-    // filter is the closest match — Vocabulary/Nuance -> vocab, informational
-    // CCSS (RI.*) -> infotext, literary CCSS (RL.*) -> littext. There isn't a
-    // dedicated practice filter per fine-grained type (e.g. "Inference"
-    // specifically) yet — that would need a new SKILL_FILTERS entry, tracked
-    // as a follow-up rather than guessed at here.
+    // Maps a question type to its skill-group practice mode (SKILL_GROUP_OF).
+    // Unknown types fall back to the broad Informational / Literary modes.
     function closestSkillPracticeMode(type, ccss) {
-        if (type === 'Vocabulary' || type === 'Nuance') return 'vocab_20';
+        const group = SKILL_GROUP_OF[type];
+        if (group) return group + '_20';
         if (ccss && ccss.startsWith('RL')) return 'littext_20';
-        return 'infotext_20'; // default: most non-vocab types are informational-text-tagged
+        return 'infotext_20';
     }
     function startRecommendedPractice(modeValue) {
         document.getElementById('view-results').classList.add('hidden');
@@ -8749,6 +8848,7 @@
         const card = document.getElementById('player-card');
         if (!card) return;
         const name = (document.getElementById('student-name') || {}).value || '';
+        getPlayerHistory(name).then(h => renderMissions(name, h)).catch(() => {});
         if (!name.trim() && !window.MAP_USER) { card.classList.add('hidden'); return; }
         const s = await computePlayerStats(name);
         if (s.testsCompleted === 0) { card.classList.add('hidden'); return; }
