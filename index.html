@@ -559,6 +559,7 @@
         <hr>
         <p style="font-size: 12px; margin-bottom:4px;">Authored by: <b>XAG Education Solutions</b><br>Copyright © XAG Educational Solutions. All rights reserved.</p>
         <span class="contact-link" onclick="openContactModal()">Contact XAG →</span>
+        <a class="contact-link" href="/trust/" style="display:block; margin-top:6px; text-decoration:none;">Trust &amp; Verification →</a>
     </div>
 </div>
 
@@ -1158,11 +1159,20 @@
             </div>
             <div class="footer-credit">
                 Authored by: XAG Education Solutions<br>
-                Copyright © XAG Educational Solutions. All rights reserved.
+                Copyright © XAG Educational Solutions. All rights reserved.<br>
+                <a href="/trust/" style="color:inherit;">Trust &amp; Verification →</a>
+                <div id="xag-trust-badges" style="margin-top:6px;"></div>
             </div>
         </div>
     </div>
 </div>
+<script src="trust/xag-trust.js" defer></script>
+<script>
+    // XAGTrustBadges: shows only official badges that are currently valid (none until a provider verifies the app).
+    window.addEventListener('load', () => {
+        if (window.XAGTrust) XAGTrust.load().then(cfg => XAGTrust.renderBadges(document.getElementById('xag-trust-badges'), cfg)).catch(() => {});
+    });
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>

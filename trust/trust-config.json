@@ -1,0 +1,103 @@
+{
+  "_readme": "XAG Trust & Verification config: the single source of truth for /trust, the footer badges and the App Manager Trust Center. Edit only with real evidence. Never invent scores, certificate IDs or dates. Empty or unverified entries stay hidden or show 'Not yet verified'. See TRUST_RUNBOOK.md.",
+  "schemaVersion": 1,
+  "appName": "XAG MAP-style Reading",
+  "appId": "map-reading",
+  "productionUrl": "https://map-trainer-six.vercel.app",
+  "trustUrl": "/trust/",
+  "contactEmail": "xaglobally@gmail.com",
+  "links": {
+    "privacy": null,
+    "terms": null,
+    "accessibilityStatement": null,
+    "dataDeletion": null
+  },
+
+  "providers": [
+    {
+      "id": "xlogs",
+      "category": "security",
+      "name": "xlogs",
+      "kind": "scan + domain verification badge",
+      "status": "not_yet_verified",
+      "checkedDate": null,
+      "validityDays": 30,
+      "verificationUrl": null,
+      "badge": null,
+      "note": "Requires a custom domain the badge can be installed on. Its badge is a dated verification record, not an audit or certification."
+    },
+    {
+      "id": "launchguard",
+      "category": "security",
+      "name": "LaunchGuard",
+      "kind": "security scan + Verified certificate (score 80+, no open critical/high)",
+      "status": "not_yet_verified",
+      "checkedDate": null,
+      "validityDays": 30,
+      "verificationUrl": null,
+      "certificateId": null,
+      "score": null,
+      "grade": null,
+      "badge": null
+    },
+    { "id": "veriify", "category": "security", "name": "Veriify", "kind": "HTTPS/TLS/headers/email checks", "status": "not_yet_verified", "checkedDate": null, "validityDays": 30, "verificationUrl": null, "badge": null },
+    { "id": "clearaudit", "category": "security", "name": "ClearAudit", "kind": "security/technical scan", "status": "not_yet_verified", "checkedDate": null, "validityDays": 30, "verificationUrl": null, "badge": null },
+    { "id": "trustedorigin", "category": "security", "name": "Trusted Origin", "kind": "SSL/DNS/email/headers/reputation", "status": "not_yet_verified", "checkedDate": null, "validityDays": 30, "verificationUrl": null, "badge": null },
+    { "id": "acuityscan", "category": "security", "name": "AcuityScan", "kind": "pre-release testing (internal record unless an official badge is provided)", "status": "not_yet_verified", "checkedDate": null, "validityDays": 30, "verificationUrl": null, "badge": null },
+    { "id": "sentrio", "category": "security", "name": "Sentrio", "kind": "security/privacy/accessibility scan", "status": "not_yet_verified", "checkedDate": null, "validityDays": 30, "verificationUrl": null, "badge": null },
+    {
+      "id": "domain",
+      "category": "domain",
+      "name": "Domain ownership",
+      "kind": "domain control (e.g. via the xlogs badge)",
+      "status": "not_yet_verified",
+      "checkedDate": null,
+      "validityDays": 30,
+      "verificationUrl": null,
+      "note": "Awaiting the custom domain. The current address is a vercel.app subdomain owned by Vercel."
+    }
+  ],
+
+  "accessibility": {
+    "standard": "WCAG 2.2",
+    "level": null,
+    "status": "testing",
+    "statusOptions": ["not_tested", "testing", "A", "AA", "AAA"],
+    "checkedDate": "2026-09-28",
+    "evaluation": {
+      "automated": "partial",
+      "keyboard": "partial",
+      "responsive": "done",
+      "humanReview": "not_done"
+    },
+    "note": "Conformance is claimed only after a full evaluation including human review; automated tools alone cannot establish WCAG conformance (W3C). The official W3C WCAG logo is shown only once a level is actually declared."
+  },
+
+  "privacy": {
+    "status": "in_preparation",
+    "items": {
+      "privacyPolicy": false,
+      "termsOfUse": false,
+      "dataUseInformation": false,
+      "thirdPartyServicesDisclosed": false,
+      "accountDeletionProcess": false
+    },
+    "thirdPartyServices": ["Supabase (accounts and saved progress)", "Vercel (hosting)", "Google (optional sign-in)", "jsDelivr (JavaScript library delivery)"]
+  },
+
+  "integrity": {
+    "status": "not_yet_sealed",
+    "artifacts": [],
+    "note": "Candidates for Let's Seal: the Language Usage question bank, the reading question templates, and certificates. Only individually sealed artifacts are ever described as sealed; the app as a whole is not."
+  },
+
+  "internalChecks": [
+    { "date": "2026-09-28", "area": "security", "result": "passed", "summary": "HTTPS/TLS valid (Google Trust Services certificate), HTTP redirects to HTTPS, HSTS enabled." },
+    { "date": "2026-09-28", "area": "security", "result": "passed", "summary": "Database access-control test: 28 of 28 checks passed (students and outsiders blocked from teacher-only data and controls)." },
+    { "date": "2026-09-28", "area": "security", "result": "fixed", "summary": "Internal project files were publicly downloadable; now excluded from deployment. Security headers (CSP, nosniff, frame, referrer, permissions) added." },
+    { "date": "2026-09-27", "area": "security", "result": "passed", "summary": "Supabase security advisor: no MAP-specific findings; database functions restricted to signed-in users." },
+    { "date": "2026-09-28", "area": "accessibility", "result": "partial", "summary": "Keyboard-operable answer options, labelled progress bar, reduced-motion support and phone layout reviewed. Full WCAG 2.2 evaluation not yet done." }
+  ],
+
+  "history": []
+}

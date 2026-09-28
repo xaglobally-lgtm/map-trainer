@@ -1,0 +1,5 @@
+# Internal files: never published to the live site (found publicly downloadable 2026-09-28)
+*.md
+*.sql
+.claude/
+trust/check.mjs

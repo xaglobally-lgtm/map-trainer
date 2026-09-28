@@ -11,7 +11,7 @@ NWEA MAP-style adaptive reading assessment PWA. Single-file HTML app (`index.htm
 
 ## Repo structure
 - `index.html` — the entire app (HTML/CSS/JS in one file, ~715KB). Contains procedural question generation (`FRAMES` object, A1–C2 CEFR bands), adaptive scoring, gamification, monetization, MAP Connect live-session code.
-- `manifest.json`, `sw.js` (service worker — **network-first for index.html**, cache-fallback for icons only, `CACHE_NAME` currently v2), `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`.
+- `trust/` (Trust layer, see below), `vercel.json` (security headers), `.vercelignore`, `manifest.json`, `sw.js` (service worker — **network-first for index.html**, cache-fallback for icons only, `CACHE_NAME` currently v2), `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`.
 - `*.sql` files — migrations, already applied to production in this order (do not re-run; keep as history):
   `map_backend_schema.sql` → `map_leaderboard_migration.sql` → `map_by_type_migration.sql` → `map_schema_rename_migration.sql` → `map_connect_schema.sql` → `map_architecture_fixes.sql` → `map_connect_v1_migration.sql`
 
@@ -80,6 +80,13 @@ Simulation mode only (Training unchanged):
 - Training modes only: `lu_mixed_30` (domains balanced), `lu_grammar_20`, `lu_mechanics_20`, `lu_writing_20`. Served adaptively by grade band (`luBandForRit`), nearest band when a band runs out, no repeats per session. Never in Reading Simulation/reports.
 - Import fixes: 26 items had no instruction (prompt was only the sentence) → instructions added; W007 key was wrong ("Eat the toast" as first step) → fixed; M017 key made an ungrammatical sentence → prompt fixed; M031, M035, G010 had two defensible answers → distractors fixed; M021 made logical ("but"). Explanations taken from the .md (the .json lost its curly quotes).
 - Reusable as the seed bank for the planned separate Language Usage app.
+
+## Trust & Verification layer (2026-09-28)
+- `/trust/` Trust Passport, `trust/xag-trust.js` (status/badges/footer/passport/summary), `trust/trust-config.json` = single source of truth and the App Manager Trust Center feed. Procedures, wording rules and the monitoring schedule are in `TRUST_RUNBOOK.md`.
+- All external providers (xlogs, LaunchGuard, Veriify, ClearAudit, Trusted Origin, AcuityScan, Sentrio, domain) are `not_yet_verified`: they need the user to run them, and several need the custom domain. **Never fill in scores/IDs/dates/badges without a real report.** WCAG level is only declared after human review. PlanetOS/FamilyOS are excluded.
+- Security fixes found by the check: `vercel.json` adds CSP + nosniff + X-Frame-Options + Referrer/Permissions-Policy + COOP (CSP allows only self, cdn.jsdelivr.net, and the Supabase project; **add a provider's domain to the CSP before embedding its badge**). `.vercelignore` stops `*.md`, `*.sql` and `trust/check.mjs` from being published (they were publicly downloadable before).
+- `sw.js` ignores `/trust/` (always live, never overwrites the cached app).
+- Monitor: `node trust/check.mjs` (or `--json`); exit 1 on FAIL. Local test server with production headers: scratchpad `hdr_server.py` on 127.0.0.1:5198 (service-worker registration fails on 127.0.0.1 in the browser pane regardless of headers; it works on localhost and live).
 
 ## Languages (status 2026-09-27)
 - **Questions stay English** (it's an English reading assessment).
