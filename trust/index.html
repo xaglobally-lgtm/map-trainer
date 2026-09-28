@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trust &amp; Verification · XAG</title>
+<meta name="description" content="Security, accessibility, privacy, domain and integrity verification record for this XAG application.">
+<style>
+:root { --bg:#f7f8fa; --card:#fff; --text:#1c2230; --muted:#5b6475; --line:#e3e6ec; --accent:#2457c5;
+        --ok:#1f7a3f; --okbg:#e6f4ea; --due:#8a5a00; --duebg:#fff4d6; --bad:#a3261b; --badbg:#fde8e6; --none:#5b6475; --nonebg:#eef0f4; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#10141c; --card:#171c26; --text:#e8ebf2; --muted:#9aa3b5; --line:#2a3140; --accent:#7ea4ff;
+          --ok:#7fd89a; --okbg:#173024; --due:#f2c65a; --duebg:#352b12; --bad:#ff9b8f; --badbg:#3a1a17; --none:#aab2c2; --nonebg:#232a36; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+main { max-width:860px; margin:0 auto; padding:24px 16px 48px; }
+a { color:var(--accent); }
+.xt-back { display:inline-block; margin-bottom:16px; text-decoration:none; font-size:14px; }
+.xt-head { margin-bottom:20px; }
+.xt-kicker { font-weight:700; letter-spacing:.12em; color:var(--muted); font-size:13px; }
+.xt-head h1 { margin:4px 0 6px; font-size:clamp(24px,5vw,32px); }
+.xt-sub { color:var(--muted); margin:0 0 8px; }
+.xt-last { margin:0; }
+.xt-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:20px 0 24px; }
+.xt-summary > div { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; font-size:14px; color:var(--muted); }
+.xt-summary b { color:var(--text); font-size:14px; }
+.xt-sec { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 18px 12px; margin-bottom:16px; }
+.xt-sec h2 { margin:0 0 10px; font-size:20px; }
+.xt-sec h3 { margin:16px 0 6px; font-size:15px; }
+.xt-list, .xt-hist { margin:0; padding-left:20px; }
+.xt-list li, .xt-hist li { margin:6px 0; }
+.xt-meta { font-size:13px; color:var(--muted); }
+.xt-pill { display:inline-block; font-size:12px; font-weight:600; padding:2px 8px; border-radius:99px; margin-left:4px; }
+.xt-ok { color:var(--ok); background:var(--okbg); } .xt-due { color:var(--due); background:var(--duebg); }
+.xt-bad { color:var(--bad); background:var(--badbg); } .xt-none { color:var(--none); background:var(--nonebg); }
+.xt-note { font-size:13px; color:var(--muted); }
+.xt-foot { margin-top:20px; }
+footer { text-align:center; font-size:13px; color:var(--muted); margin-top:24px; }
+</style>
+</head>
+<body>
+<main>
+  <a class="xt-back" href="/">← Back to the app</a>
+  <div id="passport"><p>Loading verification record…</p></div>
+  <footer>Questions about this page: <a id="contact" href="#">contact XAG</a></footer>
+</main>
+<script src="xag-trust.js"></script>
+<script>
+XAGTrust.load().then(cfg => {
+    XAGTrust.renderPassport(document.getElementById('passport'), cfg);
+    const c = document.getElementById('contact');
+    if (cfg.contactEmail) c.href = 'mailto:' + cfg.contactEmail; else c.parentNode.remove();
+    document.title = 'Trust & Verification · ' + cfg.appName;
+}).catch(() => {
+    document.getElementById('passport').innerHTML = '<p>The verification record could not be loaded. Please try again later.</p>';
+});
+</script>
+</body>
+</html>

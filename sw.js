@@ -44,6 +44,9 @@ self.addEventListener('fetch', (event) => {
   // Never intercept cross-origin calls (Supabase API, CDN) — let the
   // browser handle them normally.
   if (new URL(req.url).origin !== self.location.origin) return;
+  // The Trust page and its config must always be live (dates and expiry
+  // are evaluated on every visit) and must never replace the cached app.
+  if (new URL(req.url).pathname.startsWith('/trust/')) return;
 
   if (isAppPage(req)) {
     event.respondWith(
