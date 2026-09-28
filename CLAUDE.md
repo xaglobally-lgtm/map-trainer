@@ -75,6 +75,12 @@ Simulation mode only (Training unchanged):
 - **Wording:** "Est. RIT" in the test header, "Estimated RIT (practice)" on the report (English; other report languages keep their wording), and a footnote: practice estimates, not official NWEA scores.
 - Not done (deliberately): untimed default (#1), 43-question length (#2), seasons (#9), per-area separately estimated RIT, highlighter / line reader / notepad.
 
+## Language Usage preview (2026-09-28)
+- 120 XAG-authored items imported from `XAG_MAP_Style_English_Language_Usage_Question_Bank_v1.json/.md` (Downloads) into `LU_ITEMS` in `index.html`: 40 Grammar, 40 Mechanics, 40 Writing & Revision; grade bands 2-3 / 4-5 / 6-8 / 9-12; DOK tagged.
+- Training modes only: `lu_mixed_30` (domains balanced), `lu_grammar_20`, `lu_mechanics_20`, `lu_writing_20`. Served adaptively by grade band (`luBandForRit`), nearest band when a band runs out, no repeats per session. Never in Reading Simulation/reports.
+- Import fixes: 26 items had no instruction (prompt was only the sentence) → instructions added; W007 key was wrong ("Eat the toast" as first step) → fixed; M017 key made an ungrammatical sentence → prompt fixed; M031, M035, G010 had two defensible answers → distractors fixed; M021 made logical ("but"). Explanations taken from the .md (the .json lost its curly quotes).
+- Reusable as the seed bank for the planned separate Language Usage app.
+
 ## Languages (status 2026-09-27)
 - **Questions stay English** (it's an English reading assessment).
 - **Report translation:** 11 languages (es, fr, zh, ja, ko, ru, ar, vi, th, km, mn) via the report language selector.
