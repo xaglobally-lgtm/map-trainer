@@ -3,7 +3,7 @@
 ## What this is
 MAP-style adaptive reading assessment PWA. Single-file HTML app (`index.html`) + Supabase backend. Currently deployed and live.
 
-**Trademark rule:** the app never names or implies affiliation with the assessment provider whose scale RIT/Lexile come from. All "official score" disclaimers say *not an official score* with no brand named. A `NWEA` grep over `index.html` must return zero hits — keep it that way.
+**Trademark rule:** the app never names or implies affiliation with the assessment provider whose scale RIT/Lexile come from. All "official score" disclaimers say *not an official score* with no brand named. A case-insensitive grep for the provider's name (N-W-E-A) over the whole repo must return zero hits — keep it that way.
 
 ## Live infrastructure
 - **Production URL:** https://map-trainer-six.vercel.app/
