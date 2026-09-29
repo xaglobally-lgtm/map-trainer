@@ -566,27 +566,8 @@
         <button onclick="saveSettings()" style="width:100%; padding:12px; border-radius:10px; background:var(--primary-grad); color:white; border:none; font-weight:bold; cursor:pointer;">Save Changes</button>
         <hr>
         <p style="font-size: 12px; margin-bottom:4px;">Authored by: <b>XAG Education Solutions</b><br>Copyright © XAG Educational Solutions. All rights reserved.</p>
-        <span class="contact-link" onclick="openContactModal()">Contact XAG →</span>
+        <p data-i18n="ritDisclaimer" style="font-size:11px; color:#64748b; margin:0 0 6px;">RIT is a proprietary adaptive scoring scale. This app calculates its own estimates and uses the RIT scale only as an approximate guide.</p>
         <a class="contact-link" href="/trust/" style="display:block; margin-top:6px; text-decoration:none;">Trust &amp; Verification →</a>
-    </div>
-</div>
-
-<!-- CONTACT POP-UP -->
-<div id="modal-contact" class="modal hidden">
-    <div class="modal-content" style="max-height:90vh; overflow-y:auto;">
-        <button type="button" class="modal-close" onclick="closeModal('modal-contact')" title="Close" aria-label="Close">×</button>
-        <h2 style="margin-top:0; padding-right:40px;">Contact XAG</h2>
-        <p style="font-size:13px; color:#64748b; margin:0 0 10px 0;">Questions or feedback? Send us a message below.</p>
-        <div class="contact-form">
-            <label for="contact-name">Your name</label>
-            <input id="contact-name" type="text" placeholder="Name">
-            <label for="contact-email">Your email</label>
-            <input id="contact-email" type="email" placeholder="you@example.com">
-            <label for="contact-msg">Message</label>
-            <textarea id="contact-msg" rows="4" placeholder="How can we help?"></textarea>
-            <button type="button" onclick="submitContactForm()" style="width:100%; margin-top:10px; padding:12px; border-radius:10px; background:var(--primary-grad); color:white; border:none; font-weight:bold; cursor:pointer;">Send message</button>
-            <p id="contact-status" style="font-size:12px; margin-top:8px; color:#047857;"></p>
-        </div>
     </div>
 </div>
 
@@ -4881,25 +4862,6 @@
         try { window.open(mailto, '_blank'); } catch (e) {}
     }
 
-    function submitContactForm() {
-        const name = (document.getElementById('contact-name') || {}).value || '';
-        const email = (document.getElementById('contact-email') || {}).value || '';
-        const msg = (document.getElementById('contact-msg') || {}).value || '';
-        const status = document.getElementById('contact-status');
-        if (!msg.trim()) {
-            if (status) status.innerText = 'Please write a short message.';
-            return;
-        }
-        const body = encodeURIComponent(
-            'Contact from MAP-style Assessment App\n' +
-            'Name: ' + name + '\n' +
-            'Reply-to: ' + email + '\n\n' +
-            msg
-        );
-        const mailto = 'mailto:?subject=' + encodeURIComponent('MAP-style Assessment App: contact') + '&body=' + body;
-        try { window.location.href = mailto; } catch (e) {}
-        if (status) status.innerText = 'Opening your email app…';
-    }
 
     
     // ===================== INTERACTIVE FRAMES (Phase 1) =====================
@@ -8657,6 +8619,7 @@
         if (d && d[key] !== undefined && d[key] !== '') return d[key];
         const x = UI_I18N_EXTRA[l];
         if (x && x[key] !== undefined && x[key] !== '') return x[key];
+        if (key === 'ritDisclaimer' && REPORT_I18N[l] && REPORT_I18N[l].ritDisclaimer) return REPORT_I18N[l].ritDisclaimer;
         return undefined;
     }
     function getUiLang() {
@@ -9589,11 +9552,6 @@ document.querySelectorAll('[data-i18n-ph]').forEach(el => {
 
         window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         closeModal('modal-sendto');
-    }
-    function openContactModal() {
-        const status = document.getElementById('contact-status');
-        if (status) status.innerText = '';
-        openModal('modal-contact');
     }
     // Click backdrop to close modals
     document.querySelectorAll('.modal').forEach(m => {

@@ -43,14 +43,11 @@ footer { text-align:center; font-size:13px; color:var(--muted); margin-top:24px;
 <main>
   <a class="xt-back" href="/">← Back to the app</a>
   <div id="passport"><p>Loading verification record…</p></div>
-  <footer>Questions about this page: <a id="contact" href="#">contact XAG</a></footer>
 </main>
 <script src="xag-trust.js"></script>
 <script>
 XAGTrust.load().then(cfg => {
     XAGTrust.renderPassport(document.getElementById('passport'), cfg);
-    const c = document.getElementById('contact');
-    if (cfg.contactEmail) c.href = 'mailto:' + cfg.contactEmail; else c.parentNode.remove();
     document.title = 'Trust & Verification · ' + cfg.appName;
 }).catch(() => {
     document.getElementById('passport').innerHTML = '<p>The verification record could not be loaded. Please try again later.</p>';
