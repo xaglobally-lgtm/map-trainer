@@ -93,7 +93,6 @@
             L.privacy && `<a href="${esc(L.privacy)}">Privacy</a>`,
             L.terms && `<a href="${esc(L.terms)}">Terms</a>`,
             L.accessibilityStatement && `<a href="${esc(L.accessibilityStatement)}">Accessibility</a>`,
-            cfg.contactEmail && `<a href="mailto:${esc(cfg.contactEmail)}">Contact</a>`,
             `<a href="${esc(cfg.trustUrl || '/trust/')}"><b>Trust &amp; Verification →</b></a>`
         ].filter(Boolean);
         const badges = badgesHtml(cfg);
