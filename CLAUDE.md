@@ -1,9 +1,7 @@
 # MAP Trainer — Claude Code Handover
 
 ## What this is
-MAP-style adaptive reading assessment PWA. Single-file HTML app (`index.html`) + Supabase backend. Currently deployed and live.
-
-**Trademark rule:** the app never names or implies affiliation with the assessment provider whose scale RIT/Lexile come from. All "official score" disclaimers say *not an official score* with no brand named. A `NWEA` grep over `index.html` must return zero hits — keep it that way.
+NWEA MAP-style adaptive reading assessment PWA. Single-file HTML app (`index.html`) + Supabase backend. Currently deployed and live.
 
 ## Live infrastructure
 - **Production URL:** https://map-trainer-six.vercel.app/
@@ -74,7 +72,7 @@ Simulation mode only (Training unchanged):
 - **Selector** `drawForSimulation(band)`: next question from the least-represented MAP area (Literary `RL` / Informational `RI` / Vocabulary), preferring non-multiple-choice items while under ~30% and DOK 2–3 types while under ~45%. DOK is tagged per question **type** (`DOK_OF_TYPE`), not per item. Top bands borrow interactive items from the band below; passage sets are skipped when their area is already ahead. Measured mix: areas ~13/13/13 per 40; interactive ~30% (Grade-1 level ~18%, few A1 interactive frames); DOK 2–3 ranges ~25% (A-levels, literal by nature) to ~65% (C-levels).
 - **Report:** "MAP-style areas": Literary / Informational / Vocabulary, each with an estimated RIT range (overall RIT ± up to 15 by area accuracy vs overall) and Relative strength / On par / Focus area; question-mix line; "about half right is normal" note. Also in the Simulation description.
 - **Answer eliminator:** ✕ on multiple-choice options strikes them out (tap again to undo).
-- **Wording:** "Est. RIT" in the test header, "Estimated RIT (practice)" on the report (English; other report languages keep their wording), and a footnote: practice estimates, not official scores. No provider brand is named anywhere — the 12 `ritDisclaimer` values (en + 11 languages) were rewritten on 2026-09-29 to say "RIT is a proprietary adaptive scoring scale… this app calculates its own estimates".
+- **Wording:** "Est. RIT" in the test header, "Estimated RIT (practice)" on the report (English; other report languages keep their wording), and a footnote: practice estimates, not official NWEA scores.
 - Not done (deliberately): untimed default (#1), 43-question length (#2), seasons (#9), per-area separately estimated RIT, highlighter / line reader / notepad.
 
 ## Language Usage preview (2026-09-28)
